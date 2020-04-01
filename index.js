@@ -101,9 +101,8 @@ client.on("message", msg => {
 
       if(member.nickname !== undefined && member.nickname !== null){
         var rank = HasRank(member.nickname)
-        msg.reply(rank.abbrev);
         if(rank !== null){
-          member.setNickname(`${rank.abbrev} ${newNick}`);
+          member.setNickname(`${rank.abbrev}. ${newNick}`);
         }
         else{
           member.setNickname(newNick);
