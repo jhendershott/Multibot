@@ -36,14 +36,20 @@ client.on("message", msg => {
       if (msg.content.includes("!UpdateRank")) {
         var newRank = msg.content.split(' ');
         console.log(newRank);
-        var rankUpdates = newRank[2].split('>'); 
-        var updateFrom = rankUpdates[0]
-        var updateTo = rankUpdates[1]   
+        var updateFrom
+        var updateTo 
+        if(newRank[2].includes('>')){
+          var rankUpdates = newRank[2].split('>'); 
+          updateFrom = rankUpdates[0];
+          updateTo = rankUpdates[1];   
+        }
+        else {
+          UpdateTo = newRank[2];
+        }
 
         if(ranks.includes(updateTo.toUpperCase())){
-          
-          var rankFrom = msg.guild.roles.cache.find(role => role.name === GetRank(rankUpdates[0]).rank);
-          var rankTo = msg.guild.roles.cache.find(role => role.name === GetRank(rankUpdates[1]).rank);
+          var rankFrom = msg.guild.roles.cache.find(role => role.name === GetRank(updateFrom).rank);
+          var rankTo = msg.guild.roles.cache.find(role => role.name === GetRank(updateTo).rank);
           var member = msg.mentions.members.first();
           
           if(member !== undefined){ 
