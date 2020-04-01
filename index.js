@@ -7,26 +7,43 @@ client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`)
 })
 
-var ranks = ['private', 'sergeant', 'staff sergeant', 'private first class']
+var ranks = ['RCT', 'CDT', 'PVT', 'PV2', 'PFC', 'SPC', 'LCPL', 'CPL', 'SGT', 'SSG', 'LT2', 'LT', 'LCDR', 'CDR', 'CAPT', 'VADM', 'ADM', 'HADM']
 
 var rankAbbrevs = [
-  {rank: 'staff sergeant', abbrev: 'SSGT.' },
-  {rank: 'private first class', abbrev: 'PVT1.'},
-  {rank: 'private', abbrev: 'PVT.' },
-  {rank: 'sergeant', abbrev: 'SGT.' }
+  {rank: 'Recruit', abbrev: 'RCT' },
+  {rank: 'Cadet', abbrev: 'CDT' },
+  {rank: 'Private', abbrev: 'PVT' },
+  {rank: 'Private Second Class', abbrev: 'PV2'},
+  {rank: 'Private First Class', abbrev: 'PFC'},
+  {rank: 'Specialist', abbrev: 'SPC'},
+  {rank: 'Lance Corporal', abbrev: 'LCPL'},
+  {rank: 'Corporal', abbrev: 'CPL'},
+  {rank: 'Sergeant', abbrev: 'SGT' },
+  {rank: 'Staff Sergeant', abbrev: 'SSGT' },
+  {rank: 'Second Lieutenant', abbrev: 'LT2' },
+  {rank: 'Lieutenant', abbrev: 'LT' },
+  {rank: 'Lieutenant Commander', abbrev: 'LCDR' },
+  {rank: 'Commander', abbrev: 'CDR' },
+  {rank: 'Captain', abbrev: 'CPT' },
+  {rank: 'Vice Admiral', abbrev: 'VADM' },
+  {rank: 'Admiral', abbrev: 'ADM' },
+  {rank: 'High Admiral', abbrev: 'HADM' },
 ]
 
 client.on("message", msg => {
   if(msg.member.hasPermission('MANAGE_ROLES')){
     try{
       if (msg.content.includes("!UpdateRank")) {
-        var newRank = msg.content.split(',');
-        var updateTo = newRank[2]
-        var updateFrom = newRank[3]
+        var newRank = msg.content.split(' ');
+        console.log(newRank);
+        var rankUpdates = newRank[2].split('>'); 
+        var updateFrom = rankUpdates[0]
+        var updateTo = rankUpdates[1]   
 
-        if(ranks.includes(updateTo.toLowerCase())){
-          var rankTo = msg.guild.roles.cache.find(role => role.name === updateTo);
-          var rankFrom = msg.guild.roles.cache.find(role => role.name === updateFrom);
+        if(ranks.includes(updateTo.toUpperCase())){
+          
+          var rankFrom = msg.guild.roles.cache.find(role => role.name === GetRank(rankUpdates[0]).rank);
+          var rankTo = msg.guild.roles.cache.find(role => role.name === GetRank(rankUpdates[1]).rank);
           var member = msg.mentions.members.first();
           
           if(member !== undefined){ 
@@ -34,13 +51,13 @@ client.on("message", msg => {
             if(rankFrom !== undefined){
               member.roles.remove(rankFrom).catch(console.error);
             }
-            msg.reply('Rank Successfully Updated');
+            console.log('Rank Successfully Updated');
 
             var nick = member.nickname;
 
-            var newNick = `${GetRank(updateTo, msg).abbrev} ${ClearAllRanks(nick)}`
+            var newNick = `${GetRank(updateTo, msg).abbrev}. ${ClearAllRanks(nick)}`
             member.setNickname(newNick);
-            msg.reply(`nick update successfully: ${newNick}`)
+            console.log(`nick update successfully: ${newNick}`)
           }
           else{
             msg.reply('No Member Defined');
@@ -51,6 +68,7 @@ client.on("message", msg => {
         }
       }
     }catch(e){
+      console.log(e);
       msg.reply(`an error has occured`)
     }
   }
@@ -62,18 +80,29 @@ client.on("message", msg => {
 client.on("message", msg => {
   try{
     if(msg.content.includes("!Handle")){
-      var member = msg.mentions.members.first();
-      var handle = msg.content.split(',')[2];
+      var handle = msg.content.split(' ')
+      var newNick
+      if(handle.length === 3){
+        member = msg.mentions.members.first()
+        newNick = handle[2];
+      }
+      else if(handle.length === 2){
+        var member = msg.member
+        newNick = handle[1];
+      }
 
-      if(member.nickname !== undefined){
+      if(member.nickname !== undefined && member.nickname !== null){
         var rank = HasRank(member.nickname)
         if(rank !== null){
-          var nick = member.nickname.split();
-          member.setNickname(`${rank.abbrev} ${nick[1]}`);
+
+          member.setNickname(`${rank.abbrev} ${newNick}`);
+        }
+        else{
+          member.setNickname(newNick);
         }
       }
       else{
-        member.setNickname(handle);
+        member.setNickname(newNick);
       }
     }
   }catch(e){
@@ -97,20 +126,25 @@ client.on("message", msg => {
   }
 })
 
+client.on("guildMemberAdd", (member) => {
+  let role = member.guild.roles.cache.find(role => role.name === 'Recruit');
+  member.roles.add(role).catch(console.error);
+  member.setNickName(`RCT. ${member.displayName}`).catch(console.error);
+});
+
 function HasRank(nick){
   for(var i = 0; i< rankAbbrevs.length; i++){
-    if(nick.toLowerCase() === rankAbbrevs[i].abbrev){
+    let nsplit = nick.split(' ');
+    if(nsplit[0] === rankAbbrevs[i].abbrev){
       return rankAbbrevs[i]
     }
-    else{
-      return null;
-    }
   }
+  return null;
 }
 
   function GetRank(rankName){
     for(var i = 0; i < rankAbbrevs.length; i++){
-      if(rankName.toLowerCase() === rankAbbrevs[i].rank){
+      if(rankName.toUpperCase() === rankAbbrevs[i].abbrev){
         return rankAbbrevs[i]
       }
     }
