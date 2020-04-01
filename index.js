@@ -101,8 +101,8 @@ client.on("message", msg => {
 
       if(member.nickname !== undefined && member.nickname !== null){
         var rank = HasRank(member.nickname)
+        msg.reply(rank.abbrev);
         if(rank !== null){
-
           member.setNickname(`${rank.abbrev} ${newNick}`);
         }
         else{
@@ -143,7 +143,7 @@ client.on("guildMemberAdd", (member) => {
 function HasRank(nick){
   for(var i = 0; i< rankAbbrevs.length; i++){
     let nsplit = nick.split(' ');
-    if(nsplit[0] === rankAbbrevs[i].abbrev){
+    if(nsplit[0] === `${rankAbbrevs[i].abbrev}.`){
       return rankAbbrevs[i]
     }
   }
