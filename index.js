@@ -154,7 +154,7 @@ function HasRank(nick){
 
   function ClearAllRanks(nick){
     for(var i = 0; i < rankAbbrevs.length; i++){
-      nick = nick.replace(rankAbbrevs[i].abbrev, '');
+      nick = nick.replace(`${rankAbbrevs[i].abbrev}. `, '');
     }
 
     return nick
