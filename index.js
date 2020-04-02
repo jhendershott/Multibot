@@ -19,7 +19,7 @@ var rankAbbrevs = [
   {rank: 'Lance Corporal', abbrev: 'LCPL'},
   {rank: 'Corporal', abbrev: 'CPL'},
   {rank: 'Sergeant', abbrev: 'SGT' },
-  {rank: 'Staff Sergeant', abbrev: 'SSGT' },
+  {rank: 'Staff Sergeant', abbrev: 'SSG' },
   {rank: 'Second Lieutenant', abbrev: 'LT2' },
   {rank: 'Lieutenant', abbrev: 'LT' },
   {rank: 'Lieutenant Commander', abbrev: 'LCDR' },
@@ -135,11 +135,11 @@ client.on("message", msg => {
   }
 })
 
-client.on("guildMemberAdd", (member) => {
-  let role = member.guild.roles.cache.find(role => role.name === 'Recruit');
-  member.roles.add(role).catch(console.error);
-  member.setNickName(`RCT. ${member.displayName}`).catch(console.error);
-});
+// client.on("guildMemberAdd", (member) => {
+//   let role = member.guild.roles.cache.find(role => role.name === 'Recruit');
+//   member.roles.add(role).catch(console.error);
+//   member.setNickName(`RCT. ${member.displayName}`).catch(console.error);
+// });
 
 function HasRank(nick){
   for(var i = 0; i< rankAbbrevs.length; i++){
