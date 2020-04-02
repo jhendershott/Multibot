@@ -76,12 +76,12 @@ client.on("message", msg => {
         }
         
       }else{
-        msg.reply('Sorry! You do not have permissions to edit roles')
+        msg.reply("You can't change roles, who do you think ya are? Ya MUPPET!")
       }
     }  
     }catch(e){
       console.log(e);
-      msg.reply(`an error has occured`)
+      msg.reply(`WNR's the muppet and screwed something up`)
     }
   }
 )
@@ -89,15 +89,16 @@ client.on("message", msg => {
 client.on("message", msg => {
   try{
     if(msg.content.startsWith("!Handle")){
-      var handle = msg.content.split(/ +/);
+      var handleCmd = msg.content.split(/ +/);
       var newNick
-      if(handle.length === 3){
+      if(handleCmd.length === 3){
         member = msg.mentions.members.first()
-        newNick = handle[2];
+        newNick = handleCmd[2];
       }
-      else if(handle.length === 2){
+
+      else if(handleCmd.length === 2){
         var member = msg.member
-        newNick = handle[1];
+        newNick = handleCmd[1];
       }
 
       if(member.nickname !== undefined && member.nickname !== null){
@@ -116,7 +117,7 @@ client.on("message", msg => {
     }
   }catch(e){
     console.log(e);
-    //msg.reply('An Error Occured trying to set Nickname')
+    msg.reply(`WNR's the muppet and screwed something up`)
     msg.reply(e);
   }
 })
@@ -147,13 +148,12 @@ client.on("message", msg => {
           console.log(`nick update successfully: ${newNick}`)
           }
       }else{
-        msg.reply('Sorry! You do not have permissions to edit roles')
+        msg.reply("You can't change roles, who do you think ya are? Ya MUPPET!")
       }
     }  
   }catch(e){
     console.log(e);
-    msg.reply(`What a muppet!
-    `)
+    msg.reply(`WNR's the muppet and screwed something up`)
   }
 })
 
