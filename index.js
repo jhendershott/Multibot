@@ -31,9 +31,9 @@ var rankAbbrevs = [
 ]
 
 client.on("message", msg => {
-  if(msg.member.hasPermission('MANAGE_ROLES')){
     try{
       if (msg.content.includes("!UpdateRank")) {
+        if(msg.member.hasPermission('MANAGE_ROLES')){
         var newRank = msg.content.split(' ');
         console.log(newRank);
         var updateFrom
@@ -74,16 +74,17 @@ client.on("message", msg => {
         else{
           msg.reply(`Rank ${updateTo} Could not be found in list`);
         }
+        
+      }else{
+        msg.reply('Sorry! You do not have permissions to edit roles')
       }
+    }  
     }catch(e){
       console.log(e);
       msg.reply(`an error has occured`)
     }
   }
-  else{
-    msg.reply('Sorry! You do not have permissions to edit roles')
-  }
-})
+)
 
 client.on("message", msg => {
   try{
@@ -101,6 +102,7 @@ client.on("message", msg => {
 
       if(member.nickname !== undefined && member.nickname !== null){
         var rank = HasRank(member.nickname)
+        
         if(rank !== null){
           member.setNickname(`${rank.abbrev}. ${newNick}`);
         }
