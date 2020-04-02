@@ -10,31 +10,31 @@ client.on("ready", () => {
 var ranks = ['RCT', 'CDT', 'PVT', 'PV2', 'PFC', 'SPC', 'LCPL', 'CPL', 'SGT', 'SSG', 'LT2', 'LT', 'LCDR', 'CDR', 'CAPT', 'VADM', 'ADM', 'HADM']
 
 var rankAbbrevs = [
-  {rank: 'Recruit', abbrev: 'RCT' },
-  {rank: 'Cadet', abbrev: 'CDT' },
-  {rank: 'Private', abbrev: 'PVT' },
-  {rank: 'Private Second Class', abbrev: 'PV2'},
-  {rank: 'Private First Class', abbrev: 'PFC'},
-  {rank: 'Specialist', abbrev: 'SPC'},
-  {rank: 'Lance Corporal', abbrev: 'LCPL'},
-  {rank: 'Corporal', abbrev: 'CPL'},
-  {rank: 'Sergeant', abbrev: 'SGT' },
-  {rank: 'Staff Sergeant', abbrev: 'SSG' },
-  {rank: 'Second Lieutenant', abbrev: 'LT2' },
-  {rank: 'Lieutenant', abbrev: 'LT' },
-  {rank: 'Lieutenant Commander', abbrev: 'LCDR' },
-  {rank: 'Commander', abbrev: 'CDR' },
-  {rank: 'Captain', abbrev: 'CPT' },
-  {rank: 'Vice Admiral', abbrev: 'VADM' },
-  {rank: 'Admiral', abbrev: 'ADM' },
-  {rank: 'High Admiral', abbrev: 'HADM' },
+  {rank: 'Recruit', abbrev: 'RCT', num: 0 },
+  {rank: 'Cadet', abbrev: 'CDT', num: 1  },
+  {rank: 'Private', abbrev: 'PVT', num: 2  },
+  {rank: 'Private Second Class', abbrev: 'PV2', num: 3 },
+  {rank: 'Private First Class', abbrev: 'PFC', num: 4 },
+  {rank: 'Specialist', abbrev: 'SPC', num: 5 },
+  {rank: 'Lance Corporal', abbrev: 'LCPL', num: 6 },
+  {rank: 'Corporal', abbrev: 'CPL', num: 7 },
+  {rank: 'Sergeant', abbrev: 'SGT' , num: 8 },
+  {rank: 'Staff Sergeant', abbrev: 'SSG' , num: 9 },
+  {rank: 'Second Lieutenant', abbrev: 'LT2' , num: 10 },
+  {rank: 'Lieutenant', abbrev: 'LT' , num: 11 },
+  {rank: 'Lieutenant Commander', abbrev: 'LCDR' , num: 12 },
+  {rank: 'Commander', abbrev: 'CDR' , num: 13 },
+  {rank: 'Captain', abbrev: 'CPT' , num: 14 },
+  {rank: 'Vice Admiral', abbrev: 'VADM' , num: 15 },
+  {rank: 'Admiral', abbrev: 'ADM' , num: 16 },
+  {rank: 'High Admiral', abbrev: 'HADM' , num: 17 },
 ]
 
 client.on("message", msg => {
     try{
-      if (msg.content.includes("!UpdateRank")) {
+      if (msg.content.startsWith("!UpdateRank")) {
         if(msg.member.hasPermission('MANAGE_ROLES')){
-        var newRank = msg.content.split(' ');
+        var newRank = msg.content.split(/ +/);;
         console.log(newRank);
         var updateFrom
         var updateTo 
@@ -88,8 +88,8 @@ client.on("message", msg => {
 
 client.on("message", msg => {
   try{
-    if(msg.content.includes("!Handle")){
-      var handle = msg.content.split(' ')
+    if(msg.content.startsWith("!Handle")){
+      var handle = msg.content.split(/ +/);
       var newNick
       if(handle.length === 3){
         member = msg.mentions.members.first()
@@ -116,22 +116,44 @@ client.on("message", msg => {
     }
   }catch(e){
     console.log(e);
-    msg.reply('An Error Occured trying to set Nickname')
+    //msg.reply('An Error Occured trying to set Nickname')
+    msg.reply(e);
   }
 })
 
 client.on("message", msg => {
-  if(msg.content.includes('!AddRank')){
-    var rank 
-    var abbrev
-    var split = msg.content.split();
-    var strings
-    for(let i = 0; i < split.length; i++){
-      if(s !== ' ' && s !== '!AddRank'){
-        strings.push(split[i]);
+  try{
+    if (msg.content.startsWith("!Promote")) {
+      if(msg.member.hasPermission('MANAGE_ROLES')){
+        var newRank = msg.content.split(/ +/);;
+        
+        var members = msg.mentions.members.array()
+
+        for(let member of members){
+          var currentRank = HasRank(member.nickname);
+          var rankTo = RankByNumber(currentRank.num + parseInt(newRank[1]))
+          console.log(rankTo.rank)
+
+          var roleFrom = msg.guild.roles.cache.find(role => role.name === currentRank.rank);
+          var roleTo = msg.guild.roles.cache.find(role => role.name === rankTo.rank);
+
+          member.roles.add(roleTo).catch(console.error);
+          member.roles.remove(roleFrom).catch(console.error);
+          
+          var nick = member.nickname;
+
+          var newNick = `${rankTo.abbrev}. ${ClearAllRanks(nick)}`
+          member.setNickname(newNick);
+          console.log(`nick update successfully: ${newNick}`)
+          }
+      }else{
+        msg.reply('Sorry! You do not have permissions to edit roles')
       }
-    }
-    rankAbbrevs.push(strings[0], strings[1])
+    }  
+  }catch(e){
+    console.log(e);
+    msg.reply(`What a muppet!
+    `)
   }
 })
 
@@ -143,7 +165,7 @@ client.on("message", msg => {
 
 function HasRank(nick){
   for(var i = 0; i< rankAbbrevs.length; i++){
-    let nsplit = nick.split(' ');
+    let nsplit = nick.split(/ +/);;
     if(nsplit[0] === `${rankAbbrevs[i].abbrev}.`){
       return rankAbbrevs[i]
     }
@@ -154,6 +176,7 @@ function HasRank(nick){
   function GetRank(rankName){
     for(var i = 0; i < rankAbbrevs.length; i++){
       if(rankName.toUpperCase() === rankAbbrevs[i].abbrev){
+        console.log(rankAbbrevs[i]);
         return rankAbbrevs[i]
       }
     }
@@ -169,3 +192,10 @@ function HasRank(nick){
     return nick
   }
 
+  function RankByNumber(num){
+    for(var i = 0; i < rankAbbrevs.length; i++){
+      if(rankAbbrevs[i].num === num){
+        return rankAbbrevs[i]
+      }
+    }
+  }
