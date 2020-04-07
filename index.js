@@ -14,7 +14,6 @@ client.on("message", msg => {
       if (msg.content.toLowerCase().startsWith("!updaterank")) {
         if(msg.member.hasPermission('MANAGE_ROLES')){
         var newRank = msg.content.split(/ +/);;
-        console.log(newRank);
         var updateFrom
         var updateTo 
         var rankFrom
@@ -38,13 +37,11 @@ client.on("message", msg => {
             if(rankFrom !== undefined){
               member.roles.remove(rankFrom).catch(console.error);
             }
-            console.log('Rank Successfully Updated');
 
             var nick = member.nickname;
 
             var newNick = `${rankUtilities.GetRank(updateTo, msg).abbrev}. ${rankUtilities.ClearAllRanks(nick)}`
             member.setNickname(newNick);
-            console.log(`nick update successfully: ${newNick}`)
           }
           else{
             msg.reply('No Member Defined');
@@ -59,7 +56,6 @@ client.on("message", msg => {
       }
     }  
     }catch(e){
-      console.log(e);
       msg.reply(`WNR's the muppet and screwed something up`)
     }
   }
@@ -95,7 +91,6 @@ client.on("message", msg => {
       }
     }
   }catch(e){
-    console.log(e);
     msg.reply(`WNR's the muppet and screwed something up`)
     msg.reply(e);
   }
@@ -112,7 +107,6 @@ client.on("message", msg => {
         for(let member of members){
           var currentRank = rankUtilities.HasRank(member.nickname);
           var rankTo = rankUtilities.RankByNumber(currentRank.num + parseInt(newRank[1]))
-          console.log(rankTo.rank)
 
           var roleFrom = msg.guild.roles.cache.find(role => role.name === currentRank.rank);
           var roleTo = msg.guild.roles.cache.find(role => role.name === rankTo.rank);
@@ -124,7 +118,6 @@ client.on("message", msg => {
 
           var newNick = `${rankTo.abbrev}. ${rankUtilities.ClearAllRanks(nick)}`
           member.setNickname(newNick);
-          console.log(`nick update successfully: ${newNick}`)
           }
       }else{
         msg.reply("You can't change roles, who do you think ya are? Ya MUPPET!")
@@ -146,12 +139,22 @@ client.on("message",async msg => {
       }
 
       else if(args[1].toLowerCase() === 'deposit' && args.length === 3){
-        var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.member.nickname), args[2]);
-        msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+        if(msg.member.roles.cache.find(r => r.name === "Banker")){
+          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.member.nickname), args[2]);
+          msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+        }
+        else{
+          msg.channel.send(`Please see your banker to make a deposit`)
+        }
       }
       else if(args[1].toLowerCase() === 'deposit' && args.length === 4){
-        var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.mentions.members.first().nickname), args[2]);
-        msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+        if(msg.member.roles.cache.find(r => r.name === "Banker")){
+          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.mentions.members.first().nickname), args[2]);
+          msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+        }
+        else{
+          msg.channel.send(`Please see your banker to make a deposit`)
+        }
       }
 
       if(args[1].toLowerCase() === 'contribution' && args.length === 2){
@@ -162,7 +165,6 @@ client.on("message",async msg => {
           await bank.AddMember(cleanedNick);
           msg.channel.send(`It appears you are not on our books but have been to the ledger`);
         }else{
-          console.log(memberId);
           var transid = await bank.GetTransactionId(memberId)
           if(transid){
             msg.channel.send(`Total Contributions from ${nickname} = ${await bank.GetTransactionAmount(transid)} aUEC`)
@@ -181,7 +183,6 @@ client.on("message",async msg => {
           await bank.AddMember(cleanedNick);
           msg.channel.send(`It appears ${nickname} isn't on our books but has been to the ledger`);
         }else{
-          console.log(memberId);
           var transid = await bank.GetTransactionId(memberId)
           if(transid){
             msg.channel.send(`Total Contributions from ${nickname} = ${await bank.GetTransactionAmount(transid)} aUEC`)

@@ -9,14 +9,9 @@ class Bank {
 
     async Deposit(user,amount){
         var currentBal = parseInt(await this.GetBankBalance());
-        console.log(currentBal)
         var newBalance = currentBal + parseInt(amount)
-        console.log(newBalance);
         await pool.query(`Update Bank Set Balance = ${newBalance} Where account_id = 1`).then(res =>{
             const data = res.rows;
-            for(let row of data){
-                console.log(row);
-            }  
         })
 
         await this.UpdateUserTransaction(user, amount)
@@ -25,14 +20,9 @@ class Bank {
 
     async Withdraw(amount){
         var currentBal = parseInt(await this.GetBankBalance());
-        console.log(currentBal)
         var newBalance = currentBal - parseInt(amount)
-        console.log(newBalance);
         await pool.query(`Update Bank Set Balance = ${newBalance} Where account_id = 1`).then(res =>{
             const data = res.rows;
-            for(let row of data){
-                console.log(row);
-            }  
         })
 
         return newBalance
@@ -50,23 +40,21 @@ class Bank {
 
     async GetBalanceNewConnect(){
         var balance = await this.GetBankBalance();
-        console.log(balance);
         return balance;
     }
 
     async AddMember(name){
        await pool.query(`Insert Into mcmember(username) values('${name}')`).then(res =>{
         const data = res.rows;
-        balance = data[0].balance
         });
     }
 
     async GetMemberId(name){
-        var user;
+        var user = null;
         await pool.query(`select user_id from mcmember where username = '${name}'`).then(res =>{
             const data = res.rows;
-            user = data[0].user_id
-        
+            if(data.length > 0)
+                user = data[0].user_id
             });
 
         if(user !== null){
@@ -94,8 +82,8 @@ class Bank {
 
     async CreateNewTransaction(user_id, amount){
         var transId
-
-        await pool.query(`Insert Into Transactions (user_id, amount) Values (${user_id}, ${amount})`).then(res =>{
+        var query = `Insert Into Transactions (user_id, amount) Values (${user_id}, ${amount})`
+        await pool.query(query).then(res =>{
             const data = res.rows;
             })
             
@@ -103,26 +91,20 @@ class Bank {
     }
     async UpdateUserTransaction(name, amount){
         var userId = this.GetMemberId(name);
-        if(userId === null){
+        if(!userId){
             this.AddMember(name);
         }
 
         userId = await this.GetMemberId(name);
         var transId = await this.GetTransactionId(userId);
-        console.log(transId);
-        if(transId === undefined || transId === null){
-            console.log('creating new transaction')
+        if(!transId){
             transId = await this.CreateNewTransaction(userId, amount);
         }
         else{
-            console.log('updating transaction')
             var newAmount = parseInt(amount) + await this.GetTransactionAmount(transId)
-            console.log(newAmount)
             await pool.query(`Update transactions set amount = ${newAmount}  where transaction_id = ${transId}`).then(res =>{
                 const data = res.rows;
-                console.log('UpdateUserTransaction');
                 for(let row of data){
-                    console.log(row)
                 };
             
             })
@@ -134,9 +116,7 @@ class Bank {
 
         await pool.query(`select amount from transactions where transaction_id = ${transaction_id}`).then(res =>{
             const data = res.rows;
-            console.log('GetTransactionAmount');
             amount = data[0].amount;
-            console.log(amount);
             })
         
         return amount

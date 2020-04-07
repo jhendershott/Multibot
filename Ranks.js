@@ -43,7 +43,6 @@ class Ranks{
     GetRank(rankName){
         for(var i = 0; i < this.rankAbbrevs.length; i++){
           if(rankName.toUpperCase() === this.rankAbbrevs[i].abbrev){
-            console.log(this.rankAbbrevs[i]);
             return this.rankAbbrevs[i]
           }
         }
