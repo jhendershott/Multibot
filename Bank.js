@@ -1,7 +1,7 @@
 const { Pool } = require('pg')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0
 const pool = new Pool({
-    connectionString: 'postgres://otaezimgjezlqz:e1229aee93dabd15a5747c19cb63857c3669137d147df681c5d501f1df2e6a70@ec2-52-87-58-157.compute-1.amazonaws.com:5432/d7rat0uua58ok5',
+    connectionString: process.env.POSTGRESCONNECTIONSTRING,
     ssl: true,
 })
 
