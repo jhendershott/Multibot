@@ -211,22 +211,22 @@ client.on("message",async msg => {
 client.on("message",async msg => {
   try{
     var args = msg.content.split(/ +/);;
-    if (msg.content.startsWith("!Help") && args.length === 1) {
+    if (msg.content.startsWith("!MultiBot-Help") && args.length === 1) {
       msg.channel.send("MultiBot is your one stop shop for all your needs");
       msg.channel.send("Try out !Handle {new handle name} will update your your name while keeping your rank");
-      msg.channel.send("Try !Help Promote !Promote will manage members roles ");
-      msg.channel.send("Try !Help Bank will help you manage the org bank");
+      msg.channel.send("Try !MultiBot-Help Promote !Promote will manage members roles ");
+      msg.channel.send("Try !MultiBot-Help Bank will help you manage the org bank");
     }
-    else if (msg.content.startsWith("!Help") && args[1] === 'Bank') {
-      msg.channel.send("!Bank Depost {amount} - will add to the account and your contributions");
-      msg.channel.send("try out !Bank Depost {amount} {tagged server member} - will add to the account and their contributions");
-      msg.channel.send("try out !Bank Contribution - will display your total contributions to the bank");
-      msg.channel.send("try out !Bank Contribution {tagged server name} - will display their total contributions to the bank");
-      msg.channel.send("try out !Bank Withdraw - will withdraw funds from the org bank *Note only Bankers are allowed to withdraw*");  
+    else if (msg.content.startsWith("!MultiBot-Help") && args[1] === 'Bank') {
+      msg.channel.send("Try out !Bank Depost {amount} - will add to the account and your contributions");
+      msg.channel.send("Try out !Bank Depost {amount} {tagged server member} - will add to the account and their contributions");
+      msg.channel.send("Try out !Bank Contribution - will display your total contributions to the bank");
+      msg.channel.send("Try out !Bank Contribution {tagged server name} - will display their total contributions to the bank");
+      msg.channel.send("Try out !Bank Withdraw - will withdraw funds from the org bank *Note only Bankers are allowed to withdraw*");  
     }
     
-    else if (msg.content.startsWith("!Help") && args[1] === 'Promote') {
-      msg.channel.send("try out !Promote {how many ranks} {tagged server members} - will increase ranks of member");
+    else if (msg.content.startsWith("!MultiBot-Help") && args[1] === 'Promote') {
+      msg.channel.send("Try out !Promote {how many ranks} {tagged server members} - will increase ranks of member");
       msg.channel.send("This will update their rank on the server as well as their nickname");
       msg.channel.send("Only members with MANAGE_ROLES permissions can promote");
     }
