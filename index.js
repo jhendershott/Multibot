@@ -1,34 +1,13 @@
-require("dotenv").config()
+var Bank = require("./Bank");
+var Ranks = require("./Ranks");
+
 const Discord = require("discord.js")
 const client = new Discord.Client()
 
+const rankUtilities = new Ranks();
+const bank = new Bank();
+
 client.login(process.env.BotToken)
-client.on("ready", () => {
-  console.log(`Logged in as ${client.user.tag}!`)
-})
-
-var ranks = ['RCT', 'CDT', 'PVT', 'PV2', 'PFC', 'SPC', 'LCPL', 'CPL', 'SGT', 'SSG', 'LT2', 'LT', 'LCDR', 'CDR', 'CAPT', 'VADM', 'ADM', 'HADM']
-
-var rankAbbrevs = [
-  {rank: 'Recruit', abbrev: 'RCT', num: 0 },
-  {rank: 'Cadet', abbrev: 'CDT', num: 1  },
-  {rank: 'Private', abbrev: 'PVT', num: 2  },
-  {rank: 'Private Second Class', abbrev: 'PV2', num: 3 },
-  {rank: 'Private First Class', abbrev: 'PFC', num: 4 },
-  {rank: 'Specialist', abbrev: 'SPC', num: 5 },
-  {rank: 'Lance Corporal', abbrev: 'LCPL', num: 6 },
-  {rank: 'Corporal', abbrev: 'CPL', num: 7 },
-  {rank: 'Sergeant', abbrev: 'SGT' , num: 8 },
-  {rank: 'Staff Sergeant', abbrev: 'SSG' , num: 9 },
-  {rank: 'Second Lieutenant', abbrev: 'LT2' , num: 10 },
-  {rank: 'Lieutenant', abbrev: 'LT' , num: 11 },
-  {rank: 'Lieutenant Commander', abbrev: 'LCDR' , num: 12 },
-  {rank: 'Commander', abbrev: 'CDR' , num: 13 },
-  {rank: 'Captain', abbrev: 'CPT' , num: 14 },
-  {rank: 'Vice Admiral', abbrev: 'VADM' , num: 15 },
-  {rank: 'Admiral', abbrev: 'ADM' , num: 16 },
-  {rank: 'High Admiral', abbrev: 'HADM' , num: 17 },
-]
 
 client.on("message", msg => {
     try{
@@ -44,14 +23,14 @@ client.on("message", msg => {
           var rankUpdates = newRank[2].split('>'); 
           updateFrom = rankUpdates[0];
           updateTo = rankUpdates[1];   
-          rankFrom = msg.guild.roles.cache.find(role => role.name === GetRank(updateFrom).rank);
+          rankFrom = msg.guild.roles.cache.find(role => role.name === rankUtilities.GetRank(updateFrom).rank);
         }
         else {
           updateTo = newRank[2];
         }
 
-        if(ranks.includes(updateTo.toUpperCase())){
-          var rankTo = msg.guild.roles.cache.find(role => role.name === GetRank(updateTo).rank);
+        if(rankUtilities.rankList.includes(updateTo.toUpperCase())){
+          var rankTo = msg.guild.roles.cache.find(role => role.name === rankUtilities.GetRank(updateTo).rank);
           var member = msg.mentions.members.first();
           
           if(member !== undefined){ 
@@ -63,7 +42,7 @@ client.on("message", msg => {
 
             var nick = member.nickname;
 
-            var newNick = `${GetRank(updateTo, msg).abbrev}. ${ClearAllRanks(nick)}`
+            var newNick = `${rankUtilities.GetRank(updateTo, msg).abbrev}. ${rankUtilities.ClearAllRanks(nick)}`
             member.setNickname(newNick);
             console.log(`nick update successfully: ${newNick}`)
           }
@@ -102,7 +81,7 @@ client.on("message", msg => {
       }
 
       if(member.nickname !== undefined && member.nickname !== null){
-        var rank = HasRank(member.nickname)
+        var rank = rankUtilities.HasRank(member.nickname)
         
         if(rank !== null){
           member.setNickname(`${rank.abbrev}. ${newNick}`);
@@ -131,8 +110,8 @@ client.on("message", msg => {
         var members = msg.mentions.members.array()
 
         for(let member of members){
-          var currentRank = HasRank(member.nickname);
-          var rankTo = RankByNumber(currentRank.num + parseInt(newRank[1]))
+          var currentRank = rankUtilities.HasRank(member.nickname);
+          var rankTo = rankUtilities.RankByNumber(currentRank.num + parseInt(newRank[1]))
           console.log(rankTo.rank)
 
           var roleFrom = msg.guild.roles.cache.find(role => role.name === currentRank.rank);
@@ -143,7 +122,7 @@ client.on("message", msg => {
           
           var nick = member.nickname;
 
-          var newNick = `${rankTo.abbrev}. ${ClearAllRanks(nick)}`
+          var newNick = `${rankTo.abbrev}. ${rankUtilities.ClearAllRanks(nick)}`
           member.setNickname(newNick);
           console.log(`nick update successfully: ${newNick}`)
           }
@@ -157,45 +136,109 @@ client.on("message", msg => {
   }
 })
 
+client.on("message",async msg => {
+  try{
+    if (msg.content.startsWith("!Bank")) {
+      var args = msg.content.split(/ +/);;
+      if(args[1].toLowerCase() === 'balance'){
+        var balance = await bank.GetBalanceNewConnect();
+        msg.channel.send(`${balance} aUEC`)
+      }
+
+      else if(args[1].toLowerCase() === 'deposit' && args.length === 3){
+        var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.member.nickname), args[2]);
+        msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+      }
+      else if(args[1].toLowerCase() === 'deposit' && args.length === 4){
+        var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.mentions.members.first().nickname), args[2]);
+        msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
+      }
+
+      if(args[1].toLowerCase() === 'contribution' && args.length === 2){
+        var nickname = msg.member.nickname
+        var cleanedNick = rankUtilities.ClearAllRanks(nickname);
+        var memberId = await bank.GetMemberId(cleanedNick);
+        if(!memberId){
+          await bank.AddMember(cleanedNick);
+          msg.channel.send(`It appears you are not on our books but have been to the ledger`);
+        }else{
+          console.log(memberId);
+          var transid = await bank.GetTransactionId(memberId)
+          if(transid){
+            msg.channel.send(`Total Contributions from ${nickname} = ${await bank.GetTransactionAmount(transid)} aUEC`)
+          }
+          else{
+            msg.channel.send(`You have not contributed to MultiCorp Bank`)
+          }  
+        }      
+      } 
+      
+      else if(args[1].toLowerCase() === 'contribution' && args.length === 3){
+        var nickname = msg.mentions.members.first().nickname
+        var cleanedNick = rankUtilities.ClearAllRanks(nickname);
+        var memberId = await bank.GetMemberId(cleanedNick);
+        if(!memberId){
+          await bank.AddMember(cleanedNick);
+          msg.channel.send(`It appears ${nickname} isn't on our books but has been to the ledger`);
+        }else{
+          console.log(memberId);
+          var transid = await bank.GetTransactionId(memberId)
+          if(transid){
+            msg.channel.send(`Total Contributions from ${nickname} = ${await bank.GetTransactionAmount(transid)} aUEC`)
+          }
+          else{
+            msg.channel.send(`${nickname} has not contributed to MultiCorp Bank`)
+          }  
+        }
+      }
+
+      if(args[1].toLowerCase() === 'withdraw'){
+        if(msg.member.roles.cache.find(r => r.name === "Banker")){
+          var withdraw = await bank.Withdraw(args[2]);
+          msg.channel.send(`You have withdrawn funds: New Balance = ${withdraw} aUEC`)
+        }
+        else{
+          msg.channel.send("Come on, muppets like you can't pull out money willy nilly!");
+        }
+      }
+    }
+
+  } catch (e){
+    console.log(e)
+  }
+})
+
+client.on("message",async msg => {
+  try{
+    var args = msg.content.split(/ +/);;
+    if (msg.content.startsWith("!Help") && args.length === 1) {
+      msg.channel.send("MultiBot is your one stop shop for all your needs");
+      msg.channel.send("Try out !Handle {new handle name} will update your your name while keeping your rank");
+      msg.channel.send("Try !Help Promote !Promote will manage members roles ");
+      msg.channel.send("Try !Help Bank will help you manage the org bank");
+    }
+    else if (msg.content.startsWith("!Help") && args[1] === 'Bank') {
+      msg.channel.send("!Bank Depost {amount} - will add to the account and your contributions");
+      msg.channel.send("try out !Bank Depost {amount} {tagged server member} - will add to the account and their contributions");
+      msg.channel.send("try out !Bank Contribution - will display your total contributions to the bank");
+      msg.channel.send("try out !Bank Contribution {tagged server name} - will display their total contributions to the bank");
+      msg.channel.send("try out !Bank Withdraw - will withdraw funds from the org bank *Note only Bankers are allowed to withdraw*");  
+    }
+    
+    else if (msg.content.startsWith("!Help") && args[1] === 'Promote') {
+      msg.channel.send("try out !Promote {how many ranks} {tagged server members} - will increase ranks of member");
+      msg.channel.send("This will update their rank on the server as well as their nickname");
+      msg.channel.send("Only members with MANAGE_ROLES permissions can promote");
+    }
+  } catch (e){
+    console.log(e)
+  }
+})
+
+
 // client.on("guildMemberAdd", (member) => {
 //   let role = member.guild.roles.cache.find(role => role.name === 'Recruit');
 //   member.roles.add(role).catch(console.error);
 //   member.setNickName(`RCT. ${member.displayName}`).catch(console.error);
 // });
 
-function HasRank(nick){
-  for(var i = 0; i< rankAbbrevs.length; i++){
-    let nsplit = nick.split(/ +/);;
-    if(nsplit[0] === `${rankAbbrevs[i].abbrev}.`){
-      return rankAbbrevs[i]
-    }
-  }
-  return null;
-}
-
-  function GetRank(rankName){
-    for(var i = 0; i < rankAbbrevs.length; i++){
-      if(rankName.toUpperCase() === rankAbbrevs[i].abbrev){
-        console.log(rankAbbrevs[i]);
-        return rankAbbrevs[i]
-      }
-    }
-
-    return null;
-  }
-
-  function ClearAllRanks(nick){
-    for(var i = 0; i < rankAbbrevs.length; i++){
-      nick = nick.replace(`${rankAbbrevs[i].abbrev}. `, '');
-    }
-
-    return nick
-  }
-
-  function RankByNumber(num){
-    for(var i = 0; i < rankAbbrevs.length; i++){
-      if(rankAbbrevs[i].num === num){
-        return rankAbbrevs[i]
-      }
-    }
-  }
