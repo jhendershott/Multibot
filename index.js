@@ -11,7 +11,7 @@ client.login(process.env.BotToken)
 
 client.on("message", msg => {
     try{
-      if (msg.content.startsWith("!UpdateRank")) {
+      if (msg.content.toLowerCase().startsWith("!UpdateRank")) {
         if(msg.member.hasPermission('MANAGE_ROLES')){
         var newRank = msg.content.split(/ +/);;
         console.log(newRank);
@@ -67,7 +67,7 @@ client.on("message", msg => {
 
 client.on("message", msg => {
   try{
-    if(msg.content.startsWith("!Handle")){
+    if(msg.content.toLowerCase().startsWith("!Handle")){
       var handleCmd = msg.content.split(/ +/);
       var newNick
       if(handleCmd.length === 3){
@@ -103,7 +103,7 @@ client.on("message", msg => {
 
 client.on("message", msg => {
   try{
-    if (msg.content.startsWith("!Promote")) {
+    if (msg.content.toLowerCase().startsWith("!Promote")) {
       if(msg.member.hasPermission('MANAGE_ROLES')){
         var newRank = msg.content.split(/ +/);;
         
@@ -138,7 +138,7 @@ client.on("message", msg => {
 
 client.on("message",async msg => {
   try{
-    if (msg.content.startsWith("!Bank")) {
+    if (msg.content.toLowerCase().startsWith("!Bank")) {
       var args = msg.content.split(/ +/);;
       if(args[1].toLowerCase() === 'balance'){
         var balance = await bank.GetBalanceNewConnect();
@@ -211,21 +211,21 @@ client.on("message",async msg => {
 client.on("message",async msg => {
   try{
     var args = msg.content.split(/ +/);;
-    if (msg.content.startsWith("!MultiBot-Help") && args.length === 1) {
+    if (msg.content.toLowerCase().startsWith("!MultiBot-Help") && args.length === 1) {
       msg.channel.send("MultiBot is your one stop shop for all your needs");
       msg.channel.send("Try out !Handle {new handle name} will update your your name while keeping your rank");
       msg.channel.send("Try !MultiBot-Help Promote !Promote will manage members roles ");
       msg.channel.send("Try !MultiBot-Help Bank will help you manage the org bank");
     }
-    else if (msg.content.startsWith("!MultiBot-Help") && args[1] === 'Bank') {
-      msg.channel.send("Try out !Bank Depost {amount} - will add to the account and your contributions");
-      msg.channel.send("Try out !Bank Depost {amount} {tagged server member} - will add to the account and their contributions");
+    else if (msg.content.toLowerCase().startsWith("!MultiBot-Help") && args[1].toLowerCase() === 'Bank') {
+      msg.channel.send("Try out !Bank Deposit {amount} - will add to the account and your contributions");
+      msg.channel.send("Try out !Bank Deposit {amount} {tagged server member} - will add to the account and their contributions");
       msg.channel.send("Try out !Bank Contribution - will display your total contributions to the bank");
       msg.channel.send("Try out !Bank Contribution {tagged server name} - will display their total contributions to the bank");
       msg.channel.send("Try out !Bank Withdraw - will withdraw funds from the org bank *Note only Bankers are allowed to withdraw*");  
     }
     
-    else if (msg.content.startsWith("!MultiBot-Help") && args[1] === 'Promote') {
+    else if (msg.content.toLowerCase().startsWith("!MultiBot-Help") && args[1].toLowerCase() === 'Promote') {
       msg.channel.send("Try out !Promote {how many ranks} {tagged server members} - will increase ranks of member");
       msg.channel.send("This will update their rank on the server as well as their nickname");
       msg.channel.send("Only members with MANAGE_ROLES permissions can promote");
