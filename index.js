@@ -142,7 +142,7 @@ client.on("message",async msg => {
       var args = msg.content.split(/ +/);;
       if(args[1].toLowerCase() === 'balance'){
         var balance = await bank.GetBalanceNewConnect();
-        msg.channel.send(`${balance} aUEC`)
+        msg.channel.send(`${numberWithCommas(balance)} aUEC`)
       }
 
       else if(args[1].toLowerCase() === 'deposit' && args.length === 3){
@@ -242,3 +242,8 @@ client.on("message",async msg => {
 //   member.setNickName(`RCT. ${member.displayName}`).catch(console.error);
 // });
 
+function numberWithCommas(x) {
+  var parts = x.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+}
