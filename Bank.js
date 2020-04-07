@@ -13,7 +13,7 @@ class Bank {
         await pool.query(`Update Bank Set Balance = ${newBalance} Where account_id = 1`).then(res =>{
             const data = res.rows;
         })
-
+        console.log('deposit successful - updating user transaction');
         await this.UpdateUserTransaction(user, amount)
         return newBalance
     }
@@ -44,8 +44,10 @@ class Bank {
     }
 
     async AddMember(name){
-       await pool.query(`Insert Into mcmember(username) values('${name}')`).then(res =>{
-        const data = res.rows;
+        console.log('adding member')
+        await pool.query(`Insert Into mcmember(username) values('${name}')`).then(res =>{
+            const data = res.rows;
+            console.log(data);
         });
     }
 
@@ -90,9 +92,10 @@ class Bank {
         return transId
     }
     async UpdateUserTransaction(name, amount){
-        var userId = this.GetMemberId(name);
+        var userId = await this.GetMemberId(name);
+        console.log(userId);
         if(!userId){
-            this.AddMember(name);
+            await this.AddMember(name);
         }
 
         userId = await this.GetMemberId(name);
