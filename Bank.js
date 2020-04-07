@@ -42,16 +42,15 @@ class Bank {
         var balance;
         await pool.query(`select balance from bank where account_id = 1`).then(res =>{
             const data = res.rows;
-            balance = data[0].balance
-        
+            balance = data[0].balance;        
         });    
-          
         //return balance[0].amount;
         return balance
     }
 
     async GetBalanceNewConnect(){
-        balance = await this.GetBankBalance();
+        var balance = await this.GetBankBalance();
+        console.log(balance);
         return balance;
     }
 
