@@ -133,14 +133,15 @@ client.on("message",async msg => {
   try{
     if (msg.content.toLowerCase().startsWith("!bank")) {
       var args = msg.content.split(/ +/);;
+      var orgId = await bank.GetOrgId(msg.guild.name);
       if(args[1].toLowerCase() === 'balance'){
-        var balance = await bank.GetBalanceNewConnect();
+        var balance = await bank.GetBalanceNewConnect(msg.guild.name);
         msg.channel.send(`${numberWithCommas(balance)} aUEC`)
       }
 
       else if(args[1].toLowerCase() === 'deposit' && args.length === 3){
         if(msg.member.roles.cache.find(r => r.name === "Banker")){
-          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.member.nickname), args[2]);
+          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.member.nickname), args[2], msg.guild.name);
           msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
         }
         else{
@@ -149,7 +150,7 @@ client.on("message",async msg => {
       }
       else if(args[1].toLowerCase() === 'deposit' && args.length === 4){
         if(msg.member.roles.cache.find(r => r.name === "Banker")){
-          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.mentions.members.first().nickname), args[2]);
+          var deposit = await bank.Deposit(rankUtilities.ClearAllRanks(msg.mentions.members.first().nickname), args[2], msg.guild.name);
           msg.channel.send(`Thank you for your contribution: New Balance = ${deposit} aUEC`)
         }
         else{
@@ -160,9 +161,10 @@ client.on("message",async msg => {
       if(args[1].toLowerCase() === 'contribution' && args.length === 2){
         var nickname = msg.member.nickname
         var cleanedNick = rankUtilities.ClearAllRanks(nickname);
-        var memberId = await bank.GetMemberId(cleanedNick);
+        var orgId = await bank.GetOrgId(msg.guild.name);
+        var memberId = await bank.GetMemberId(cleanedNick, orgId);
         if(!memberId){
-          await bank.AddMember(cleanedNick);
+          await bank.AddMember(cleanedNick, orgId);
           msg.channel.send(`It appears you are not on our books but have been to the ledger`);
         }else{
           var transid = await bank.GetTransactionId(memberId)
@@ -178,9 +180,9 @@ client.on("message",async msg => {
       else if(args[1].toLowerCase() === 'contribution' && args.length === 3){
         var nickname = msg.mentions.members.first().nickname
         var cleanedNick = rankUtilities.ClearAllRanks(nickname);
-        var memberId = await bank.GetMemberId(cleanedNick);
+        var memberId = await bank.GetMemberId(cleanedNick, orgId);
         if(!memberId){
-          await bank.AddMember(cleanedNick);
+          await bank.AddMember(cleanedNick, orgId);
           msg.channel.send(`It appears ${nickname} isn't on our books but has been to the ledger`);
         }else{
           var transid = await bank.GetTransactionId(memberId)
@@ -195,8 +197,8 @@ client.on("message",async msg => {
 
       if(args[1].toLowerCase() === 'withdraw'){
         if(msg.member.roles.cache.find(r => r.name === "Banker")){
-          var withdraw = await bank.Withdraw(args[2]);
-          msg.channel.send(`You have withdrawn funds: New Balance = ${withdraw} aUEC`)
+          var withdraw = await bank.Withdraw(args[2], msg.guild.name);
+          msg.channel.send(`You have withdrawn ${args[2]} aUEC: New Balance = ${withdraw} aUEC`)
         }
         else{
           msg.channel.send("Come on, muppets like you can't pull out money willy nilly!");
