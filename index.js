@@ -103,6 +103,8 @@ client.on("message", msg => {
         var newRank = msg.content.split(/ +/);;
         
         var members = msg.mentions.members.array()
+        var newMsg = `Congratulations on your recent promotions! Well Earned!`
+        var membersArrayString = '';
 
         for(let member of members){
           var currentRank = rankUtilities.HasRank(member.nickname);
@@ -118,6 +120,18 @@ client.on("message", msg => {
 
           var newNick = `${rankTo.abbrev}. ${rankUtilities.ClearAllRanks(nick)}`
           member.setNickname(newNick);
+          membersArrayString = (`${membersArrayString} <@${member.id}>`);
+          }
+          msg.delete();
+          if(members.length > 1){
+            msg.channel.send(`Congratulations on your promotions! Well Earned! ${membersArrayString}`)
+              .then(msg => console.log(`Updated the content of a message to ${msg.content}`))
+              .catch(console.error);
+          } 
+          else{
+            msg.channel.send(`Congratulations on your promotion! Well Earned! ${membersArrayString}`)
+              .then(msg => console.log(`Updated the content of a message to ${msg.content}`))
+              .catch(console.error);
           }
       }else{
         msg.reply("You can't change roles, who do you think ya are? Ya MUPPET!")
@@ -214,10 +228,15 @@ client.on("message",async msg => {
 client.on("message",async msg => {
   try{
     var args = msg.content.split(/ +/);;
-    if (msg.content.toLowerCase().startsWith("!multibot-help") && args.length === 1) {
+    if (msg.content.toLowerCase().startsWith("!multibot-help") && args.length === 1 && msg.guild.name === 'MultiCorp') {
       msg.channel.send("MultiBot is your one stop shop for all your needs");
       msg.channel.send("Try out !Handle {new handle name} will update your your name while keeping your rank");
       msg.channel.send("Try !MultiBot-Help Promote !Promote will manage members roles ");
+      msg.channel.send("Try !MultiBot-Help Bank will help you manage the org bank");
+    }
+    else if(msg.content.toLowerCase().startsWith("!multibot-help") && args.length === 1 && msg.guild.name !== 'MultiCorp') {
+      msg.channel.send("MultiBot is your one stop shop for all your needs");
+      msg.channel.send("Try out !Handle {new handle name} will update your your name while keeping your rank");
       msg.channel.send("Try !MultiBot-Help Bank will help you manage the org bank");
     }
     else if (msg.content.toLowerCase().startsWith("!multibot-help") && args[1].toLowerCase() === 'bank') {
