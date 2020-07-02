@@ -12,23 +12,23 @@ namespace multicorp_bot {
         }
 
         [Command ("check")]
-        public async Task Check (CommandContext ctx) {
+        public async Task Check (CommandContext ctx, DiscordUser user) {
             try {
-                var level = PermissionResolver.GetPermissionLevel (ctx.Guild, ctx.Message.Author);
+                var level = Permissions.GetPermissionLevel (ctx.Guild, user);
                 System.Console.WriteLine (level);
-                await ctx.RespondAsync ($"Your permission level is: {level}");
+                await ctx.RespondAsync ($"The permission level of {user.Mention} is: {level}");
             } catch (Exception e) {
-                System.Console.WriteLine(e.Message);
+                System.Console.WriteLine (e.Message);
             }
         }
 
-       [Command ("set-role-level")]
+        [Command ("set-role-level")]
         public async Task SetRoleLevel (CommandContext ctx, DiscordRole role, int level) {
             try {
-                PermissionResolver.SetRolePermissionLevel(ctx.Guild,role,level);
+                Permissions.SetRolePermissionLevel (ctx.Guild, role, level);
                 await ctx.RespondAsync ($"{role.Mention} is now assigned to level {level}");
             } catch (Exception e) {
-                System.Console.WriteLine(e.Message);
+                System.Console.WriteLine (e.Message);
             }
         }
     }

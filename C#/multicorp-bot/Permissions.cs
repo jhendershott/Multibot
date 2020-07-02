@@ -5,7 +5,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 
 namespace multicorp_bot {
-    public static class PermissionResolver {
+    public static class Permissions {
 
         static Dictionary<DiscordGuild, Dictionary<int, DiscordRole>> GuildPermissions = new Dictionary<DiscordGuild, Dictionary<int, DiscordRole>> ();
 
@@ -21,18 +21,16 @@ namespace multicorp_bot {
             if (user == guild.Owner)
                 return 3;
             else
-                return  GetUserRoleLevel (guild, user);
+                return GetUserRoleLevel (guild, user);
         }
 
-        public static void SetRolePermissionLevel(DiscordGuild guild,DiscordRole role, int level){
-            if(!GuildPermissions.ContainsKey(guild))
-                GuildPermissions.Add(guild, new Dictionary<int, DiscordRole>());
+        public static void SetRolePermissionLevel (DiscordGuild guild, DiscordRole role, int level) {
+            if (!GuildPermissions.ContainsKey (guild))
+                GuildPermissions.Add (guild, new Dictionary<int, DiscordRole> ());
 
-            if(!GuildPermissions[guild].ContainsKey(level)){
-                GuildPermissions[guild].Add(level,role);
-            }
-            else
-            {
+            if (!GuildPermissions[guild].ContainsKey (level)) {
+                GuildPermissions[guild].Add (level, role);
+            } else {
                 GuildPermissions[guild][level] = role;
             }
         }
