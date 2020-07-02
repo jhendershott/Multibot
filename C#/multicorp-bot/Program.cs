@@ -21,14 +21,9 @@ namespace multicorp_bot {
 
             });
             commands = discord.UseCommandsNext (new CommandsNextConfiguration {
-                StringPrefix = ";;"
+                StringPrefix = "."
             });
             commands.RegisterCommands<Commands> ();
-
-            discord.MessageCreated += async e => {
-                if (e.Message.Content.ToLower ().StartsWith ("ping"))
-                    await e.Message.RespondAsync ("pong!");
-            };
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);
