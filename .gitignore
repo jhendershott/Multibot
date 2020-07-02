@@ -1,1 +1,4 @@
 /node_modules
+C#/multicorp-bot/bin/Debug/
+*.cache
+C#/multicorp-bot/obj/Debug/

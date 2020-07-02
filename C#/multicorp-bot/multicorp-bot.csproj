@@ -6,4 +6,9 @@
     <RootNamespace>multicorp_bot</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DSharpPlus" Version="3.2.3" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="3.2.3" />
+  </ItemGroup>
+
 </Project>
