@@ -5865,24 +5865,26 @@
     ]
   },
   "packageFolders": {
-    "/home/mwalk/.nuget/packages/": {}
+    "C:\\Users\\walkm\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/mwalk/Documents/MultiBot/multicorp-rankbot/C#/multicorp-bot/multicorp-bot.csproj",
+      "projectUniqueName": "C:\\Users\\walkm\\source\\repos\\multicorp-rankbot\\C#\\multicorp-bot\\multicorp-bot.csproj",
       "projectName": "multicorp-bot",
-      "projectPath": "/home/mwalk/Documents/MultiBot/multicorp-rankbot/C#/multicorp-bot/multicorp-bot.csproj",
-      "packagesPath": "/home/mwalk/.nuget/packages/",
-      "outputPath": "/home/mwalk/Documents/MultiBot/multicorp-rankbot/C#/multicorp-bot/obj/",
+      "projectPath": "C:\\Users\\walkm\\source\\repos\\multicorp-rankbot\\C#\\multicorp-bot\\multicorp-bot.csproj",
+      "packagesPath": "C:\\Users\\walkm\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\walkm\\source\\repos\\multicorp-rankbot\\C#\\multicorp-bot\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/mwalk/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\walkm\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "netcoreapp3.1"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -5923,7 +5925,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.103/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
       }
     }
   }
