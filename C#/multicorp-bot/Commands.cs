@@ -104,7 +104,7 @@ namespace multicorp_bot
             await ctx.RespondAsync($"Welcome on board {member.Mention} :alien:");
         }
 
-        [Command("deposit")]
+        [Command("bank deposit")]
         public async Task Deposit(CommandContext ctx, DiscordMember member, int amount)
         {
             try

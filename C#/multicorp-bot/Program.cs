@@ -14,14 +14,14 @@ namespace multicorp_bot {
 
         static async Task MainAsync (string[] args) {
             discord = new DiscordClient (new DiscordConfiguration {
-                Token = "NzI5ODI3NjAwMzM5MzA0NTY4.XwOnMw.6D0ko9gk5iiPzo0acvGkAfL5wc4",
+                Token = Environment.GetEnvironmentVariable("BotToken2"),
                     TokenType = TokenType.Bot,
                     UseInternalLogHandler = true,
                     LogLevel = LogLevel.Debug,
 
             });
             commands = discord.UseCommandsNext (new CommandsNextConfiguration {
-                StringPrefix = "."
+                StringPrefix = "!"
             });
             commands.RegisterCommands<Commands> ();
 
