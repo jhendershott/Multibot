@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using multicorp_bot.POCO;
 
 namespace multicorp_bot
 {
@@ -18,6 +20,27 @@ namespace multicorp_bot
             ranks = new Ranks();
             bank = new Bank();
             Permissions.LoadPermissions();
+        }
+
+        [Command("handle")]
+        public async Task UpdateHandle(CommandContext ctx)
+        {
+            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            DiscordMember member = null;
+            string newNick = null;
+            if(args.Length == 2)
+            {
+                member = ctx.Member;
+                newNick = ranks.GetUpdatedNickname(member, args[1]);
+            }
+            else if(args.Length >= 3)
+            {
+                member = await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id);
+                newNick = ranks.GetUpdatedNickname(member, args[2]);
+            }
+
+            ranks.Psql.UpdateNickName(ranks.GetNickWithoutRank(member), ranks.GetNickWithoutRank(newNick), ctx.Guild);
+            await member.ModifyAsync(nickname: newNick);
         }
 
         [Command("check-requirements")]
@@ -79,8 +102,8 @@ namespace multicorp_bot
         {
             if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
                 return;
-            Ranks r = new Ranks();
-            await r.Promote(member);
+            await ranks.Promote(member);
+            await member.ModifyAsync(ranks.GetUpdatedNickname(member));
             await ctx.RespondAsync($"Congratulations on your promotion {member.Mention} :partying_face:");
         }
 
@@ -89,9 +112,9 @@ namespace multicorp_bot
         {
             if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
                 return;
-            Ranks r = new Ranks();
-            await r.Demote(member);
-            await ctx.RespondAsync($"Oh no! What have you done {member.Mention}? :disappointed_relieved:");
+            await ranks.Demote(member);
+            await member.ModifyAsync(ranks.GetUpdatedNickname(member, -1));
+            await ctx.RespondAsync($"Oh no you've been demoted! What have you done {member.Mention}? :disappointed_relieved:");
         }
 
         [Command("recruit")]
@@ -99,68 +122,51 @@ namespace multicorp_bot
         {
             if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
                 return;
-            Ranks r = new Ranks();
-            await r.Recruit(member);
+            await ranks.Recruit(member);
             await ctx.RespondAsync($"Welcome on board {member.Mention} :alien:");
         }
 
-        [Command("bank deposit")]
-        public async Task Deposit(CommandContext ctx, DiscordMember member, int amount)
+        [Command("bank")]
+        public async Task Bank(CommandContext ctx)
         {
+            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            string newBalance;
+            BankTransaction transaction = null;
             try
             {
-                bank.Deposit(member, amount);
+                switch (args[1].ToLower())
+                {
+                    case "deposit":
+                        transaction = await bank.GetBankActionAsync(ctx);
+                        newBalance = bank.Deposit(transaction);
+                        bank.UpdateTransaction(transaction);
+                        await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance}");
+                        break;
+                    case "withdraw":
+                        transaction = await bank.GetBankActionAsync(ctx);
+                        newBalance = bank.Withdraw(transaction);
+                        await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}. The new bank balance is {newBalance}");
+                        break;
+                    case "balance":
+                        var balanceembed = bank.GetBankBalance(ctx.Guild);
+                        await ctx.RespondAsync(embed: balanceembed);
+                        break;
+                }
 
-                //NAME NULL
-                if (bank.GetBankStatusEmbedId() == 0)
-                {
-                    var msg = await ctx.RespondAsync("", false, bank.GetBankBalance());
-                    bank.BankEmbedId = msg.Id;
-                }
-                else
-                {
-                    var msg = await ctx.Channel.GetMessageAsync(bank.GetBankStatusEmbedId());
-                    await msg.ModifyAsync("", bank.GetBankBalance());
-                }
             }
+
             catch (Exception e)
             {
-
                 Console.WriteLine(e.Message);
             }
-
-        }
-
-        [Command("withdraw")]
-        public async Task Withdraw(CommandContext ctx, DiscordMember member, int amount)
-        {
-            try
-            {
-                bank.Withdraw(member, amount);
-
-                if (bank.GetBankStatusEmbedId() == 0)
-                {
-                    var msg = await ctx.RespondAsync("", false, bank.GetBankBalance());
-                    bank.BankEmbedId = msg.Id;
-                }
-                else
-                {
-                    var msg = await ctx.Channel.GetMessageAsync(bank.GetBankStatusEmbedId());
-                    await msg.ModifyAsync("", bank.GetBankBalance());
-                }
-            }
-            catch (Exception e)
-            {
-
-                Console.WriteLine(e.Message);
-            }
-
         }
 
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
-            bank.WipeBank();
+            bank.WipeBank(ctx.Guild);
+            await ctx.RespondAsync("Your org balance and transactions have been set to 0");
+
         }
     }
 }
