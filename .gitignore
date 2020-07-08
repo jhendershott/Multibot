@@ -2,3 +2,5 @@
 C#/multicorp-bot/bin/Debug/
 *.cache
 C#/multicorp-bot/obj/Debug/
+/C#/multicorp-bot/.vs/multicorp-bot/v16/TestStore/0/000.testlog
+/C#/multicorp-bot/.vs/multicorp-bot/v16/TestStore/0/testlog.manifest
