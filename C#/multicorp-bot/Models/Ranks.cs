@@ -1,14 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using multicorp_bot.Models;
 
 namespace multicorp_bot
 {
     public class Ranks
     {
+        public Psql Psql;
 
+        public Ranks()
+        {
+            Psql = new Psql();
+        }
         public List<Rank> MilRanks { get; set; } = new List<Rank>() {
             new Rank () { RankName = "Recruit", Abbreviation = "RCT", Number = 0 },
             new Rank () { RankName = "Cadet", Abbreviation = "CDT", Number = 1 },
@@ -97,6 +104,58 @@ namespace multicorp_bot
             var matchingRole = MilRanks.Where(x => roleNamesForMember.Contains(x.RankName)).FirstOrDefault();
 
             return matchingRole;
+        }
+
+        public string GetNickWithoutRank(DiscordMember member)
+        {
+            string nick = member.Nickname;
+            var rank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
+            if (rank == null)
+            {
+                return nick;
+            }
+            else
+            {
+                return nick.Split(" ")[1];
+            }
+        }
+
+        public string GetNickWithoutRank(string memberName)
+        {
+        
+            var rank = MilRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
+            if (rank == null)
+            {
+                return memberName;
+            }
+            else
+            {
+                return memberName.Split(" ")[1];
+            }
+        }
+
+
+        public string GetUpdatedNickname(DiscordMember member, int advancement = 1)
+        {
+            string nick = member.Nickname;
+            var rank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
+            if (rank == null)
+            {
+                rank = GetMatchingRank(member);
+                return $"{rank.Abbreviation}. {nick}";
+            }
+            else
+            {
+                return nick.Replace(rank.Abbreviation, MilRanks.Find(x => x.Number == rank.Number + advancement).Abbreviation);
+            }
+        }
+
+        public string GetUpdatedNickname(DiscordMember member, string nickname)
+        {
+            string nick = nickname;
+            var rank = GetMatchingRank(member);
+     
+            return $"{rank.Abbreviation}. {nick}";
         }
     }
 }
