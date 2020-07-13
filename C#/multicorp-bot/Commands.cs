@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using multicorp_bot.Controllers;
 using multicorp_bot.POCO;
 
 namespace multicorp_bot
@@ -13,12 +14,16 @@ namespace multicorp_bot
     {
 
         Ranks ranks;
-        Bank bank;
+        BankController BankController;
+        MemberController MemberController;
+        TransactionController TransactionController;
 
         public Commands()
         {
             ranks = new Ranks();
-            bank = new Bank();
+            BankController = new BankController();
+            MemberController = new MemberController();
+            TransactionController = new TransactionController();
             Permissions.LoadPermissions();
         }
 
@@ -28,18 +33,18 @@ namespace multicorp_bot
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
             DiscordMember member = null;
             string newNick = null;
-            if(args.Length == 2)
+            if (args.Length == 2)
             {
                 member = ctx.Member;
                 newNick = ranks.GetUpdatedNickname(member, args[1]);
             }
-            else if(args.Length >= 3)
+            else if (args.Length >= 3)
             {
                 member = await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id);
                 newNick = ranks.GetUpdatedNickname(member, args[2]);
             }
 
-            ranks.Psql.UpdateNickName(ranks.GetNickWithoutRank(member), ranks.GetNickWithoutRank(newNick), ctx.Guild);
+            MemberController.UpdateMemberName(ranks.GetNickWithoutRank(member), ranks.GetNickWithoutRank(newNick), ctx.Guild);
             await member.ModifyAsync(nickname: newNick);
         }
 
@@ -137,18 +142,18 @@ namespace multicorp_bot
                 switch (args[1].ToLower())
                 {
                     case "deposit":
-                        transaction = await bank.GetBankActionAsync(ctx);
-                        newBalance = bank.Deposit(transaction);
-                        bank.UpdateTransaction(transaction);
+                        transaction = await BankController.GetBankActionAsync(ctx);
+                        newBalance = BankController.Deposit(transaction);
+                        BankController.UpdateTransaction(transaction);
                         await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance}");
                         break;
                     case "withdraw":
-                        transaction = await bank.GetBankActionAsync(ctx);
-                        newBalance = bank.Withdraw(transaction);
+                        transaction = await BankController.GetBankActionAsync(ctx);
+                        newBalance = BankController.Withdraw(transaction);
                         await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}. The new bank balance is {newBalance}");
                         break;
                     case "balance":
-                        var balanceembed = bank.GetBankBalance(ctx.Guild);
+                        var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
                         await ctx.RespondAsync(embed: balanceembed);
                         break;
                 }
@@ -164,8 +169,10 @@ namespace multicorp_bot
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
-            bank.WipeBank(ctx.Guild);
-            await ctx.RespondAsync("Your org balance and transactions have been set to 0");
+            BankController.WipeBank(ctx.Guild);
+            TransactionController.WipeTransactions(ctx.Guild);
+
+            await ctx.RespondAsync("your org balance and transactions have been set to 0");
 
         }
     }
