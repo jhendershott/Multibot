@@ -49,7 +49,7 @@ namespace multicorp_bot
             return FormattedNumber(GetBankBalance(trans.Guild).ToString());
 
         }
-
+         
         public DiscordEmbed GetBankBalanceEmbed(DiscordGuild guild)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -64,7 +64,7 @@ namespace multicorp_bot
 
             foreach (var trans in new TransactionController().GetTopTransactions(guild))
             {
-                builder.AddField(trans.MemberName, FormattedNumber(trans.Amount.ToString()) + " aUEC");
+                builder.AddField(trans.MemberName, $"${FormattedNumber(trans.Amount.ToString())} aUEC");
             }
 
             return builder.Build();
@@ -95,20 +95,10 @@ namespace multicorp_bot
             var memberC = new MemberController();
             
             var orgId = new OrgController().GetOrgId(trans.Guild);
-            var memberId = memberC.GetMemberId(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId);
-
-            if(memberId == null)
-            {
-                memberId = memberC.AddMember(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId);
-            }
+            var memberId = memberC.GetMemberId(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId, trans.Member);
 
             var transC = new TransactionController();
             var transactionId = transC.GetTransactionId(memberId);
-
-            if (transactionId == null)
-            {
-                transactionId = transC.GetTransactionId(memberId);
-            }
 
             transC.UpdateTransaction(transactionId, trans.Amount);
             MultiBotDb.SaveChanges();

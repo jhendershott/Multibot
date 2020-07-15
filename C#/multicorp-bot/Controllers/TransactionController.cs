@@ -19,19 +19,21 @@ namespace multicorp_bot.Controllers
             MultiBotDb = new MultiBotDb();
         }
 
-        public void AddTransaction(int userId, int amount)
+        public int AddTransaction(int? userId, int amount)
         {
             var transContext = MultiBotDb.Transactions;
             var transItem = new Transactions()
             {
-                UserId = userId,
+                UserId = userId.GetValueOrDefault(),
                 Amount = amount
             };
 
             transContext.Add(transItem);
+            MultiBotDb.SaveChanges();
+            return GetTransactionId(userId);
         }
 
-        public int? GetTransactionId(int? userId)
+        public int GetTransactionId(int? userId)
         {
             var transContext = MultiBotDb.Transactions;
             try
@@ -40,7 +42,7 @@ namespace multicorp_bot.Controllers
             }
             catch 
             {
-                return null;
+                return AddTransaction(userId.GetValueOrDefault(), 0);
             }
             
         }

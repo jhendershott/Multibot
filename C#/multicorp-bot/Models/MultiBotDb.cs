@@ -25,6 +25,8 @@ namespace multicorp_bot
         public virtual DbSet<WorkOrderTypes> WorkOrderTypes { get; set; }
         public virtual DbSet<WorkOrders> WorkOrders { get; set; }
 
+        public virtual DbSet<Loans> Loans { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -67,6 +69,8 @@ namespace multicorp_bot
                 entity.Property(e => e.UserId).HasColumnName("user_id");
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
+
+                entity.Property(e => e.DiscordId).HasColumnName("discord_id");
 
                 entity.Property(e => e.Username)
                     .IsRequired()
@@ -186,93 +190,48 @@ namespace multicorp_bot
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
             });
 
+            modelBuilder.Entity<Loans>(entity =>
+            {
+                entity.HasKey(e => e.LoanId)
+                    .HasName("primary");
+
+                entity.ToTable("loans");
+
+                entity.HasIndex(e => e.ApplicantId)
+                    .HasName("fki_requestor_id");
+
+                entity.HasIndex(e => e.FunderId)
+                    .HasName("fki_funder_fk");
+
+                entity.HasIndex(e => e.OrgId)
+                    .HasName("fki_org_id");
+
+                entity.Property(e => e.LoanId)
+                    .HasColumnName("loan_id")
+                    .ValueGeneratedNever();
+
+                entity.Property(e => e.ApplicantId).HasColumnName("applicant_id");
+
+                entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
+
+                entity.Property(e => e.Status).HasColumnName("status");
+
+                entity.Property(e => e.FunderId).HasColumnName("funder_id");
+
+                entity.Property(e => e.InterestAmount).HasColumnName("interest_amount");
+
+                entity.Property(e => e.OrgId).HasColumnName("org_id");
+
+                entity.Property(e => e.RemainingAmount).HasColumnName("remaining_amount");
+
+                entity.Property(e => e.RequestedAmount).HasColumnName("requested_amount");
+
+            });
+
+
             OnModelCreatingPartial(modelBuilder);
         }
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
-
-
-
-        //public void AddNewTransaction(string userId, int amount)
-        //{
-        //    InsertUpdateTable($"INSERT INTO Transactions (user_id, amount) VALUES ({userId}, {amount})");
-        //}
-
-        //public string GetBankBalance(DiscordGuild guild)
-        //{
-        //    var orgId = GetOrgId(guild.Name);
-        //    return GetFirstResult($"SELECT balance FROM bank WHERE org_id = {orgId}");
-        //}
-
-        //public string GetTransactionId(string userId)
-        //{
-        //    return GetFirstResult($"SELECT transaction_id FROM transactions WHERE user_id = {userId}");
-        //}
-
-        //public string GetTransactionValue(string transId)
-        //{
-        //    return GetFirstResult($"SELECT amount FROM transactions WHERE transaction_id = {transId}");
-        //}
-
-        //public List<Tuple<string, string>> GetOrgTopTransactions(DiscordGuild guild)
-        //{
-        //    List<Tuple<string, string>> transactionList = new List<Tuple<string, string>>();
-
-        //    StringBuilder query = new StringBuilder("SELECT m.username, t.amount");
-        //    query.Append(" FROM transactions t join mcmember m on m.user_id = t.user_id");
-        //    query.Append($" WHERE m.org_id = {GetOrgId(guild.Name)} Order By t.amount desc Limit 5");
-
-        //    var cmd = new NMultiBotDbCommand(query.ToString(), Connection);
-        //    var reader = cmd.ExecuteReader();
-        //    DataTable dt = new DataTable();
-        //    dt.Load(reader);
-
-        //    foreach(DataRow row in dt.Rows){
-        //        transactionList.Add(new Tuple<string, string>(row["username"].ToString(), row["amount"].ToString()));
-        //    }
-
-        //    return transactionList;
-
-        //}
-
-        //public void UpdateUserTransaction(string name, int amount, string orgId)
-        //{
-        //    string userId = GetMemberId(name, orgId);
-        //    if (userId == null)
-        //    {
-        //        AddMember(name, orgId);
-        //        userId = GetMemberId(name, orgId);
-        //    }
-
-        //    string transId = GetTransactionId(userId);
-        //    if (transId == null)
-        //    {
-        //        AddNewTransaction(userId, amount);
-        //    }
-        //    else
-        //    {
-        //        var newAmount = int.Parse(GetTransactionValue(transId)) + amount;
-        //        InsertUpdateTable($"UPDATE transactions SET amount = {newAmount} WHERE transaction_id = {transId}");
-        //    }
-
-        //}
-
-        //public string UpdateBankBalance(int amount, DiscordGuild guild)
-        //{
-        //    int newBalance = amount + int.Parse(GetBankBalance(guild));
-        //    InsertUpdateTable($"UPDATE bank SET balance = {newBalance} WHERE org_id = {GetOrgId(guild.Name)}");
-        //    return GetBankBalance(guild);
-        //}
-
-        //public void UpdateNickName(string oldNick, string newNick, DiscordGuild guild)
-        //{
-        //    string memberId = GetMemberId(oldNick, GetOrgId(guild.Name));
-        //    if (memberId != null)
-        //    {
-        //        InsertUpdateTable($"UPDATE mcmember SET username = '{newNick}' WHERE user_id = {memberId}");
-        //    }
-
-        //}
-
     }
 }
