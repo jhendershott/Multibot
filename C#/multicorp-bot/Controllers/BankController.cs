@@ -2,6 +2,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using Microsoft.EntityFrameworkCore.Internal;
 using multicorp_bot.Controllers;
+using multicorp_bot.Helpers;
 using multicorp_bot.Models;
 using multicorp_bot.POCO;
 using System;
@@ -23,30 +24,64 @@ namespace multicorp_bot
             MultiBotDb = new MultiBotDb();
         }
 
+        public Bank AddBankEntry(DiscordGuild guild)
+        {
+            var orgId = new OrgController().GetOrgId(guild);
+
+            var bank = new Bank()
+            {
+                AccountId = GetHighestBankId() + 1,
+                Balance = 0,
+                OrgId = new OrgController().GetOrgId(guild),
+            };
+
+            MultiBotDb.Bank.Add(bank);
+            MultiBotDb.SaveChangesAsync();
+
+            return GetBankByOrg(guild);
+        }
+
+        public int GetHighestBankId()
+        {
+            return MultiBotDb.Bank.OrderByDescending(x => x.AccountId).First().AccountId;
+        }
+
+        public Bank GetBankByOrg(DiscordGuild guild)
+        {
+            try
+            {
+                return MultiBotDb.Bank.Single(x => x.OrgId == new OrgController().GetOrgId(guild));
+            }
+            catch
+            {
+                return AddBankEntry(guild);
+            }
+        }
+
         public string Deposit(BankTransaction trans)
         {
             var bankContext = MultiBotDb.Bank;
             OrgController orgC = new OrgController();
-            var bankItem = bankContext.Single(x => x.OrgId == orgC.GetOrgId(trans.Guild));
+            var bankItem = GetBankByOrg(trans.Guild);
             bankItem.Balance = bankItem.Balance + trans.Amount;
 
             bankContext.Update(bankItem);
             MultiBotDb.SaveChanges();
 
-            return FormattedNumber(GetBankBalance(trans.Guild).ToString());
+            return FormatHelpers.FormattedNumber(GetBankBalance(trans.Guild).ToString());
         }
 
         public string Withdraw(BankTransaction trans)
         {
             var bankContext = MultiBotDb.Bank;
             OrgController orgC = new OrgController();
-            var bankItem = bankContext.Single(x => x.OrgId == orgC.GetOrgId(trans.Guild));
+            var bankItem = GetBankByOrg(trans.Guild);
             bankItem.Balance = bankItem.Balance - trans.Amount;
 
             bankContext.Update(bankItem);
             MultiBotDb.SaveChanges();
 
-            return FormattedNumber(GetBankBalance(trans.Guild).ToString());
+            return FormatHelpers.FormattedNumber(GetBankBalance(trans.Guild).ToString());
 
         }
          
@@ -56,7 +91,7 @@ namespace multicorp_bot
             builder.Title = "MultiCorp Bank";
             builder.Timestamp = DateTime.Now;
 
-            string amount = FormattedNumber(GetBankBalance(guild).ToString());
+            string amount = FormatHelpers.FormattedNumber(GetBankBalance(guild).ToString());
             builder.Description = $"Current Balance: {amount} aUEC";
 
             builder.AddField("Top Contributors", "Keep up the good work!", true).WithColor(DiscordColor.Red);
@@ -64,7 +99,7 @@ namespace multicorp_bot
 
             foreach (var trans in new TransactionController().GetTopTransactions(guild))
             {
-                builder.AddField(trans.MemberName, $"${FormattedNumber(trans.Amount.ToString())} aUEC");
+                builder.AddField(trans.MemberName, $"${FormatHelpers.FormattedNumber(trans.Amount.ToString())} aUEC");
             }
 
             return builder.Build();
@@ -75,7 +110,7 @@ namespace multicorp_bot
 
             var bankContext = MultiBotDb.Bank;
             OrgController orgC = new OrgController();
-            var bankItem = bankContext.Single(x => x.OrgId == orgC.GetOrgId(guild));
+            var bankItem = GetBankByOrg(guild);
             return bankItem.Balance;
         }
 
@@ -83,7 +118,7 @@ namespace multicorp_bot
         {
             var bankContext = MultiBotDb.Bank;
             OrgController orgC = new OrgController();
-            var bankItem = bankContext.Single(x => x.OrgId == orgC.GetOrgId(guild));
+            var bankItem = GetBankByOrg(guild);
             bankItem.Balance = 0;
             bankContext.Update(bankItem);
             MultiBotDb.SaveChanges();
@@ -124,11 +159,6 @@ namespace multicorp_bot
                 await ctx.RespondAsync("Your transaction contains invalid arguments use !bank {action} {amount}");
                 return null;
             }
-        }
-
-        private string FormattedNumber(string amount)
-        {
-            return String.Format("{0:n0}", int.Parse(amount));
         }
     }
 }

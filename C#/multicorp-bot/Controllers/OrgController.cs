@@ -15,7 +15,7 @@ namespace multicorp_bot.Controllers
         }
 
 
-        public void AddOrg(DiscordGuild guild)
+        public int AddOrg(DiscordGuild guild)
         {
             var orgContext = MultiBotDb.Orgs;
             var org = new Orgs()
@@ -25,6 +25,7 @@ namespace multicorp_bot.Controllers
              };
 
             orgContext.Add(org);
+            return GetOrgId(guild);
         }
 
 
@@ -32,7 +33,14 @@ namespace multicorp_bot.Controllers
         public int GetOrgId(DiscordGuild guild)
         {
             var orgContext = MultiBotDb.Orgs;
-            return orgContext.Single(x => x.OrgName == guild.Name).Id;
+            try
+            {
+                return orgContext.Single(x => x.OrgName == guild.Name).Id;
+            }
+            catch
+            {
+                return AddOrg(guild);
+            }
         }
 
         private int GetHighestOrgId()
