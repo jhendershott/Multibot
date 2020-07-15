@@ -1,14 +1,10 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
-using Microsoft.EntityFrameworkCore.Query;
 using multicorp_bot.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace multicorp_bot.Controllers

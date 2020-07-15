@@ -1,15 +1,10 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using Microsoft.EntityFrameworkCore.Internal;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
-using multicorp_bot.Models;
 using multicorp_bot.POCO;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
