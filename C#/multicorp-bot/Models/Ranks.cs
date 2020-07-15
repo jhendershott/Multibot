@@ -10,12 +10,7 @@ namespace multicorp_bot
 {
     public class Ranks
     {
-        public Psql Psql;
 
-        public Ranks()
-        {
-            Psql = new Psql();
-        }
         public List<Rank> MilRanks { get; set; } = new List<Rank>() {
             new Rank () { RankName = "Recruit", Abbreviation = "RCT", Number = 0 },
             new Rank () { RankName = "Cadet", Abbreviation = "CDT", Number = 1 },
