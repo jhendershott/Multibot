@@ -17,7 +17,7 @@ namespace multicorp_bot {
 
         static async Task MainAsync (string[] args) {
             discord = new DiscordClient (new DiscordConfiguration {
-                Token = Environment.GetEnvironmentVariable("BotToken"),
+                Token = Environment.GetEnvironmentVariable("BOTTOKEN"),
                     TokenType = TokenType.Bot,
                     UseInternalLogHandler = true,
                     LogLevel = LogLevel.Debug
