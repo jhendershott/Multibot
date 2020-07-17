@@ -31,7 +31,7 @@ namespace multicorp_bot {
                 });
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration {
-                StringPrefix = ".",
+                StringPrefix = "!",
                 CaseSensitive = false
             });
             commands.RegisterCommands<Commands> ();

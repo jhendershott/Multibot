@@ -1,14 +1,15 @@
-using System;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using multicorp_bot.Models;
 
 namespace multicorp_bot
 {
-    public class Permissions
+    public static class PermissionsHelper
     {
 
         static Dictionary<int, DiscordRole> GuildPermissions;
@@ -59,6 +60,7 @@ namespace multicorp_bot
         private static int GetUserRoleLevel(DiscordGuild guild, DiscordUser user)
         {
             //Go through all roles and check if user is member of one of those and return the level
+
             for (int i = 0; i < GuildPermissions.Count; i++)
             {
                 if (guild.Members.Where(u => u == user).FirstOrDefault().Roles.Contains(GuildPermissions[i]))
@@ -67,6 +69,13 @@ namespace multicorp_bot
 
             //If not return -1
             return -1;
+        }
+
+        public static bool CheckPermissions(CommandContext ctx, Permissions perm)
+        {
+            var perms = ctx.Member.PermissionsIn(ctx.Channel);
+            var test = perms.HasPermission(perm);
+            return perms.HasPermission(perm);
         }
     }
 }
