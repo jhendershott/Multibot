@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -31,7 +32,7 @@ namespace multicorp_bot
             TransactionController = new TransactionController();
             LoanController = new LoanController();
             OrgController = new OrgController();
-            Permissions.LoadPermissions();
+            PermissionsHelper.LoadPermissions();
         }
 
         [Command("handle")]
@@ -109,7 +110,7 @@ namespace multicorp_bot
         {
             try
             {
-                var level = Permissions.GetPermissionLevel(ctx.Guild, user);
+                var level = PermissionsHelper.GetPermissionLevel(ctx.Guild, user);
                 Console.WriteLine(level);
                 await ctx.RespondAsync($"The permission level of {user.Mention} is: {level}");
             }
@@ -122,12 +123,12 @@ namespace multicorp_bot
         [Command("set-role-level")]
         public async Task SetRoleLevel(CommandContext ctx, DiscordRole role, int level)
         {
-            if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 2)
+            if (PermissionsHelper.GetPermissionLevel(ctx.Guild, ctx.User) < 2)
                 return;
 
             try
             {
-                Permissions.SetRolePermissionLevel(role, level);
+                PermissionsHelper.SetRolePermissionLevel(role, level);
                 await ctx.RespondAsync($"{role.Mention} is now assigned to level {level}");
             }
             catch (Exception e)
@@ -139,9 +140,12 @@ namespace multicorp_bot
         [Command("promote")]
         public async Task PromoteMember(CommandContext ctx)
         {
-            if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
+            if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
+            {
+                await ctx.RespondAsync("You can't do that you don't have the power!");
                 return;
-
+            }
+             
             string congrats = $"Congratulations on your promotion :partying_face:";
             foreach (var user in ctx.Message.MentionedUsers)
             {
@@ -159,8 +163,12 @@ namespace multicorp_bot
         [Command("demote")]
         public async Task DemoteMember(CommandContext ctx)
         {
-            if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
+            if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
+            {
+                await ctx.RespondAsync("You can't do that you don't have the power!");
                 return;
+            }
+
             string congrats = $"Oh no you've been demoted! What have you done :disappointed_relieved:";
             foreach (var user in ctx.Message.MentionedUsers)
             {
@@ -177,7 +185,7 @@ namespace multicorp_bot
         [Command("recruit")]
         public async Task RecruitMember(CommandContext ctx, DiscordMember member)
         {
-            if (Permissions.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
+            if (PermissionsHelper.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
                 return;
             await Ranks.Recruit(member);
             await ctx.RespondAsync($"Welcome on board {member.Mention} :alien:");
