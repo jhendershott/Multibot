@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 
 namespace multicorp_bot.POCO
 {
@@ -10,13 +7,15 @@ namespace multicorp_bot.POCO
         public string Action;
         public DiscordMember Member;
         public int Amount;
+        public int Merits;
         public DiscordGuild Guild;
 
-        public BankTransaction(string action, DiscordMember member, int amount, DiscordGuild guild)
-        {
+        public BankTransaction(string action, DiscordMember member, DiscordGuild guild, int amount = 0, int merits = 0)
+        { 
             Action = action;
             Member = member;
             Amount = amount;
+            Merits = merits;
             Guild = guild;
         }
     }

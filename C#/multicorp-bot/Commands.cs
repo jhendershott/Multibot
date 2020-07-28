@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,6 +11,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using multicorp_bot.Controllers;
+using multicorp_bot.Helpers;
 using multicorp_bot.POCO;
 
 namespace multicorp_bot
@@ -17,12 +19,13 @@ namespace multicorp_bot
     public class Commands
     {
 
-        Ranks Ranks;
-        BankController BankController;
-        MemberController MemberController;
-        TransactionController TransactionController;
-        LoanController LoanController;
-        OrgController OrgController;
+        readonly Ranks Ranks;
+        readonly BankController BankController;
+        readonly MemberController MemberController;
+        readonly TransactionController TransactionController;
+        readonly LoanController LoanController;
+        readonly FleetController FleetController;
+        readonly OrgController OrgController;
 
         public Commands()
         {
@@ -31,6 +34,7 @@ namespace multicorp_bot
             MemberController = new MemberController();
             TransactionController = new TransactionController();
             LoanController = new LoanController();
+            FleetController = new FleetController();
             OrgController = new OrgController();
             PermissionsHelper.LoadPermissions();
         }
@@ -195,10 +199,11 @@ namespace multicorp_bot
         public async Task Bank(CommandContext ctx)
         {
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
-            string newBalance;
+            Tuple<string, string> newBalance;
             var interactivity = ctx.Client.GetInteractivityModule();
             BankTransaction transaction = null;
-            
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+
 
             try
             {
@@ -209,12 +214,29 @@ namespace multicorp_bot
                         var continueMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
                         if (!continueMsg.Message.Content.ToLower().Contains("yes"))
                         {
+                            await ctx.RespondAsync("Thank you and have a great day");
                             break;
                         }
+                   
+                        await ctx.RespondAsync("Are you depositing Credits or Merits?");
 
-                        transaction = await BankController.GetBankActionAsync(ctx);
+                        var currency = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
 
-                        var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+                        bool isCredit = true;
+                        if (currency.Message.Content.ToLower().Contains("credit"))
+                        {
+                            transaction = await BankController.GetBankActionAsync(ctx);
+                        }
+                        else if (currency.Message.Content.ToLower().Contains("merit"))
+                        {
+                            transaction = await BankController.GetBankActionAsync(ctx, false);
+                            isCredit = false;
+                        }
+                        else
+                        {
+                            await ctx.RespondAsync("Transaction types can only include Credit or Merit, please start over");
+                            return;
+                        }
 
                         await ctx.RespondAsync("Waiting for Banker to Approve your request");
                         var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains((int)xm.Author.Id), TimeSpan.FromMinutes(10));
@@ -223,10 +245,21 @@ namespace multicorp_bot
                             || confirmMsg.Message.Content.ToLower().Contains("confirm")
                             || confirmMsg.Message.Content.ToLower().Contains("approve"))
                         {
-                            newBalance = BankController.Deposit(transaction);
-                            BankController.UpdateTransaction(transaction);
+                                newBalance = BankController.Deposit(transaction);
+                                BankController.UpdateTransaction(transaction);
+                                MemberController.UpdateExperiencePoints("credits", transaction);
 
-                            await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance}");
+                            if (isCredit)
+                            {
+                                await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                MemberController.UpdateExperiencePoints("credits", transaction);
+                            }
+                            else{
+                                await ctx.RespondAsync($"Thank you for your contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                MemberController.UpdateExperiencePoints("merits", transaction);
+                            }
+                              
+                                
                         }
                         else
                         {
@@ -235,9 +268,29 @@ namespace multicorp_bot
 
                         break;
                     case "withdraw":
-                        transaction = await BankController.GetBankActionAsync(ctx);
+
+                        await ctx.RespondAsync("Are you depositing Credits or Merits?");
+                        currency = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+
+                        isCredit = true;
+                        if (currency.Message.Content.ToLower().Contains("credit"))
+                        {
+                            transaction = await BankController.GetBankActionAsync(ctx);
+                        }
+                        else if (currency.Message.Content.ToLower().Contains("merit"))
+                        {
+                            transaction = await BankController.GetBankActionAsync(ctx, false);
+                            isCredit = false;
+                        }
                         newBalance = BankController.Withdraw(transaction);
-                        await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}. The new bank balance is {newBalance}");
+                        if (isCredit)
+                        {
+                            await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                        }
+                        else
+                        {
+                            await ctx.RespondAsync($"You have successfully withdraw {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                        }
                         break;
                     case "balance":
                         var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
@@ -251,6 +304,25 @@ namespace multicorp_bot
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        [Command("fleet")]
+        public async Task Fleet(CommandContext ctx, string arg)
+        {
+            switch(arg.ToLower()){
+                case "view": await ctx.RespondAsync(embed: new FleetController().GetFleetRequests(ctx.Guild));
+                    break;
+                case "request":
+                    await FleetRequest(ctx);
+                    break;
+                case "fund":
+                    await FundFleet(ctx);
+                    break;
+                case "complete": var completed = FleetController.CompleteFleetRequest(ctx.Guild);
+                    await ctx.RespondAsync($"{completed} requests have been marked complete");
+                    break;
+            }
+            
         }
 
         [Command("loan")]
@@ -321,6 +393,53 @@ namespace multicorp_bot
         //        Console.WriteLine($"{member.Nickname} - {item.Id} - {member.Id}");
         //    }
         //}
+
+        private async Task FleetRequest(CommandContext ctx)
+        {
+            await ctx.RespondAsync("What is the Make and Model of the ship you're requesting");
+            var interactivity = ctx.Client.GetInteractivityModule();
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+
+            await ctx.RespondAsync("What is the price of the ship in aUEC");
+            var price = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+            await ctx.RespondAsync("Please provide an image url of the ship you're requestion");
+            var image = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            try
+            {
+                FleetController.AddFleetRequest(item, price, image, ctx.Guild);
+                await ctx.RespondAsync("Your request has been logged", embed: FleetController.GetFleetRequests(ctx.Guild));
+            }
+            catch(Exception e)
+            {
+                await ctx.RespondAsync("Something went wrong with your request");
+                Console.WriteLine(e);
+            }
+        }
+
+        private async Task FundFleet(CommandContext ctx)
+        {
+            await ctx.RespondAsync("What is the ID of the ship you would like to fun");
+            var interactivity = ctx.Client.GetInteractivityModule();
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            await ctx.RespondAsync("How many credits you put towards the ship");
+            var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+
+            await ctx.RespondAsync("Waiting for Banker to confirm the transfer");
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+            var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains((int)xm.Author.Id), TimeSpan.FromMinutes(10));
+            if (confirmMsg.Message.Content.ToLower().Contains("yes")
+                || confirmMsg.Message.Content.ToLower().Contains("confirm")
+                || confirmMsg.Message.Content.ToLower().Contains("approve"))
+            {
+                BankTransaction trans = new BankTransaction("deposit", ctx.Member, ctx.Guild, credits);
+                BankController.Deposit(trans);
+                BankController.UpdateTransaction(trans);
+                var xp = MemberController.UpdateExperiencePoints("credits for ships" ,trans);
+                FleetController.UpdateFleetItemAmount(int.Parse(item), credits);
+                await ctx.RespondAsync($"Your funds have been accepted and you've been credited the transaction.\n Your org experience is now {FormatHelpers.FormattedNumber(xp.ToString())}");
+            }
+
+        }
 
         private async Task LoanFund(CommandContext ctx)
         {

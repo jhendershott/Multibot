@@ -11,5 +11,6 @@ namespace multicorp_bot
         public int TotalPrice { get; set; }
         public int? RemainingPrice { get; set; }
         public string ImgUrl { get; set; }
+        public bool IsCompleted { get; set; }
     }
 }

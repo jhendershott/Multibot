@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using multicorp_bot.Models;
+using multicorp_bot.POCO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -102,6 +103,30 @@ namespace multicorp_bot.Controllers
         private int GetHighestUserId()
         {
             return MultiBotDb.Mcmember.ToList().OrderByDescending(x => x.UserId).First().UserId;
+        }
+
+        public long? UpdateExperiencePoints(string workOrderType, BankTransaction trans)
+        {
+            Mcmember member = GetMemberbyDcId(trans.Member, trans.Guild);
+            double xpMod = new WorkOrderController().GetExpModifier(workOrderType);
+            switch (workOrderType)
+            {
+                case "merits":
+                    member.Xp = member.Xp + Convert.ToInt64(trans.Merits * xpMod);
+                    break;
+                case "credit":
+                    member.Xp = member.Xp + Convert.ToInt64(trans.Amount * xpMod);
+                    break;
+
+                default: Console.WriteLine("Currently support xp modifiers are merit and credits");
+                    break;
+            }
+
+            member.Xp = member.Xp + Convert.ToInt64(trans.Amount * xpMod);
+            MultiBotDb.Mcmember.Update(member);
+            MultiBotDb.SaveChanges();
+
+            return member.Xp;
         }
     }
 }

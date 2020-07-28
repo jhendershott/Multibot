@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace multicorp_bot
 {
@@ -50,6 +48,7 @@ namespace multicorp_bot
                 entity.Property(e => e.AccountId).HasColumnName("account_id");
 
                 entity.Property(e => e.Balance).HasColumnName("balance");
+                entity.Property(e => e.Merits).HasColumnName("merits");
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
 
@@ -105,6 +104,8 @@ namespace multicorp_bot
 
                 entity.Property(e => e.Amount).HasColumnName("amount");
 
+                entity.Property(e => e.Merits).HasColumnName("merits");
+
                 entity.Property(e => e.UserId).HasColumnName("user_id");
 
                 entity.HasOne(d => d.User)
@@ -136,6 +137,7 @@ namespace multicorp_bot
                 entity.Property(e => e.RemainingPrice).HasColumnName("remainingPrice");
 
                 entity.Property(e => e.TotalPrice).HasColumnName("totalPrice");
+                entity.Property(e => e.IsCompleted).HasColumnName("isCompleted");
             });
 
             modelBuilder.Entity<WorkOrderRequirements>(entity =>

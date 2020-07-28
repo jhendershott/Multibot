@@ -1,13 +1,9 @@
 ﻿using DSharpPlus.Entities;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Metadata;
 using multicorp_bot.POCO;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
+
 
 namespace multicorp_bot.Controllers
 {
@@ -19,13 +15,14 @@ namespace multicorp_bot.Controllers
             MultiBotDb = new MultiBotDb();
         }
 
-        public int AddTransaction(int? userId, int amount)
+        public int AddTransaction(int? userId, int amount = 0, int merits = 0)
         {
             var transContext = MultiBotDb.Transactions;
             var transItem = new Transactions()
             {
                 UserId = userId.GetValueOrDefault(),
-                Amount = amount
+                Amount = amount,
+                Merits = merits
             };
 
             transContext.Add(transItem);
@@ -47,11 +44,12 @@ namespace multicorp_bot.Controllers
             
         }
 
-        public void UpdateTransaction(int? transId, int newValue)
+        public void UpdateTransaction(int? transId, BankTransaction transaction)
         {
             var transContext = MultiBotDb.Transactions;
             var trans = transContext.Single(x => x.TransactionId == transId);
-            trans.Amount = trans.Amount + newValue;
+            trans.Amount = trans.Amount + transaction.Amount;
+            trans.Merits = trans.Merits + transaction.Merits;
             transContext.Update(trans);
             MultiBotDb.SaveChanges();
         }
@@ -74,7 +72,8 @@ namespace multicorp_bot.Controllers
                     {
                         memberName = mem.Username,
                         orgId = mem.OrgId.GetValueOrDefault(),
-                        amount = trans.Amount
+                        amount = trans.Amount,
+                        merits = trans.Merits
                     }              
                  ).Where(x => x.orgId == new OrgController().GetOrgId(guild)).OrderByDescending(x => x.amount).ToList();
 
@@ -82,12 +81,43 @@ namespace multicorp_bot.Controllers
             foreach (var item in data)
             {
 
-                transactions.Add(new TransactionItem(item.memberName, item.orgId, item.amount.GetValueOrDefault()));
+                transactions.Add(new TransactionItem(item.memberName, item.orgId, item.amount.GetValueOrDefault(), item.merits.GetValueOrDefault()));
             }
 
             return transactions;
 
                 
+            //return transContext.OrderByDescending(x => x.Amount).Take(5).ToList();
+        }
+
+        public List<TransactionItem> GetTopMeritTransactions(DiscordGuild guild)
+        {
+            var orgId = new OrgController().GetOrgId(guild);
+            var data = MultiBotDb.Transactions
+                .Join(
+                    MultiBotDb.Mcmember,
+                    trans => trans.UserId,
+                    mem => mem.UserId,
+                    (trans, mem) => new
+                    {
+                        memberName = mem.Username,
+                        orgId = mem.OrgId.GetValueOrDefault(),
+                        amount = trans.Amount,
+                        merits = trans.Merits
+                        
+                    }
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild)).OrderByDescending(x => x.amount).ToList();
+
+            var transactions = new List<TransactionItem>();
+            foreach (var item in data)
+            {
+
+                transactions.Add(new TransactionItem(item.memberName, item.orgId, item.amount.GetValueOrDefault(), item.merits.GetValueOrDefault()));
+            }
+
+            return transactions;
+
+
             //return transContext.OrderByDescending(x => x.Amount).Take(5).ToList();
         }
 

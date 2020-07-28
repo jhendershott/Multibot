@@ -8,6 +8,7 @@ namespace multicorp_bot
         public int AccountId { get; set; }
         public long? Balance { get; set; }
         public int? OrgId { get; set; }
+        public int Merits { get; set; }
 
         public virtual Orgs Org { get; set; }
     }
