@@ -63,7 +63,7 @@ namespace multicorp_bot
         [Command("multibot-help")]
         public async Task Help(CommandContext ctx)
         {
-            await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion or Wipe?");
+            await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet or Wipe?");
             var interactivity = ctx.Client.GetInteractivityModule();
             var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
@@ -79,6 +79,9 @@ namespace multicorp_bot
                     break;
                 case "promotion":
                     await ctx.RespondAsync(embed: HelpController.PromotionEmbed());
+                    break;
+                case "fleet":
+                    await ctx.RespondAsync(embed: HelpController.FleetEmbed());
                     break;
                 case "wipe":
                     await ctx.RespondAsync(embed: HelpController.WipeHelper());
