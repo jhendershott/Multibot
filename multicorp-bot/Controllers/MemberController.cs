@@ -114,7 +114,7 @@ namespace multicorp_bot.Controllers
                 case "merits":
                     member.Xp = member.Xp + Convert.ToInt64(trans.Merits * xpMod);
                     break;
-                case "credit":
+                case "credits":
                     member.Xp = member.Xp + Convert.ToInt64(trans.Amount * xpMod);
                     break;
 

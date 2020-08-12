@@ -176,7 +176,34 @@ namespace multicorp_bot
                     return trans;
                 }
             }
+            else if (args.Length == 4 && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
+            {
+                if (isCredits)
+                {
+                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, int.Parse(args[2]));
+                    return trans;
+                }
+                else
+                {
+                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, merits: int.Parse(args[2]));
+                    return trans;
+                }
+            }
             else if (args.Length == 4)
+            {
+                if (isCredits)
+                {
+                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, int.Parse(args[3]));
+                    return transaction;
+                }
+                else
+                {
+
+                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, merits: int.Parse(args[3]));
+                    return transaction;
+                }
+            }
+            else if (args.Length > 4 && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
             {
                 if (isCredits)
                 {

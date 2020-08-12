@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# S2327: "try" statements with identical "catch" and/or "finally" blocks should be merged
+dotnet_diagnostic.S2327.severity = silent
