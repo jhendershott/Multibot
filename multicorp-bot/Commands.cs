@@ -407,30 +407,59 @@ namespace multicorp_bot
                         }
                         break;
                     case "withdraw":
+                        if (bankers.Contains(ctx.Member.Id))
+                        {
+                            if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                            {
+                                var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits?");
+                                var credEmojis = ConfirmEmojis(ctx, "credit");
+                                await currency.CreateReactionAsync(credEmojis[0]);
+                                await currency.CreateReactionAsync(credEmojis[1]);
+                                Thread.Sleep(500);
 
-                        //await ctx.RespondAsync("Are you withdrawing Credits or Merits?");
-                        //currency = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(1));
 
-                        //isCredit = true;
-                        //if (currency.Message.Content.ToLower().Contains("credit"))
-                        //{
-                        //    transaction = await BankController.GetBankActionAsync(ctx);
-                        //}
-                        //else if (currency.Message.Content.ToLower().Contains("merit"))
-                        //{
-                        //    transaction = await BankController.GetBankActionAsync(ctx, false);
-                        //    isCredit = false;
-                        //}
-                        //newBalance = BankController.Withdraw(transaction);
-                        //if (isCredit)
-                        //{
-                        //    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
-                        //}
-                        //else
-                        //{
-                        //    await ctx.RespondAsync($"You have successfully withdraw {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
-                        //}
-                        //break;
+                                try
+                                {
+                                    if (creditmsg.Emoji.Name == "💰")
+                                        transaction = await BankController.GetBankActionAsync(ctx);
+
+                                    else if (creditmsg.Emoji.Name == "🎖")
+                                    {
+                                        transaction = await BankController.GetBankActionAsync(ctx, false);
+                                        isCredit = false;
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
+                                    break;
+                                }
+                            }
+                            else if (ctx.Message.Content.ToLower().Contains("credit"))
+                            {
+                                transaction = await BankController.GetBankActionAsync(ctx);
+                            }
+                            else if (ctx.Message.Content.ToLower().Contains("merit"))
+                            {
+                                transaction = await BankController.GetBankActionAsync(ctx, false);
+                                isCredit = false;
+                            }
+                            newBalance = BankController.Withdraw(transaction);
+                            if (isCredit)
+                            {
+                                await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                            }
+                            else
+                            {
+                                await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                            }
+                        }
+                        else
+                        {
+                            await ctx.RespondAsync($"Only Bankers can make a withdrawal");
+                        }
+                        break;
                     case "balance":
                         var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
                         await ctx.RespondAsync(embed: balanceembed);
