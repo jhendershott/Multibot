@@ -74,7 +74,7 @@ namespace multicorp_bot.Controllers
                         amount = trans.Amount,
                         merits = trans.Merits
                     }              
-                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.amount).ToList();
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0).OrderByDescending(x => x.amount).ToList();
 
             var transactions = new List<TransactionItem>();
 
@@ -114,7 +114,7 @@ namespace multicorp_bot.Controllers
                         merits = trans.Merits
                         
                     }
-                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.merits).ToList();
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.merits != 0).OrderByDescending(x => x.merits).ToList();
 
             var transactions = new List<TransactionItem>();
 
