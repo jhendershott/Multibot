@@ -102,7 +102,7 @@ namespace multicorp_bot
 
             foreach (var trans in new TransactionController().GetTopMeritTransactions(guild))
             {
-                builder.AddField(trans.MemberName, $"${FormatHelpers.FormattedNumber(trans.Amount.ToString())} Merits");
+                builder.AddField(trans.MemberName, $"{FormatHelpers.FormattedNumber(trans.Merits.ToString())} Merits");
             }
 
             return builder.Build();

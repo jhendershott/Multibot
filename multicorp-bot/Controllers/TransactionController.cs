@@ -74,24 +74,33 @@ namespace multicorp_bot.Controllers
                         amount = trans.Amount,
                         merits = trans.Merits
                     }              
-                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild)).OrderByDescending(x => x.amount).ToList();
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.amount).ToList();
 
             var transactions = new List<TransactionItem>();
 
-            for (int i = 0; i <= 2; i++)
+            var length = data.Count;
+
+            if (length < 3)
             {
-                transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                for (int i = 0; i < length; i++)
+                {
+                    transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                }
+            }
+            else
+            {
+                for (int i = 0; i <= 2; i++)
+                {
+                    transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                }
             }
 
-            return transactions;
 
-                
-            //return transContext.OrderByDescending(x => x.Amount).Take(5).ToList();
+            return transactions;
         }
 
         public List<TransactionItem> GetTopMeritTransactions(DiscordGuild guild)
         {
-            var orgId = new OrgController().GetOrgId(guild);
             var data = MultiBotDb.Transactions
                 .Join(
                     MultiBotDb.Mcmember,
@@ -105,18 +114,28 @@ namespace multicorp_bot.Controllers
                         merits = trans.Merits
                         
                     }
-                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.amount).ToList();
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.merits).ToList();
 
             var transactions = new List<TransactionItem>();
-            for (int i = 0; i <= 2; i++)
+
+            var length = data.Count;
+
+            if(length < 3)
             {
-                transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                for (int i = 0; i < length; i++)
+                {
+                    transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                }
+            }
+            else
+            {
+                for (int i = 0; i <= 2; i++)
+                {
+                    transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
+                }
             }
 
             return transactions;
-
-
-            //return transContext.OrderByDescending(x => x.Amount).Take(5).ToList();
         }
 
 
