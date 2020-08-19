@@ -93,30 +93,16 @@ namespace multicorp_bot
 
             builder.AddField("\nTop Contributors", "Keep up the good work!", false).WithColor(DiscordColor.Red);
 
-
             foreach (var trans in new TransactionController().GetTopTransactions(guild))
             {
-                builder.AddField(trans.MemberName, $"Credits: {FormatHelpers.FormattedNumber(trans.Amount.ToString())} aUEC \nMerits: {FormatHelpers.FormattedNumber(trans.Merits.ToString())}");
+                builder.AddField(trans.MemberName, $"Credits: {FormatHelpers.FormattedNumber(trans.Amount.ToString())} aUEC");
             }
 
-            return builder.Build();
-        }
-
-        public DiscordEmbed GetBankMeritEmbed(DiscordGuild guild)
-        {
-            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
-            builder.Title = "MultiCorp Bank";
-            builder.Timestamp = DateTime.Now;
-
-            string amount = FormatHelpers.FormattedNumber(GetBankBalance(guild).ToString());
-            builder.Description = $"Current Balance: {amount} aUEC";
-
-            builder.AddField("Top Contributors", "Keep up the good work!", true).WithColor(DiscordColor.Red);
-
+            builder.AddField("Top Merits Contributors", "Keep up the good work!", true).WithColor(DiscordColor.Red);
 
             foreach (var trans in new TransactionController().GetTopMeritTransactions(guild))
             {
-                builder.AddField(trans.MemberName, $"${FormatHelpers.FormattedNumber(trans.Amount.ToString())} aUEC");
+                builder.AddField(trans.MemberName, $"${FormatHelpers.FormattedNumber(trans.Amount.ToString())} Merits");
             }
 
             return builder.Build();

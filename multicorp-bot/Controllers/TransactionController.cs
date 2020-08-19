@@ -78,7 +78,7 @@ namespace multicorp_bot.Controllers
 
             var transactions = new List<TransactionItem>();
 
-            for (int i = 0; i <= 4; i++)
+            for (int i = 0; i <= 2; i++)
             {
                 transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
             }
@@ -108,10 +108,9 @@ namespace multicorp_bot.Controllers
                  ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.merits != 0).OrderByDescending(x => x.amount).ToList();
 
             var transactions = new List<TransactionItem>();
-            foreach (var item in data)
+            for (int i = 0; i <= 2; i++)
             {
-
-                transactions.Add(new TransactionItem(item.memberName, item.orgId, item.amount.GetValueOrDefault(), item.merits.GetValueOrDefault()));
+                transactions.Add(new TransactionItem(data[i].memberName, data[i].orgId, data[i].amount.GetValueOrDefault(), data[i].merits.GetValueOrDefault()));
             }
 
             return transactions;
