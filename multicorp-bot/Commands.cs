@@ -23,7 +23,7 @@ namespace multicorp_bot
     {
 
         readonly Ranks Ranks;
-        readonly BankController BankController;
+        
         readonly MemberController MemberController;
         readonly TransactionController TransactionController;
         readonly LoanController LoanController;
@@ -33,7 +33,6 @@ namespace multicorp_bot
         public Commands()
         {
             Ranks = new Ranks();
-            BankController = new BankController();
             MemberController = new MemberController();
             TransactionController = new TransactionController();
             LoanController = new LoanController();
@@ -204,6 +203,7 @@ namespace multicorp_bot
         [Command("bank")]
         public async Task Bank(CommandContext ctx)
         {
+            BankController BankController = new BankController();
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
             Tuple<string, string> newBalance;
             var interactivity = ctx.Client.GetInteractivityModule();
@@ -538,13 +538,15 @@ namespace multicorp_bot
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
+            BankController bankController = new BankController();
+
             var interactivity = ctx.Client.GetInteractivityModule();
             await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
             var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
      
             if(confirmMsg.Message.Content.ToLower() == "yes")
             {
-                BankController.WipeBank(ctx.Guild);
+                bankController.WipeBank(ctx.Guild);
                 TransactionController.WipeTransactions(ctx.Guild);
                 LoanController.WipeLoans(ctx);
 
@@ -616,6 +618,8 @@ namespace multicorp_bot
 
         private async Task FundFleet(CommandContext ctx)
         {
+            BankController bankController = new BankController();
+
             await ctx.RespondAsync("What is the ID of the ship you would like to fun");
             var interactivity = ctx.Client.GetInteractivityModule();
             var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
@@ -630,8 +634,8 @@ namespace multicorp_bot
                 || confirmMsg.Message.Content.ToLower().Contains("approve"))
             {
                 BankTransaction trans = new BankTransaction("deposit", ctx.Member, ctx.Guild, credits);
-                BankController.Deposit(trans);
-                BankController.UpdateTransaction(trans);
+                bankController.Deposit(trans);
+                bankController.UpdateTransaction(trans);
                 var xp = MemberController.UpdateExperiencePoints("credits for ships" ,trans);
                 FleetController.UpdateFleetItemAmount(int.Parse(item), credits);
                 await ctx.RespondAsync($"Your funds have been accepted and you've been credited the transaction.\n Your org experience is now {FormatHelpers.FormattedNumber(xp.ToString())}");
