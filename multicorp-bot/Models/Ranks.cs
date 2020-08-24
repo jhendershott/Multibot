@@ -26,7 +26,7 @@ namespace multicorp_bot
             new Rank () { RankName = "Lieutenant", Abbreviation = "LT", Number = 11 },
             new Rank () { RankName = "Lieutenant Commander", Abbreviation = "LCDR", Number = 12 },
             new Rank () { RankName = "Commander", Abbreviation = "CMDR", Number = 13 },
-            new Rank () { RankName = "Captain", Abbreviation = "CPT", Number = 14 },
+            new Rank () { RankName = "Captain", Abbreviation = "CAPT", Number = 14 },
             new Rank () { RankName = "Vice Admiral", Abbreviation = "VADM", Number = 15 },
             new Rank () { RankName = "Admiral", Abbreviation = "ADM", Number = 16 },
             new Rank () { RankName = "High Admiral", Abbreviation = "HADM", Number = 17 },
