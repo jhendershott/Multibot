@@ -20,11 +20,11 @@ namespace multicorp_bot.Controllers
             var orgContext = MultiBotDb.Orgs;
             var org = new Orgs()
             {
-                Id = GetHighestOrgId() +1,
                 OrgName = guild.Name
              };
 
             orgContext.Add(org);
+            MultiBotDb.SaveChanges();
             return GetOrgId(guild);
         }
 

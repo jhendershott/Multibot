@@ -5,6 +5,7 @@ using multicorp_bot.Helpers;
 using multicorp_bot.POCO;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -133,15 +134,60 @@ namespace multicorp_bot
         {
             Ranks ranks = new Ranks();
             var memberC = new MemberController();
-            
+            var memberId = 0;
             var orgId = new OrgController().GetOrgId(trans.Guild);
-            var memberId = memberC.GetMemberId(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId, trans.Member);
+            if(trans.Member.Nickname != null)
+            {
+                memberId = memberC.GetMemberId(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId, trans.Member).GetValueOrDefault();
+            }
+            else
+            {
+                memberId = memberC.GetMemberId(trans.Member.Username, orgId, trans.Member).GetValueOrDefault();
+            }
+            
 
             var transC = new TransactionController();
             var transactionId = transC.GetTransactionId(memberId);
 
             transC.UpdateTransaction(transactionId, trans);
             MultiBotDb.SaveChanges();
+        }
+
+        public decimal ExchangeTransaction(CommandContext ctx, string action, int credits, int merits)
+        {
+            var bankContext = MultiBotDb.Bank;
+            var bankItem = GetBankByOrg(ctx.Guild);
+            decimal margin = 0;
+
+            if (action == "buy")
+            {
+                bankItem.Balance = bankItem.Balance - credits;
+                bankItem.Merits = bankItem.Merits + merits;
+
+                bankContext.Update(bankItem);
+                MultiBotDb.SaveChanges();
+
+                decimal cost = Convert.ToDecimal(credits);
+                decimal grossmargin = Convert.ToDecimal(merits);
+
+                margin = cost / (1 - grossmargin);
+
+            }
+            else if(action == "sell")
+            {
+                bankItem.Balance = bankItem.Balance + credits;
+                bankItem.Merits = bankItem.Merits - merits;
+
+                bankContext.Update(bankItem);
+                MultiBotDb.SaveChanges();
+
+                decimal cost = Convert.ToDecimal(credits);
+                decimal grossmargin = Convert.ToDecimal(merits);
+                
+                margin = cost / (1 - grossmargin);
+            }
+
+            return Math.Round(Math.Abs(margin), 2);
         }
 
         public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, bool isCredits = true)

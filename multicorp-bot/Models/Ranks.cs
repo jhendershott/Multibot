@@ -117,15 +117,21 @@ namespace multicorp_bot
 
         public string GetNickWithoutRank(string memberName)
         {
-        
-            var rank = MilRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
-            if (rank == null)
+            try
+            {
+                var rank = MilRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
+                if (rank == null)
+                {
+                    return memberName;
+                }
+                else
+                {
+                    return memberName.Split(" ")[1];
+                }
+            }
+            catch
             {
                 return memberName;
-            }
-            else
-            {
-                return memberName.Split(" ")[1];
             }
         }
 

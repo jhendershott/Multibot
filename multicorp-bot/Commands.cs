@@ -464,6 +464,63 @@ namespace multicorp_bot
                         var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
                         await ctx.RespondAsync(embed: balanceembed);
                         break;
+                    case "exchange":
+                        if (bankers.Contains(ctx.Member.Id))
+                        {
+                            var exchange = await ctx.RespondAsync("Are you Buying :regional_indicator_b: or Selling Merits?");
+                            var credEmojis = ConfirmEmojis(ctx, "exchange");
+                            await exchange.CreateReactionAsync(credEmojis[0]);
+                            await exchange.CreateReactionAsync(credEmojis[1]);
+
+                            var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(1));
+                            if (exMsg.Emoji.Name == "🇧")
+                            {
+                                var buy = await ctx.RespondAsync("How many Merits are you buying?");
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+
+                                var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+
+                                if(margin <= Convert.ToDecimal(1.5))
+                                {
+                                    await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
+                                }
+
+                                buy.DeleteAsync();
+                                sell.DeleteAsync(); 
+                                merits.Message.DeleteAsync(); 
+                                credits.Message.DeleteAsync();
+                            }
+                            else if (exMsg.Emoji.Name == "🇸")
+                            {
+                                var sell = await ctx.RespondAsync("How many Merits are you selling?");
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+
+                                var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+                                if (margin >= Convert.ToDecimal(2.5))
+                                {
+                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater thanw 2.5");
+                                }
+
+                                buy.DeleteAsync();
+                                sell.DeleteAsync();
+                                merits.Message.DeleteAsync();
+                                credits.Message.DeleteAsync();
+                            }
+
+                        }
+                        break;
                 }
 
             }
@@ -805,7 +862,12 @@ namespace multicorp_bot
             {
                 emojis.Add(DiscordEmoji.FromName(ctx.Client, ":moneybag:"));
                 emojis.Add(DiscordEmoji.FromName(ctx.Client, ":military_medal:"));
-            };
+            }
+            else if(group == "exchange")
+            {
+                emojis.Add(DiscordEmoji.FromName(ctx.Client, ":regional_indicator_b:"));
+                emojis.Add(DiscordEmoji.FromName(ctx.Client, ":regional_indicator_s:"));
+            }
 
             return emojis;
         }
