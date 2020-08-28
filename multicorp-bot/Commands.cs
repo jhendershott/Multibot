@@ -554,7 +554,7 @@ namespace multicorp_bot
 
             if (args.Length == 1)
             {
-                await ctx.RespondAsync($"Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'\n For Example .loan request");
+                await ctx.RespondAsync($"Options for loans is 'request', 'view', 'payment' (or 'pay', 'fund', and 'complete'\n For Example !loan request");
             }
             else
             { 
