@@ -16,7 +16,7 @@ namespace multicorp_bot.Controllers
         public DiscordEmbed GetFleetRequests(DiscordGuild guild)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
-            builder.Title = "MultiCorp Fleet Requests";
+            builder.Title = $"{guild.Name} Fleet Requests";
             builder.Timestamp = DateTime.Now;
             builder.Description = "The below lists are ships deemed imperative by command to advance the org";
             var fleetReqs = GetOrgFleetRequests(guild);

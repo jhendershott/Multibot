@@ -85,7 +85,8 @@ namespace multicorp_bot
         public DiscordEmbed GetBankBalanceEmbed(DiscordGuild guild)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
-            builder.Title = "MultiCorp Bank";
+
+            builder.Title = $"{guild.Name} Bank";
             builder.Timestamp = DateTime.Now;
 
      

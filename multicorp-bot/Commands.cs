@@ -702,11 +702,39 @@ namespace multicorp_bot
 
         private async Task LoanFund(CommandContext ctx)
         {
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+
             await ctx.RespondAsync("Which Loan would you like to fund", embed: LoanController.GetWaitingLoansEmbed(ctx.Guild));
 
             var interactivity = ctx.Client.GetInteractivityModule();
             var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
-            var loan = await LoanController.FundLoan(loanIdMsg);
+
+            Loans loan = null;
+
+            if (bankers.Contains(ctx.Member.Id) && ctx.Message.Content.Contains("bank"))
+            {
+                var confirmEmojis = ConfirmEmojis(ctx);
+
+                var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds?");
+                await approval.CreateReactionAsync(confirmEmojis[0]);
+                await approval.CreateReactionAsync(confirmEmojis[1]);
+                Thread.Sleep(500);
+                var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], approval, timeoutoverride: TimeSpan.FromMinutes(1));
+
+                if (confirmMsg.Emoji.Name == "✅" && bankers.Contains(confirmMsg.User.Id))
+                {
+                    loan = await LoanController.FundLoan(loanIdMsg);
+                }
+                else 
+                {
+                    await ctx.RespondAsync("Loan funding with bank credits has been cancelled");
+                }
+
+            }
+            else
+            {
+                loan = await LoanController.FundLoan(loanIdMsg);
+            }
 
             await ctx.RespondAsync($"Congratulations " +
                 $"{(await MemberController.GetDiscordMemberByMemberId(ctx ,loan.FunderId.GetValueOrDefault())).Mention}! \n" +

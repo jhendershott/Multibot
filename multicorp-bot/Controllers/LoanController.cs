@@ -69,7 +69,7 @@ namespace multicorp_bot.Controllers
                 var memberController = new MemberController();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
-                builder.Title = "MultiCorp Loans";
+                builder.Title = $"{guild.Name} Loans";
                 builder.Timestamp = DateTime.Now;
 
                 builder.Description = $"Here is a list of all of your Loans that are outstanding or waiting for funding! \n\u200b";
@@ -161,10 +161,18 @@ namespace multicorp_bot.Controllers
             return builder.Build();
         }
 
-        public async Task<Loans> FundLoan(MessageContext ctx)
+        public async Task<Loans> FundLoan(MessageContext ctx, bool isBank = false)
         {
             var loan = GetLoanById(int.Parse(ctx.Message.Content));
-            loan.FunderId = new MemberController().GetMemberbyDcId(await ctx.Guild.GetMemberAsync(ctx.User.Id), ctx.Guild).UserId;
+            if (isBank)
+            {
+                loan.FunderId = 0;
+            }
+            else
+            {
+                loan.FunderId = new MemberController().GetMemberbyDcId(await ctx.Guild.GetMemberAsync(ctx.User.Id), ctx.Guild).UserId;
+            }
+            
             loan.Status = "Funded";
             await MultiBotDb.SaveChangesAsync();
 
