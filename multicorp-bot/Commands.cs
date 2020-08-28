@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -756,36 +752,58 @@ namespace multicorp_bot
                 $"You've paid off your loan and you're debt free! For now :money_mouth:");
         }
 
-        private async Task LoanView(CommandContext ctx)
+        private async Task<DiscordEmbed> LoanView(CommandContext ctx)
         {
-            await ctx.RespondAsync("Getting your Loan Information, please hold");
+            var plsHold = await ctx.RespondAsync("Getting your Loan Information, please hold");
+            var embed = LoanController.GetLoanEmbed(ctx.Guild);
             await ctx.RespondAsync(embed: LoanController.GetLoanEmbed(ctx.Guild));
+            plsHold.DeleteAsync();
+            return embed;
         }
 
 
 
         private async Task LoanPayment(CommandContext ctx)
         {
-            await ctx.RespondAsync("Pulling up your loan info now.");
+            Loans loan = null;
+            var pullingMsg = await ctx.RespondAsync("Pulling up your loan info now.");
             try
             {
                 int memberId = MemberController.GetMemberbyDcId(ctx.Member, ctx.Guild).UserId;
-                var loan = LoanController.GetLoanByApplicantId(memberId);
+                var loans = LoanController.GetLoanByApplicantId(memberId);
 
-                if (loan != null)
+                if (loans != null)
                 {
                     var interactivity = ctx.Client.GetInteractivityModule();
-                    await ctx.RespondAsync($"Your current balance is {loan.RemainingAmount} much of your loan would you like to repay");
+
+                    if(loans.Count > 1)
+                    {
+                        var loanCntMgs = await ctx.RespondAsync($"You have {loans.Count} outstanding loans. What is the is the id of the loan which you'd like to make a payment?");
+                        var viewEmbed = await LoanView(ctx);
+                        var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                        loan = loans.Find(x => x.LoanId == int.Parse(loanIdMsg.Message.Content));
+
+                        loanIdMsg.Message.DeleteAsync();
+                    }
+
+                    
+                    var balmsg = await ctx.RespondAsync($"Your current balance is {loan.RemainingAmount} much of your loan would you like to repay");
                     var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
 
                     var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
-                    await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
-                    var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10))).Message.Content;
-                    if (confirm.Contains("yes") || confirm.Contains("confirm"))
+                    var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
+                    var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10)));
+                    if (confirm.Message.Content.Contains("yes") || confirm.Message.Content.Contains("confirm"))
                     {
                         LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Message.Content));
-                        await ctx.RespondAsync($"Payment has been confirmed: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
+                        await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Message.Content)} has been confirmed for loan - {loan.LoanId}: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
                     }
+
+                    pullingMsg.DeleteAsync();
+                    balmsg.DeleteAsync();
+                    amountmsg.Message.DeleteAsync();
+                    confirmMsg.DeleteAsync();
+                    confirm.Message.DeleteAsync();
                 }
                 else
                 {

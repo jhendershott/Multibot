@@ -179,9 +179,9 @@ namespace multicorp_bot.Controllers
             return GetLoanById(int.Parse(ctx.Message.Content));
         }
 
-        public Loans GetLoanByApplicantId(int appId)
+        public List<Loans> GetLoanByApplicantId(int appId)
         {
-            return MultiBotDb.Loans.Single(x => x.ApplicantId == appId);
+            return MultiBotDb.Loans.Where(x => x.ApplicantId == appId && x.IsCompleted == 0).ToList();
         }
 
         public Loans GetLoanById(int id)
@@ -212,6 +212,7 @@ namespace multicorp_bot.Controllers
         {
             var loan = MultiBotDb.Loans.Single(x => x.LoanId == loanId);
             loan.IsCompleted = 1;
+            loan.Status = "Completed";
             MultiBotDb.SaveChangesAsync();
 
             return loan;
