@@ -75,10 +75,10 @@ namespace multicorp_bot
             try
             {
                 var currentRank = GetMatchingRank(member);
-                var newRank = MilRanks.Where(x => x.Number == currentRank.Number + 1).FirstOrDefault();
+                var newRank = MilRanks.Where(x => x.Number == currentRank.Number + 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
                 if(newRank == null)
                 {
-                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number + 1).FirstOrDefault();
+                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number + 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
                 }
 
                 await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Name == newRank.RankName).FirstOrDefault());
@@ -97,10 +97,10 @@ namespace multicorp_bot
             try
             {
                 var currentRank = GetMatchingRank(member);
-                var newRank = MilRanks.Where(x => x.Number == currentRank.Number - 1).FirstOrDefault();
+                var newRank = MilRanks.Where(x => x.Number == currentRank.Number - 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
                 if (newRank == null)
                 {
-                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number - 1).FirstOrDefault();
+                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number - 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
                 }
 
                 await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Name == currentRank.RankName).FirstOrDefault());
