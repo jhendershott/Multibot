@@ -34,26 +34,26 @@ namespace multicorp_bot
 
         public List<Rank> CommerceRanks { get; set; } = new List<Rank>()
         {
-            new Rank () { RankName = "Freelancer I", Abbreviation = "FLNCR.", Number = 0 },
-            new Rank () { RankName = "Freelancer II", Abbreviation = "FLNCR." , Number = 1 },
-            new Rank () { RankName = "Freelancer III", Abbreviation = "FLNCR.", Number = 2 },
-            new Rank () { RankName = "Junior Associate", Abbreviation = "JASSC.", Number = 3 },
-            new Rank () { RankName = "Associate I", Abbreviation = "ASSC.", Number = 4 },
-            new Rank () { RankName = "Associate II", Abbreviation = "ASSC.", Number = 5 },
-            new Rank () { RankName = "Associate III", Abbreviation = "ASSC.", Number = 6 },
-            new Rank () { RankName = "Senior Associate", Abbreviation = "SASSC.", Number = 7 },
-            new Rank () { RankName = "Manager", Abbreviation = "MGR.", Number = 8 },
-            new Rank () { RankName = "Senior Manager", Abbreviation = "SMGR", Number = 9 },
-            new Rank () { RankName = "Staff Manager", Abbreviation = "STMGR.", Number = 10 },
-            new Rank () { RankName = "Supervisor", Abbreviation = "SUP.", Number = 11 },
-            new Rank () { RankName = "Director", Abbreviation = "DIR.", Number = 12 },
-            new Rank () { RankName = "Senior Director", Abbreviation = "SDIR.", Number = 13 },
-            new Rank () { RankName = "Department Admin", Abbreviation = "ADMIN", Number = 14 },
-            new Rank () { RankName = "Assistant VP", Abbreviation = "AVP.", Number = 15 },
-            new Rank () { RankName = "Department VP", Abbreviation = "VP.", Number = 16 },
-            new Rank () { RankName = "Chief Operation Officer", Abbreviation = "COO.", Number = 17 },
-            new Rank () { RankName = "Chief Financial Officer", Abbreviation = "CFO.", Number = 18 },
-            new Rank () { RankName = "CEO", Abbreviation = "CEO.", Number = 19 }
+            new Rank () { RankName = "Freelancer I", Abbreviation = "FLNCR", Number = 20 },
+            new Rank () { RankName = "Freelancer II", Abbreviation = "2FLNCR" , Number = 21 },
+            new Rank () { RankName = "Freelancer III", Abbreviation = "3FLNCR", Number = 22 },
+            new Rank () { RankName = "Junior Associate", Abbreviation = "JASSC", Number = 23 },
+            new Rank () { RankName = "Associate I", Abbreviation = "ASSC", Number = 24 },
+            new Rank () { RankName = "Associate II", Abbreviation = "2ASSC", Number = 25 },
+            new Rank () { RankName = "Associate III", Abbreviation = "3SSC", Number = 26 },
+            new Rank () { RankName = "Senior Associate", Abbreviation = "SASSC", Number = 27 },
+            new Rank () { RankName = "Manager", Abbreviation = "MGR", Number = 28 },
+            new Rank () { RankName = "Senior Manager", Abbreviation = "SMGR", Number = 29 },
+            new Rank () { RankName = "Staff Manager", Abbreviation = "STMGR", Number = 30 },
+            new Rank () { RankName = "Supervisor", Abbreviation = "SUP", Number = 31 },
+            new Rank () { RankName = "Director", Abbreviation = "DIR", Number = 32 },
+            new Rank () { RankName = "Senior Director", Abbreviation = "SDIR", Number = 33 },
+            new Rank () { RankName = "Department Admin", Abbreviation = "ADMIN", Number = 34 },
+            new Rank () { RankName = "Assistant VP", Abbreviation = "AVP", Number = 35 },
+            new Rank () { RankName = "Department VP", Abbreviation = "VP", Number = 36 },
+            new Rank () { RankName = "Chief Operation Officer", Abbreviation = "COO", Number = 37 },
+            new Rank () { RankName = "Chief Financial Officer", Abbreviation = "CFO", Number = 38 },
+            new Rank () { RankName = "CEO", Abbreviation = "CEO", Number = 39 }
         };
 
         //Update the abbreviations for every member
@@ -75,10 +75,10 @@ namespace multicorp_bot
             try
             {
                 var currentRank = GetMatchingRank(member);
-                var newRank = MilRanks.Where(x => x.Number == currentRank.Number + 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
+                var newRank = MilRanks.Where(x => x.Number == currentRank.Number + 1).FirstOrDefault();
                 if(newRank == null)
                 {
-                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number + 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
+                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number + 1).FirstOrDefault();
                 }
 
                 await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Name == newRank.RankName).FirstOrDefault());
@@ -97,10 +97,10 @@ namespace multicorp_bot
             try
             {
                 var currentRank = GetMatchingRank(member);
-                var newRank = MilRanks.Where(x => x.Number == currentRank.Number - 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
+                var newRank = MilRanks.Where(x => x.Number == currentRank.Number - 1).FirstOrDefault();
                 if (newRank == null)
                 {
-                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number - 1 && member.Nickname.Contains(x.RankName)).FirstOrDefault();
+                    newRank = CommerceRanks.Where(x => x.Number == currentRank.Number - 1).FirstOrDefault();
                 }
 
                 await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Name == currentRank.RankName).FirstOrDefault());
@@ -129,14 +129,19 @@ namespace multicorp_bot
 
         public Rank GetMatchingRank(DiscordMember member)
         {
-            var roleNamesForMember = member.Roles.Select(y => y.Name);
+            List<string> roleNamesForMember = new List<string>();
+
+            foreach (var role in member.Roles)
+            {
+                roleNamesForMember.Add(role.Name); 
+            }
+            //var roleNamesForMember = member.Roles.ToList();
             var matchingRole = MilRanks.Where(x => roleNamesForMember.Contains(x.RankName)).FirstOrDefault();
             if(matchingRole == null)
             {
                 matchingRole = CommerceRanks.Where(x => roleNamesForMember.Contains(x.RankName)).FirstOrDefault();
             }
             
-
             return matchingRole;
         }
 
@@ -181,7 +186,8 @@ namespace multicorp_bot
         {
             string nick = member.Nickname;
             var rank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
-            var commRank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
+   
+            var commRank = CommerceRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
             if (rank == null && commRank == null)
             {
                 rank = GetMatchingRank(member);
@@ -189,7 +195,7 @@ namespace multicorp_bot
             }
             else if(rank == null)
             {
-                return nick.Replace(rank.Abbreviation, CommerceRanks.Find(x => x.Number == rank.Number + advancement).Abbreviation);
+                return nick.Replace(commRank.Abbreviation, CommerceRanks.Find(x => x.Number == commRank.Number + advancement).Abbreviation);
             }
             else
             {
