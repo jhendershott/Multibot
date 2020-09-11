@@ -22,6 +22,7 @@ namespace multicorp_bot
         public virtual DbSet<WorkOrderRequirements> WorkOrderRequirements { get; set; }
         public virtual DbSet<WorkOrderTypes> WorkOrderTypes { get; set; }
         public virtual DbSet<WorkOrders> WorkOrders { get; set; }
+        public virtual DbSet<WorkOrderMembers> WorkOrderMembers { get; set; }
 
         public virtual DbSet<Loans> Loans { get; set; }
 
@@ -145,14 +146,17 @@ namespace multicorp_bot
                 entity.ToTable("workOrderRequirements");
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("id")
-                    .ValueGeneratedNever();
+                    .HasColumnName("id");
 
                 entity.Property(e => e.Amount).HasColumnName("amount");
 
                 entity.Property(e => e.TypeId).HasColumnName("typeId");
 
                 entity.Property(e => e.WorkOrderId).HasColumnName("workOrderId");
+
+                entity.Property(e => e.Material).HasColumnName("material");
+
+                entity.Property(e => e.isCompleted).HasColumnName("isCompleted");
             });
 
             modelBuilder.Entity<WorkOrderTypes>(entity =>
@@ -169,6 +173,24 @@ namespace multicorp_bot
                     .HasColumnType("character varying");
 
                 entity.Property(e => e.XpModifier).HasColumnName("xpModifier");
+
+                entity.Property(e => e.ImgUrl)
+                .HasColumnName("imgUrl")
+                .HasColumnType("character varying"); ;
+            });
+
+            modelBuilder.Entity<WorkOrderMembers>(entity =>
+            {
+                entity.ToTable("workOrderMembers");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id").ValueGeneratedOnAdd();
+
+                entity.Property(e => e.MemberId)
+                    .IsRequired()
+                    .HasColumnName("memberId");
+
+                entity.Property(e => e.WorkOrderId).HasColumnName("workOrderId");
             });
 
             modelBuilder.Entity<WorkOrders>(entity =>
@@ -190,6 +212,15 @@ namespace multicorp_bot
                     .HasColumnType("character varying");
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
+
+                entity.Property(e => e.WorkOrderTypeId).HasColumnName("workOrderTypeId");
+
+                entity.Property(e => e.isCompleted).HasColumnName("isCompleted");
+
+                entity.Property(e => e.Location)
+                .IsRequired()
+                .HasColumnName("Location")
+                .HasColumnType("character varying");
             });
 
             modelBuilder.Entity<Loans>(entity =>

@@ -1,7 +1,11 @@
-﻿using System;
+﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
+using multicorp_bot.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace multicorp_bot.Controllers
 {
@@ -16,6 +20,219 @@ namespace multicorp_bot.Controllers
         public double GetExpModifier(string modName)
         {
             return MultiBotDb.WorkOrderTypes.Where(x => x.Name == modName).FirstOrDefault().XpModifier;
+        }
+
+        public async Task<DiscordEmbed> GetWorkOrders(CommandContext ctx, string workOrderType)
+        {
+            try
+            {
+                var orderType = await GetWorkOrderType(ctx, workOrderType);
+                var wOrders = MultiBotDb.WorkOrders.Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted).ToList();
+
+                DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+                builder.Title = $"{ctx.Guild.Name} {FormatHelpers.Capitalize(orderType.Name)} Dispatch";
+                builder.Description = $"Please select from the list of open {orderType.Name} work orders below";
+                builder.Timestamp = DateTime.Now;
+
+                if (wOrders.Count > 0)
+                {
+                    foreach (WorkOrders order in wOrders)
+                    {
+                        var workOrderMember = GetWorkOrderMembers(order.Id);
+                        StringBuilder membersStr = new StringBuilder();
+
+
+                        builder.AddField("Location", order.Location);
+                        StringBuilder reqString = new StringBuilder();
+                        foreach (WorkOrderRequirements req in GetRequirements(order.Id))
+                        {
+                            reqString.Append($"\u200b\nRequirement ID: {req.Id}\n");
+                            reqString.Append($"Material: {req.Material}\n");
+                            reqString.Append($"Amount: {req.Amount} SCU\n");
+
+                        }
+
+                        if (workOrderMember.Count > 0)
+                        {
+                            membersStr.Append($"\n\nAccepted Members:");
+                            foreach (WorkOrderMembers mem in workOrderMember)
+                            {
+                                var memberController = new MemberController();
+                                var member = memberController.GetMemberById(mem.MemberId).Username;
+                                membersStr.Append($"\n{memberController.GetMemberById(mem.MemberId).Username}\n");
+                            }
+                        }
+
+
+                        builder.AddField($"Work Order Id: {order.Id} {membersStr.ToString()}", $"\n{order.Description}\n{reqString.ToString()}");
+                    }
+                }
+                else
+                {
+                    builder.AddField($"Unfortnately there are no {FormatHelpers.Capitalize(orderType.Name)} Work Orders", "No open Work Orders");
+                }
+
+                builder.ImageUrl = orderType.ImgUrl;
+                return builder.Build();
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
+        }
+
+        public void LogWork(CommandContext ctx, int id, string type, int amount)
+        {
+            bool isCompleted = true;
+            var orderReqs = MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == id).ToList();
+            var orderReq = orderReqs.Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
+
+            var order = MultiBotDb.WorkOrders.Where(x => x.Id == id).SingleOrDefault();
+            if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
+            {
+                ctx.RespondAsync("Please try again with a valid Work Order Id");
+                return;
+            }
+
+            orderReq.Amount = orderReq.Amount - amount;
+            if (orderReq.Amount <= 0)
+            {
+                orderReq.isCompleted = true;
+                ctx.RespondAsync($"Great job you have fulfilled work order for {type}");
+            }
+            else
+            {
+                ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} SCU of {type}");
+            }
+
+            foreach(WorkOrderRequirements item in orderReqs)
+            {
+                if (!item.isCompleted)
+                    isCompleted = false;
+            }
+
+            MultiBotDb.WorkOrderRequirements.Update(orderReq);
+
+            if (isCompleted)
+            {
+                order.isCompleted = true;
+                MultiBotDb.WorkOrders.Update(order);
+                ctx.RespondAsync($"Great job you have completed the Work Order {type}");
+            }
+
+            var Member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
+            Member.Xp = (long?)(Member.Xp + (amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier));
+
+            MultiBotDb.Mcmember.Update(Member);
+            MultiBotDb.SaveChanges();
+        }
+
+        public async Task<WorkOrderTypes> GetWorkOrderType(CommandContext ctx, string type)
+        {
+            try
+            {
+                switch (type.ToLower())
+                {
+                    case "trading":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "trading").SingleOrDefault();
+                    case "trade":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "trading").SingleOrDefault();
+                    case "mining":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "mining").SingleOrDefault();
+                    case "mine":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "mining").SingleOrDefault();
+                    case "shipping":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "shipping").SingleOrDefault();
+                    case "ship":
+                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "shipping").SingleOrDefault();
+                    default:
+                        await ctx.RespondAsync("Please specify type, trading, mining, or shipping");
+                        throw new InvalidOperationException("Unspecified Work Order Type");
+
+                }
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return null;
+        }
+
+        public List<WorkOrderRequirements> GetRequirements(int workOrderId)
+        {
+            return MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == workOrderId && !x.isCompleted).ToList();
+        }
+
+        public WorkOrderRequirements GetRequirementById(int requirementId)
+        {
+            return MultiBotDb.WorkOrderRequirements.Where(x => x.Id == requirementId).SingleOrDefault();
+        }
+
+        public List<WorkOrderMembers> GetWorkOrderMembers(int workOrderId)
+        {
+            return MultiBotDb.WorkOrderMembers.Where(x => x.WorkOrderId == workOrderId).ToList();
+        }
+
+        public bool AcceptWorkOrder(CommandContext ctx, int workOrderId)
+        {
+            try
+            {
+                var member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
+                var workOrderMember = new WorkOrderMembers();
+                workOrderMember.MemberId = member.UserId;
+                workOrderMember.WorkOrderId = workOrderId;
+                MultiBotDb.WorkOrderMembers.Add(workOrderMember);
+                MultiBotDb.SaveChanges();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
+        }
+
+        public async Task AddWorkOrder(CommandContext ctx, string name, string description, string type, string location, List<Tuple<string, int>> reqs)
+        {
+
+            var id = new OrgController().GetOrgId(ctx.Guild);
+            try
+            {
+                var order = new WorkOrders()
+                {
+                    Id = GetHighestWorkOrder(id) + 1,
+                    Name = name,
+                    Description = description,
+                    Location = location,
+                    WorkOrderTypeId = (await GetWorkOrderType(ctx, type)).Id,
+                    OrgId = id,
+                    isCompleted = false
+                };
+
+
+                MultiBotDb.WorkOrders.Add(order);
+                MultiBotDb.SaveChanges();
+
+                foreach (var item in reqs)
+                {
+                    var orderReqs = new WorkOrderRequirements();
+                    orderReqs.Material = item.Item1;
+                    orderReqs.Amount = item.Item2;
+                    orderReqs.WorkOrderId = order.Id;
+                    orderReqs.TypeId = order.WorkOrderTypeId;
+                    MultiBotDb.WorkOrderRequirements.Add(orderReqs);
+                    MultiBotDb.SaveChanges();
+                }
+            } catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        public int GetHighestWorkOrder(int orgId)
+        {
+            return MultiBotDb.WorkOrders.ToList().OrderByDescending(x => x.Id).First().Id;
         }
     }
 }

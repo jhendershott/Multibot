@@ -9,5 +9,8 @@ namespace multicorp_bot
         public int WorkOrderId { get; set; }
         public int TypeId { get; set; }
         public int Amount { get; set; }
+        public string Material { get; set; }
+        public bool isCompleted { get; set; }
+
     }
 }

@@ -460,6 +460,18 @@ namespace multicorp_bot
                         var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
                         await ctx.RespondAsync(embed: balanceembed);
                         break;
+                    case "reconcile":
+                        if (bankers.Contains(ctx.Member.Id))
+                        {
+                            await ctx.RespondAsync("How many merits are in the bank?");
+                            var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                            await ctx.RespondAsync("How many credits are in the bank?");
+                            var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+
+                            var differences = BankController.Reconcile(ctx, merits.Message.Content, credits.Message.Content);
+                            await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
+                        }
+                        break;
                     case "exchange":
                         if (bankers.Contains(ctx.Member.Id))
                         {
@@ -523,7 +535,7 @@ namespace multicorp_bot
 
             catch (Exception e)
             {
-                await ctx.RespondAsync($"Unfortunately an error occured: {e}");
+                //await ctx.RespondAsync($"Unfortunately an error occured: {e}");
                 Console.WriteLine(e.Message);
             }
         }
@@ -585,7 +597,77 @@ namespace multicorp_bot
                         break;
                 }
             }
+        }
 
+        [Command("dispatch")]
+        public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
+        {
+            var interactivity = ctx.Client.GetInteractivityModule();
+            WorkOrderController controller = new WorkOrderController();
+            if (type == null)
+            {
+                await ctx.RespondAsync("What type of work are you interested in Mining, Trading, or Shipping?");
+                type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                if(type.ToLower() != "add" && type.ToLower() != "accept")
+                {
+                    await ctx.RespondAsync(embed: await controller.GetWorkOrders(ctx, type));
+                }
+            }
+            else if (type.ToLower() == "accept")
+            {
+                if (id == null)
+                {
+                    await ctx.RespondAsync("What is the ID of the work order would you like accept?");
+                    id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+                }
+                if(controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
+                    await ctx.RespondAsync("Work order has been accepted");
+                else
+                    await ctx.RespondAsync("Something went wrong trying to accept the order");
+            }
+            else if(type.ToLower() == "add")
+            {
+                await AddWorkOrder(ctx);
+            }
+            else
+            {
+
+                await ctx.RespondAsync(embed: await controller.GetWorkOrders(ctx, type));
+            }
+
+           
+        }
+
+        [Command("log")]
+        public async Task Log(CommandContext ctx, string workOrder = null, string requirementId = null, string amount = null)
+        {
+            WorkOrderController controller = new WorkOrderController();
+            var interactivity = ctx.Client.GetInteractivityModule();
+            string material;
+
+            if (workOrder == null)
+            {
+                await ctx.RespondAsync("What order would you like log against?");
+                workOrder = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            }
+
+            if (requirementId == null)
+            {
+                await ctx.RespondAsync("What type or material would you like to log");
+                material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            }
+            else
+            {
+                material = controller.GetRequirementById(int.Parse(requirementId)).Material;
+            }
+
+            if (amount == null)
+            {
+                await ctx.RespondAsync("How much would you like to log?");
+                amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            }
+
+            controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
         }
 
         [Command("wipe-bank")]
@@ -643,8 +725,37 @@ namespace multicorp_bot
                 //await test.DeleteAsync();
                 await ctx.RespondAsync("yah took to dang long you're the one who is 💩" );
             }
-           
+        }
 
+        private async Task AddWorkOrder(CommandContext ctx)
+        {
+            var interactivity = ctx.Client.GetInteractivityModule();
+            await ctx.RespondAsync("Please add the title");
+            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            await ctx.RespondAsync("Please add a Description");
+            string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            await ctx.RespondAsync("Please add a type: trading, mining or shipping");
+            string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            await ctx.RespondAsync("Please add a location");
+            string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+
+            await ctx.RespondAsync("How many requirements will it have?");
+            int reqCount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+            List<Tuple<string, int>> req = new List<Tuple<string, int>>();
+            for (int i = 0; i < reqCount; i++)
+            {
+                await ctx.RespondAsync($"What is the material they will be {workOrdertype}?");
+                string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                await ctx.RespondAsync($"What how much will they be {workOrdertype}?");
+                int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+
+                req.Add(new Tuple<string, int>(reqMaterial, reqAmount));
+            }
+
+            var controller = new WorkOrderController();
+            await controller.AddWorkOrder(ctx, name, description, workOrdertype, location, req);
+
+            await ctx.RespondAsync("Work Order has been added to the dispatch list");
         }
 
         private async Task FleetRequest(CommandContext ctx)
@@ -748,7 +859,7 @@ namespace multicorp_bot
             var loan = LoanController.CompleteLoan(int.Parse(loanIdMsg.Message.Content));
 
             await ctx.RespondAsync($"Congratulations " +
-                $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
+                $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention}! \n" +
                 $"You've paid off your loan and you're debt free! For now :money_mouth:");
         }
 
@@ -757,7 +868,7 @@ namespace multicorp_bot
             var plsHold = await ctx.RespondAsync("Getting your Loan Information, please hold");
             var embed = LoanController.GetLoanEmbed(ctx.Guild);
             await ctx.RespondAsync(embed: LoanController.GetLoanEmbed(ctx.Guild));
-            plsHold.DeleteAsync();
+            await plsHold.DeleteAsync();
             return embed;
         }
 

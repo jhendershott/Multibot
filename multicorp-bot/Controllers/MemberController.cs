@@ -75,8 +75,6 @@ namespace multicorp_bot.Controllers
                 AddMember(new Ranks().GetNickWithoutRank(member.Nickname), orgId, member);
                 return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
             }
-            
-            
         }
 
         public async Task<DiscordMember> GetDiscordMemberByMemberId(CommandContext ctx, int id)

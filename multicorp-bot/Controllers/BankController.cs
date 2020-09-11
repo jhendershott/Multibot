@@ -154,6 +154,32 @@ namespace multicorp_bot
             MultiBotDb.SaveChanges();
         }
 
+        public Tuple<string, string> Reconcile(CommandContext ctx,string merits, string credits)
+        {
+            var bank = MultiBotDb.Bank.Single(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild));
+            var differenceMerits = Math.Abs(bank.Merits - int.Parse(merits)).ToString();
+            var differenceCredits = Math.Abs((int)bank.Balance - int.Parse(credits)).ToString();
+
+            if (int.Parse(credits) < (int)bank.Balance)
+            {
+                differenceCredits = $"-{differenceCredits}";
+            }
+            if (int.Parse(merits) < (int)bank.Merits)
+            {
+                differenceMerits = $"-{differenceMerits}";
+            }
+
+            bank.Merits = int.Parse(merits);
+            bank.Balance = int.Parse(credits);
+            MultiBotDb.Bank.Update(bank);
+            MultiBotDb.SaveChanges();
+
+
+
+            return new Tuple<string, string>(FormatHelpers.FormattedNumber(differenceCredits.ToString()),
+                FormatHelpers.FormattedNumber(differenceMerits.ToString()));
+        }
+
         public decimal ExchangeTransaction(CommandContext ctx, string action, int credits, int merits)
         {
             var bankContext = MultiBotDb.Bank;

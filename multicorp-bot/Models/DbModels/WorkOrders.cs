@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace multicorp_bot
 {
@@ -9,5 +10,9 @@ namespace multicorp_bot
         public int Id { get; set; }
         public string Name { get; set; }
         public int OrgId { get; set; }
+        public int WorkOrderTypeId { get; set; }
+        public string Location { get; set; }
+
+        public bool isCompleted { get; set; }
     }
 }
