@@ -22,59 +22,64 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.WorkOrderTypes.Where(x => x.Name == modName).FirstOrDefault().XpModifier;
         }
 
-        public async Task<DiscordEmbed> GetWorkOrders(CommandContext ctx, string workOrderType)
+        public async Task<Tuple<DiscordEmbed, WorkOrders>> GetWorkOrders(CommandContext ctx, string workOrderType)
         {
             try
             {
+                WorkOrders order = null;
                 var orderType = await GetWorkOrderType(ctx, workOrderType);
                 var wOrders = MultiBotDb.WorkOrders.Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted).ToList();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+                var type = FormatHelpers.Capitalize(orderType.Name);
 
-                builder.Title = $"{ctx.Guild.Name} {FormatHelpers.Capitalize(orderType.Name)} Dispatch";
-                builder.Description = $"Please select from the list of open {orderType.Name} work orders below";
+                builder.Title = $"{ctx.Guild.Name} {type} Dispatch";
+                builder.Description = $"There are {wOrders.Count} {type} Work Orders, here's one that may interest you?";
                 builder.Timestamp = DateTime.Now;
 
                 if (wOrders.Count > 0)
                 {
-                    foreach (WorkOrders order in wOrders)
+                    Random rand = new Random();
+                    int randOrder = rand.Next(0, wOrders.Count);
+                    order = wOrders[randOrder];
+         
+                    var workOrderMember = GetWorkOrderMembers(order.Id);
+                    StringBuilder membersStr = new StringBuilder();
+
+                    builder.AddField("Location", order.Location);
+                    StringBuilder reqString = new StringBuilder();
+                    foreach (WorkOrderRequirements req in GetRequirements(order.Id))
                     {
-                        var workOrderMember = GetWorkOrderMembers(order.Id);
-                        StringBuilder membersStr = new StringBuilder();
-
-
-                        builder.AddField("Location", order.Location);
-                        StringBuilder reqString = new StringBuilder();
-                        foreach (WorkOrderRequirements req in GetRequirements(order.Id))
-                        {
-                            reqString.Append($"\u200b\nRequirement ID: {req.Id}\n");
-                            reqString.Append($"Material: {req.Material}\n");
-                            reqString.Append($"Amount: {req.Amount} SCU\n");
-
-                        }
-
-                        if (workOrderMember.Count > 0)
-                        {
-                            membersStr.Append($"\n\nAccepted Members:");
-                            foreach (WorkOrderMembers mem in workOrderMember)
-                            {
-                                var memberController = new MemberController();
-                                var member = memberController.GetMemberById(mem.MemberId).Username;
-                                membersStr.Append($"\n{memberController.GetMemberById(mem.MemberId).Username}\n");
-                            }
-                        }
-
-
-                        builder.AddField($"Work Order Id: {order.Id} {membersStr.ToString()}", $"\n{order.Description}\n{reqString.ToString()}");
+                        reqString.Append($"\u200b\nRequirement ID: {req.Id}\n");
+                        reqString.Append($"Material: {req.Material}\n");
+                        reqString.Append($"Amount: {req.Amount} SCU\n");
                     }
+
+                    if (workOrderMember.Count > 0)
+                    {
+                        membersStr.Append($"\n\nAccepted Members:");
+                        foreach (WorkOrderMembers mem in workOrderMember)
+                        {
+                            var memberController = new MemberController();
+                            var member = memberController.GetMemberById(mem.MemberId).Username;
+                            membersStr.Append($"\n{memberController.GetMemberById(mem.MemberId).Username}");
+                        }
+                    }
+
+                    builder.AddField($"Work Order Id: {order.Id} {membersStr.ToString()}", $"\n{order.Description}\n{reqString.ToString()}");
+
+                    builder.WithFooter("If you would like to accept this dispatch please respond with ✅" +
+                        "\n to decline and see another use X" +
+                        "\n If you are not interested in a dispatch at this time simply do nothing at all and the request will time out");
+
                 }
                 else
                 {
                     builder.AddField($"Unfortnately there are no {FormatHelpers.Capitalize(orderType.Name)} Work Orders", "No open Work Orders");
                 }
 
-                builder.ImageUrl = orderType.ImgUrl;
-                return builder.Build();
+                builder.WithImageUrl(orderType.ImgUrl);
+                return new Tuple<DiscordEmbed, WorkOrders>(builder.Build(), order);
             } catch(Exception e)
             {
                 Console.WriteLine(e);

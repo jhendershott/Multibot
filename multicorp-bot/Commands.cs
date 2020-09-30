@@ -220,7 +220,7 @@ namespace multicorp_bot
                             await confirmation.CreateReactionAsync(confirmEmojis[0]);
                             await confirmation.CreateReactionAsync(confirmEmojis[1]);
                             Thread.Sleep(500);
-                            var continueMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], confirmation, timeoutoverride: TimeSpan.FromMinutes(1));
+                            var continueMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], confirmation, timeoutoverride: TimeSpan.FromMinutes(5));
 
                             try
                             {
@@ -246,7 +246,7 @@ namespace multicorp_bot
                                 await cred.CreateReactionAsync(credEmojis[1]);
                                 Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(1));
+                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(5));
 
                                 try
                                 {
@@ -340,7 +340,7 @@ namespace multicorp_bot
                                 await cred.CreateReactionAsync(credEmojis[1]);
                                 Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(1));
+                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(5));
 
                                 try
                                 {
@@ -413,7 +413,7 @@ namespace multicorp_bot
                                 await currency.CreateReactionAsync(credEmojis[1]);
                                 Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(1));
+                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(5));
 
                                 try
                                 {
@@ -464,9 +464,9 @@ namespace multicorp_bot
                         if (bankers.Contains(ctx.Member.Id))
                         {
                             await ctx.RespondAsync("How many merits are in the bank?");
-                            var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                            var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
                             await ctx.RespondAsync("How many credits are in the bank?");
-                            var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                            var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
                             var differences = BankController.Reconcile(ctx, merits.Message.Content, credits.Message.Content);
                             await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
@@ -480,13 +480,13 @@ namespace multicorp_bot
                             await exchange.CreateReactionAsync(credEmojis[0]);
                             await exchange.CreateReactionAsync(credEmojis[1]);
 
-                            var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(1));
+                            var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(5));
                             if (exMsg.Emoji.Name == "🇧")
                             {
                                 var buy = await ctx.RespondAsync("How many Merits are you buying?");
-                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
                                 var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
-                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
                                 var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
 
@@ -500,16 +500,16 @@ namespace multicorp_bot
                                 }
 
                                 buy.DeleteAsync();
-                                sell.DeleteAsync(); 
+                                sell.DeleteAsync();
                                 merits.Message.DeleteAsync(); 
                                 credits.Message.DeleteAsync();
                             }
                             else if (exMsg.Emoji.Name == "🇸")
                             {
                                 var sell = await ctx.RespondAsync("How many Merits are you selling?");
-                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
                                 var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
-                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1)));
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
                                 var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
                                 if (margin >= Convert.ToDecimal(2.5))
@@ -518,7 +518,7 @@ namespace multicorp_bot
                                 }
                                 else
                                 {
-                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater thanw 2.5");
+                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
                                 }
 
                                 buy.DeleteAsync();
@@ -607,10 +607,29 @@ namespace multicorp_bot
             if (type == null)
             {
                 await ctx.RespondAsync("What type of work are you interested in Mining, Trading, or Shipping?");
-                type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
                 if(type.ToLower() != "add" && type.ToLower() != "accept")
                 {
-                    await ctx.RespondAsync(embed: await controller.GetWorkOrders(ctx, type));
+                    var initialAccept = await AcceptDispatch(ctx, type);
+                    if (initialAccept.Item1)
+                    {
+                        controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                    }
+                    else
+                    {
+                        await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
+                                $"you can can accept a previous work order by sending !Dispatch Accept [previous work order id]\n" +
+                                $"or can cancel the dispatch by simple allowing it to time out (two minutes)");
+                        for (int i = 3; i > 0; i--)
+                        {
+                            var subsequent = await AcceptDispatch(ctx, type);
+                            if (subsequent.Item1)
+                            {
+                                controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             else if (type.ToLower() == "accept")
@@ -618,7 +637,7 @@ namespace multicorp_bot
                 if (id == null)
                 {
                     await ctx.RespondAsync("What is the ID of the work order would you like accept?");
-                    id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+                    id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
                 }
                 if(controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
                     await ctx.RespondAsync("Work order has been accepted");
@@ -631,11 +650,28 @@ namespace multicorp_bot
             }
             else
             {
-
-                await ctx.RespondAsync(embed: await controller.GetWorkOrders(ctx, type));
+                var initialAccept = await AcceptDispatch(ctx, type);
+                if (initialAccept.Item1)
+                {
+                    controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                    await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
+                }
+                else
+                {
+                    await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
+                            $"you can can accept a previous work order by sending !Dispatch Accept [previous work order id]\n" +
+                            $"or can cancel the dispatch by simple allowing it to time out (two minutes)");
+                    for (int i = 3; i > 0; i--)
+                    {
+                        var subsequent = await AcceptDispatch(ctx, type);
+                        if (subsequent.Item1)
+                        {
+                            controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                            break;
+                        }
+                    }
+                }
             }
-
-           
         }
 
         [Command("log")]
@@ -648,13 +684,13 @@ namespace multicorp_bot
             if (workOrder == null)
             {
                 await ctx.RespondAsync("What order would you like log against?");
-                workOrder = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                workOrder = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
 
             if (requirementId == null)
             {
                 await ctx.RespondAsync("What type or material would you like to log");
-                material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
             else
             {
@@ -664,7 +700,7 @@ namespace multicorp_bot
             if (amount == null)
             {
                 await ctx.RespondAsync("How much would you like to log?");
-                amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
 
             controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
@@ -677,7 +713,7 @@ namespace multicorp_bot
 
             var interactivity = ctx.Client.GetInteractivityModule();
             await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
-            var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+            var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
      
             if(confirmMsg.Message.Content.ToLower() == "yes")
             {
@@ -727,27 +763,53 @@ namespace multicorp_bot
             }
         }
 
+        private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)
+        {
+            var controller = new WorkOrderController();
+            var interactivity = ctx.Client.GetInteractivityModule();
+            var wOrder = await controller.GetWorkOrders(ctx, type);
+            var msg = await ctx.RespondAsync(embed: wOrder.Item1);
+            var confirmEmojis = ConfirmEmojis(ctx);
+
+            await msg.CreateReactionAsync(confirmEmojis[0]);
+            await msg.CreateReactionAsync(confirmEmojis[1]);
+            Thread.Sleep(500);
+            var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], msg, timeoutoverride: TimeSpan.FromMinutes(5));
+
+            if (confirmMsg.Emoji.Name == "✅")
+            {
+                return new Tuple<bool, WorkOrders>(true, wOrder.Item2);
+            }
+            else
+            {
+                await msg.DeleteAsync();
+                return new Tuple<bool, WorkOrders>(false, null);
+            }
+
+
+        }
+
         private async Task AddWorkOrder(CommandContext ctx)
         {
             var interactivity = ctx.Client.GetInteractivityModule();
             await ctx.RespondAsync("Please add the title");
-            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             await ctx.RespondAsync("Please add a Description");
-            string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             await ctx.RespondAsync("Please add a type: trading, mining or shipping");
-            string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             await ctx.RespondAsync("Please add a location");
-            string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
 
             await ctx.RespondAsync("How many requirements will it have?");
-            int reqCount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+            int reqCount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
             List<Tuple<string, int>> req = new List<Tuple<string, int>>();
             for (int i = 0; i < reqCount; i++)
             {
                 await ctx.RespondAsync($"What is the material they will be {workOrdertype}?");
-                string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+                string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
                 await ctx.RespondAsync($"What how much will they be {workOrdertype}?");
-                int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+                int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
 
                 req.Add(new Tuple<string, int>(reqMaterial, reqAmount));
             }
@@ -762,10 +824,10 @@ namespace multicorp_bot
         {
             await ctx.RespondAsync("What is the Make and Model of the ship you're requesting");
             var interactivity = ctx.Client.GetInteractivityModule();
-            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
 
             await ctx.RespondAsync("What is the price of the ship in aUEC");
-            var price = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+            var price = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
             await ctx.RespondAsync("Please provide an image url of the ship you're requestion");
             var image = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             try
@@ -786,9 +848,9 @@ namespace multicorp_bot
 
             await ctx.RespondAsync("What is the ID of the ship you would like to fun");
             var interactivity = ctx.Client.GetInteractivityModule();
-            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content;
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             await ctx.RespondAsync("How many credits you put towards the ship");
-            var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1))).Message.Content);
+            var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
 
             await ctx.RespondAsync("Waiting for Banker to confirm the transfer");
             var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
@@ -814,7 +876,7 @@ namespace multicorp_bot
             await ctx.RespondAsync("Which Loan would you like to fund", embed: LoanController.GetWaitingLoansEmbed(ctx.Guild));
 
             var interactivity = ctx.Client.GetInteractivityModule();
-            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
             Loans loan = null;
 
@@ -826,7 +888,7 @@ namespace multicorp_bot
                 await approval.CreateReactionAsync(confirmEmojis[0]);
                 await approval.CreateReactionAsync(confirmEmojis[1]);
                 Thread.Sleep(500);
-                var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], approval, timeoutoverride: TimeSpan.FromMinutes(1));
+                var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], approval, timeoutoverride: TimeSpan.FromMinutes(5));
 
                 if (confirmMsg.Emoji.Name == "✅" && bankers.Contains(confirmMsg.User.Id))
                 {
@@ -854,7 +916,7 @@ namespace multicorp_bot
             await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));
 
             var interactivity = ctx.Client.GetInteractivityModule();
-            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
             
             var loan = LoanController.CompleteLoan(int.Parse(loanIdMsg.Message.Content));
 
@@ -891,7 +953,7 @@ namespace multicorp_bot
                     {
                         var loanCntMgs = await ctx.RespondAsync($"You have {loans.Count} outstanding loans. What is the is the id of the loan which you'd like to make a payment?");
                         var viewEmbed = await LoanView(ctx);
-                        var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                        var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                         loan = loans.Find(x => x.LoanId == int.Parse(loanIdMsg.Message.Content));
 
                         loanIdMsg.Message.DeleteAsync();
@@ -899,7 +961,7 @@ namespace multicorp_bot
 
                     
                     var balmsg = await ctx.RespondAsync($"Your current balance is {loan.RemainingAmount} much of your loan would you like to repay");
-                    var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                    var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
                     var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
                     var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
@@ -946,13 +1008,13 @@ namespace multicorp_bot
             var interactivity = ctx.Client.GetInteractivityModule();
            
             await ctx.RespondAsync("Thank you for banking with MultiBot. \nI'll need some info to process your request. \n\nHow much are you looking to borrow?");
-            var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+            var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
             try
             {
                 int amount = int.Parse(amountmsg.Message.Content);
                 await ctx.RespondAsync("Excellent! Do you prefer your interested to be 'percentage' or 'flat' rate?");
 
-                var typemsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                var typemsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                 string type = "";
                 switch (typemsg.Message.Content.ToLower())
                 {
@@ -970,7 +1032,7 @@ namespace multicorp_bot
                 if(type == "percent")
                 {
                     await ctx.RespondAsync("What % interest are you offering. Please use whole numbers: e.g. 3");
-                    var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                    var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                     
                     var interestamount = LoanController.CalculateInterest(amount, int.Parse(interest.Message.Content));
                     await ctx.RespondAsync("Please hold your application is being processed");
@@ -980,7 +1042,7 @@ namespace multicorp_bot
                 else
                 {
                     await ctx.RespondAsync("What amount interest are you offering. Please use whole numbers: e.g. 20000");
-                    var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+                    var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                     var interestAmount = int.Parse(interest.Message.Content);
                     await ctx.RespondAsync("Please hold your application is being processed");
 
