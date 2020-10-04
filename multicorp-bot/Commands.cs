@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,27 +41,37 @@ namespace multicorp_bot
         [Command("handle")]
         public async Task UpdateHandle(CommandContext ctx)
         {
-            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "handle", ctx);
             DiscordMember member = null;
-            string newNick = null;
-            if (args.Length == 2)
+            try
             {
-                member = ctx.Member;
-                newNick = Ranks.GetUpdatedNickname(member, args[1]);
-            }
-            else if (args.Length >= 3)
-            {
-                member = await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id);
-                newNick = Ranks.GetUpdatedNickname(member, args[2]);
-            }
+                string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+                string newNick = null;
+                if (args.Length == 2)
+                {
+                    member = ctx.Member;
+                    newNick = Ranks.GetUpdatedNickname(member, args[1]);
+                }
+                else if (args.Length >= 3)
+                {
+                    member = await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id);
+                    newNick = Ranks.GetUpdatedNickname(member, args[2]);
+                }
 
-            MemberController.UpdateMemberName(Ranks.GetNickWithoutRank(member), Ranks.GetNickWithoutRank(newNick), ctx.Guild);
-            await member.ModifyAsync(nickname: newNick);
+                MemberController.UpdateMemberName(Ranks.GetNickWithoutRank(member), Ranks.GetNickWithoutRank(newNick), ctx.Guild);
+                await member.ModifyAsync(nickname: newNick);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         [Command("multibot-help")]
         public async Task Help(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "multibot-help", ctx);
+
             await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet or Wipe?");
             var interactivity = ctx.Client.GetInteractivityModule();
             var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
@@ -91,6 +102,8 @@ namespace multicorp_bot
         [Command("check-requirements")]
         public async Task CheckRequirements(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "check-requirements", ctx);
+
             try
             {
                 string missingRequirements = "";
@@ -105,6 +118,7 @@ namespace multicorp_bot
             }
             catch (Exception e)
             {
+                TelemetryHelper.Singleton.LogException("check-requirements", e);
                 Console.WriteLine(e.Message);
             }
 
@@ -113,6 +127,7 @@ namespace multicorp_bot
         [Command("check")]
         public async Task Check(CommandContext ctx, DiscordUser user)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "check", ctx);
             try
             {
                 var level = PermissionsHelper.GetPermissionLevel(ctx.Guild, user);
@@ -121,6 +136,7 @@ namespace multicorp_bot
             }
             catch (Exception e)
             {
+                TelemetryHelper.Singleton.LogException("check", e);
                 Console.WriteLine(e.Message);
             }
         }
@@ -129,7 +145,12 @@ namespace multicorp_bot
         public async Task SetRoleLevel(CommandContext ctx, DiscordRole role, int level)
         {
             if (PermissionsHelper.GetPermissionLevel(ctx.Guild, ctx.User) < 2)
+            {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "set-role-level-denied", ctx);
                 return;
+            }
+               
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "set-role-level", ctx);
 
             try
             {
@@ -138,6 +159,7 @@ namespace multicorp_bot
             }
             catch (Exception e)
             {
+                TelemetryHelper.Singleton.LogException("set-role-level", e);
                 Console.WriteLine(e.Message);
             }
         }
@@ -147,10 +169,13 @@ namespace multicorp_bot
         {
             if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
             {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-denied", ctx);
                 await ctx.RespondAsync("You can't do that you don't have the power!");
                 return;
             }
-             
+
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote", ctx);
+
             string congrats = $"Congratulations on your promotion :partying_face:";
             foreach (var user in ctx.Message.MentionedUsers)
             {
@@ -158,11 +183,11 @@ namespace multicorp_bot
                 await Ranks.Promote(member);
                 await member.ModifyAsync(Ranks.GetUpdatedNickname(member));
                 congrats = congrats += $" {member.Mention}";
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-congrats", ctx, member);
             }
 
             await ctx.Message.DeleteAsync();
             await ctx.RespondAsync(congrats);
-        
         }
 
         [Command("demote")]
@@ -170,9 +195,12 @@ namespace multicorp_bot
         {
             if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
             {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "demote-denied", ctx);
                 await ctx.RespondAsync("You can't do that you don't have the power!");
                 return;
             }
+
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "demote", ctx);
 
             string congrats = $"Oh no you've been demoted! What have you done :disappointed_relieved:";
             foreach (var user in ctx.Message.MentionedUsers)
@@ -181,7 +209,7 @@ namespace multicorp_bot
                 await Ranks.Demote(member);
                 await member.ModifyAsync(Ranks.GetUpdatedNickname(member, -1));
                 congrats = congrats += $" {member.Mention}";
-
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "demote-congrats", ctx, member);
             }
             await ctx.Message.DeleteAsync();
             await ctx.RespondAsync(congrats);
@@ -191,7 +219,13 @@ namespace multicorp_bot
         public async Task RecruitMember(CommandContext ctx, DiscordMember member)
         {
             if (PermissionsHelper.GetPermissionLevel(ctx.Guild, ctx.User) < 1)
+            {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "recruit-denied", ctx);
                 return;
+            }
+
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "recruit", ctx);
+
             await Ranks.Recruit(member);
             await ctx.RespondAsync($"Welcome on board {member.Mention} :alien:");
         }
@@ -199,6 +233,8 @@ namespace multicorp_bot
         [Command("bank")]
         public async Task Bank(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
+
             BankController BankController = new BankController();
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
             Tuple<string, string> newBalance;
@@ -212,7 +248,7 @@ namespace multicorp_bot
                 switch (args[1].ToLower())
                 {
                     case "deposit":
-
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit", ctx);
                         if (!bankers.Contains(ctx.Member.Id)){
 
                             var confirmation = await ctx.RespondAsync("Please Make sure a Banker is online to assist you. Do you want to continue?");
@@ -230,6 +266,7 @@ namespace multicorp_bot
                                     await ctx.RespondAsync("Please try again when you're ready");
                                     break;
                                 }
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-continue", ctx);
                             }
                             catch (Exception e)
                             {
@@ -269,10 +306,12 @@ namespace multicorp_bot
 
                             if (isCredit)
                             {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx);
                             }
                             else
                             {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merits", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, false);
                                 isCredit = false;
                             }
@@ -286,6 +325,8 @@ namespace multicorp_bot
                             {
                                 if (confirmMsg.Emoji.Name == "✅" && bankers.Contains(confirmMsg.User.Id))
                                 {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-action-confirm", ctx);
+
                                     newBalance = BankController.Deposit(transaction);
                                     BankController.UpdateTransaction(transaction);
                                     MemberController.UpdateExperiencePoints("credits", transaction);
@@ -318,6 +359,7 @@ namespace multicorp_bot
                                 }
                                 else if (!bankers.Contains(confirmMsg.User.Id))
                                 {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-unauth-approval", ctx);
                                     await ctx.RespondAsync("Looks like someone who isn't a banker attempted to approve the transactions. " +
                                         "Only bankers can approve transactions");
                                 }
@@ -543,16 +585,24 @@ namespace multicorp_bot
         [Command("fleet")]
         public async Task Fleet(CommandContext ctx, string arg)
         {
-            switch(arg.ToLower()){
-                case "view": await ctx.RespondAsync(embed: new FleetController().GetFleetRequests(ctx.Guild));
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet", ctx);
+
+            switch (arg.ToLower()){
+                case "view":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-view", ctx);
+                    await ctx.RespondAsync(embed: new FleetController().GetFleetRequests(ctx.Guild));
                     break;
                 case "request":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-request", ctx);
                     await FleetRequest(ctx);
                     break;
                 case "fund":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-fund", ctx);
                     await FundFleet(ctx);
                     break;
-                case "complete": var completed = FleetController.CompleteFleetRequest(ctx.Guild);
+                case "complete":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-complete", ctx);
+                    var completed = FleetController.CompleteFleetRequest(ctx.Guild);
                     await ctx.RespondAsync($"{completed} requests have been marked complete");
                     break;
             }
@@ -562,6 +612,8 @@ namespace multicorp_bot
         [Command("loan")]
         public async Task Loan(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan", ctx);
+
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
 
             if (args.Length == 1)
@@ -573,26 +625,33 @@ namespace multicorp_bot
                 switch (args[1].ToLower())
                 {
                     case "request":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-request", ctx);
                         await LoanRequest(ctx);
                         break;
                     case "view":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-view", ctx);
                         await LoanView(ctx);
                         break;
                     case "payment":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-payment", ctx);
                         await LoanPayment(ctx);
                         break;
                     case "pay":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-pay", ctx);
                         await LoanPayment(ctx);
                         break;
                     case "fund":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-fund", ctx);
                         await LoanFund(ctx);
                         break;
                     case "complete":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-complete", ctx);
                         await LoanComplete(ctx);
                         break;
                     //case "add": LoanController.AddLoan(ctx.Member, ctx.Guild, 50000, 1000);
                     //    break;
                     default:
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-options", ctx);
                         await ctx.RespondAsync("Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'");
                         break;
                 }
@@ -1038,6 +1097,8 @@ namespace multicorp_bot
                     await ctx.RespondAsync("Please hold your application is being processed");
                     LoanController.AddLoan(ctx.Member, ctx.Guild, amount, interestamount);
                     await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + interestamount} is waiting for funding");
+                    
+                    TelemetryHelper.Singleton.LogEvent("BOT WORK", "loan-request-details", ctx);
                 }
                 else
                 {
