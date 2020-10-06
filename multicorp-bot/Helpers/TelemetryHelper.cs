@@ -12,12 +12,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace multicorp_bot.Helpers
 {
+    
     /// <summary>
     /// A class used to log telemety into Azure Application Insights.  It creates pretty charts and can log most things.
     /// This class is provisioned in the startup as a singleton object, then reference throughout the app.
     /// </summary>
     public class TelemetryHelper
     {
+        private const string DEFAULT_INSTRUMENT_KEY = "f3552a4b-4698-4742-9ec9-044fd132d10a";
         private TelemetryConfiguration _config = null;
         private TelemetryClient _client = null;
         private string _environment = string.Empty;
@@ -28,12 +30,24 @@ namespace multicorp_bot.Helpers
         {
             try
             {
+                // Gets the key from the environment variables.
+                string key = Environment.GetEnvironmentVariable("TelemetryAppKey");
+                if (string.IsNullOrEmpty(key))
+                {
+                    key = DEFAULT_INSTRUMENT_KEY;
+                }
+
                 // Create the telemetry configuration
                 TelemetryConfiguration configuration = TelemetryConfiguration.CreateDefault();
-                configuration.InstrumentationKey = Environment.GetEnvironmentVariable("TelemetryAppKey");
+                configuration.InstrumentationKey = key;
                 this._config = configuration;
 
                 // Create the environment property we'll read later, to correlate logs.
+                string env = Environment.GetEnvironmentVariable("TelemetryAppKey");
+                if (string.IsNullOrEmpty(env))
+                {
+                    env = "DEV";
+                }
                 this._environment = Environment.GetEnvironmentVariable("TelemetryENV");
 
                 // Creates the telemetry client, which needs to be a singleton, so this whole class is.
