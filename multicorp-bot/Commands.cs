@@ -311,7 +311,7 @@ namespace multicorp_bot
                             }
                             else
                             {
-                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merits", ctx);
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, false);
                                 isCredit = false;
                             }
@@ -661,6 +661,8 @@ namespace multicorp_bot
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch", ctx);
+
             var interactivity = ctx.Client.GetInteractivityModule();
             WorkOrderController controller = new WorkOrderController();
             if (type == null)
@@ -698,13 +700,20 @@ namespace multicorp_bot
                     await ctx.RespondAsync("What is the ID of the work order would you like accept?");
                     id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
                 }
-                if(controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
+                if (controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
+                {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
                     await ctx.RespondAsync("Work order has been accepted");
+                }
                 else
+                {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-failed", ctx);
                     await ctx.RespondAsync("Something went wrong trying to accept the order");
+                }
             }
             else if(type.ToLower() == "add")
             {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-added", ctx);
                 await AddWorkOrder(ctx);
             }
             else
@@ -712,6 +721,7 @@ namespace multicorp_bot
                 var initialAccept = await AcceptDispatch(ctx, type);
                 if (initialAccept.Item1)
                 {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
                     controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
                     await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
                 }
@@ -736,6 +746,8 @@ namespace multicorp_bot
         [Command("log")]
         public async Task Log(CommandContext ctx, string workOrder = null, string requirementId = null, string amount = null)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "log", ctx);
+
             WorkOrderController controller = new WorkOrderController();
             var interactivity = ctx.Client.GetInteractivityModule();
             string material;
@@ -761,13 +773,13 @@ namespace multicorp_bot
                 await ctx.RespondAsync("How much would you like to log?");
                 amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
-
             controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
         }
 
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank", ctx);
             BankController bankController = new BankController();
 
             var interactivity = ctx.Client.GetInteractivityModule();
@@ -780,6 +792,7 @@ namespace multicorp_bot
                 TransactionController.WipeTransactions(ctx.Guild);
                 LoanController.WipeLoans(ctx);
 
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank-success", ctx);
                 await ctx.RespondAsync("your org balance and transactions have been set to 0. All Loans have been completed");
             }
         }
@@ -787,6 +800,8 @@ namespace multicorp_bot
         [Command("getreactions")]
         public async Task GetId(CommandContext ctx)
         {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "get-reactions", ctx);
+
             var interactivity = ctx.Client.GetInteractivityModule();
             var test =await  ctx.RespondAsync("you pick one! :poop: :100:");
             await test.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":poop:"));
@@ -1039,10 +1054,12 @@ namespace multicorp_bot
                 }
                 else
                 {
+                    TelemetryHelper.Singleton.LogEvent("BOT TASK", "task-loan-find-not", ctx);
                     await ctx.RespondAsync("Could not find loan");
                 }
             } catch (Exception e)
             {
+                TelemetryHelper.Singleton.LogException("task-loan-pay", e);
                 Console.WriteLine(e);
             }
 
@@ -1097,8 +1114,7 @@ namespace multicorp_bot
                     await ctx.RespondAsync("Please hold your application is being processed");
                     LoanController.AddLoan(ctx.Member, ctx.Guild, amount, interestamount);
                     await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + interestamount} is waiting for funding");
-                    
-                    TelemetryHelper.Singleton.LogEvent("BOT WORK", "loan-request-details", ctx);
+                    TelemetryHelper.Singleton.LogEvent("BOT TASK", "loan-request-details", ctx);//seeing if it gets here
                 }
                 else
                 {
@@ -1114,6 +1130,7 @@ namespace multicorp_bot
                     }
                     catch (Exception e)
                     {
+                        TelemetryHelper.Singleton.LogException("task-loan-add", e);
                         Console.WriteLine(e);
                         await ctx.RespondAsync("I'm sorry, but an error has occured please notify your banker.");
                     }
@@ -1123,7 +1140,7 @@ namespace multicorp_bot
             catch(Exception e)
             {
                 Console.WriteLine(e);
-
+                TelemetryHelper.Singleton.LogException("task-loan-request", e);
                 await ctx.RespondAsync("I'm sorry, but an error has occured please notify your banker.");
             }   
 
