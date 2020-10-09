@@ -992,7 +992,7 @@ namespace multicorp_bot
         private async Task<List<ulong>> GetMembersWithRolesAsync(string roleLevel, DiscordGuild guild)
         {
             var bankerRole = guild.Roles.FirstOrDefault(x => x.Name == roleLevel);
-            var members = await guild.GetAllMembersAsync();
+            var members = guild.Members.ToList();
             List<ulong> bankersIds = new List<ulong>();
             foreach(var member in members)
             {
