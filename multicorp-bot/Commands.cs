@@ -78,7 +78,7 @@ namespace multicorp_bot
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "multibot-help", ctx);
 
-            await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet or Wipe?");
+            await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet, Dispatch or Log or Wipe?");
             var interactivity = ctx.Client.GetInteractivityModule();
             var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
@@ -100,6 +100,12 @@ namespace multicorp_bot
                     break;
                 case "wipe":
                     await ctx.RespondAsync(embed: HelpController.WipeHelper());
+                    break;
+                case "dispatch":
+                    await ctx.RespondAsync(embed: HelpController.DispatchEmbed());
+                    break;
+                case "log":
+                    await ctx.RespondAsync(embed: HelpController.LogEmbed());
                     break;
             }
         }
@@ -699,21 +705,83 @@ namespace multicorp_bot
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
         {
-            List<DiscordMessage> messages = new List<DiscordMessage>();
-            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch", ctx);
-
-            var interactivity = ctx.Client.GetInteractivityModule();
-            WorkOrderController controller = new WorkOrderController();
-            if (type == null)
+            try
             {
-                await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?");
-                type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
-                if(type.ToLower() != "add" && type.ToLower() != "accept")
+                List<DiscordMessage> messages = new List<DiscordMessage>();
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch", ctx);
+
+                var interactivity = ctx.Client.GetInteractivityModule();
+                WorkOrderController controller = new WorkOrderController();
+                if (type == null)
+                {
+                    messages.Add(await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?"));
+                    type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                    if (type.ToLower() != "add" && type.ToLower() != "accept")
+                    {
+                        var initialAccept = await AcceptDispatch(ctx, type);
+                        if (initialAccept.Item1)
+                        {
+                            controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                        }
+                        else
+                        {
+                            messages.Add(await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
+                                    $"you can can accept a previous work order by sending !Dispatch Accept [previous work order id]\n" +
+                                    $"or can cancel the dispatch by simple allowing it to time out (two minutes)"));
+                            for (int i = 3; i > 0; i--)
+                            {
+                                var subsequent = await AcceptDispatch(ctx, type);
+                                if (subsequent.Item1)
+                                {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
+                                    await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
+                                    controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (type.ToLower() == "accept")
+                {
+                    if (id == null)
+                    {
+                        messages.Add(await ctx.RespondAsync("What is the ID of the work order would you like accept?"));
+                        id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+                    }
+                    if (controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
+                    {
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
+                        await ctx.RespondAsync("Work order has been accepted");
+                    }
+                    else
+                    {
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-failed", ctx);
+                        await ctx.RespondAsync("Something went wrong trying to accept the order");
+                    }
+                }
+                else if (type.ToLower() == "add")
+                {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-added", ctx);
+                    await AddWorkOrder(ctx);
+                }
+                else if (type.ToLower() == "view")
+                {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
+                    await ctx.RespondAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
+                }
+                else if (type.ToLower() == "log")
+                {
+                    await Log(ctx);
+                }
+                else
                 {
                     var initialAccept = await AcceptDispatch(ctx, type);
                     if (initialAccept.Item1)
                     {
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
                         controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                        await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
                     }
                     else
                     {
@@ -725,67 +793,20 @@ namespace multicorp_bot
                             var subsequent = await AcceptDispatch(ctx, type);
                             if (subsequent.Item1)
                             {
-                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                                await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
                                 controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
                                 break;
                             }
                         }
                     }
                 }
-            }
-            else if (type.ToLower() == "accept")
+
+                foreach (var mess in messages)
+                {
+                    await mess.DeleteAsync();
+                }
+            } catch(Exception e)
             {
-                if (id == null)
-                {
-                    await ctx.RespondAsync("What is the ID of the work order would you like accept?");
-                    id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
-                }
-                if (controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
-                {
-                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                    await ctx.RespondAsync("Work order has been accepted");
-                }
-                else
-                {
-                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-failed", ctx);
-                    await ctx.RespondAsync("Something went wrong trying to accept the order");
-                }
-            }
-            else if(type.ToLower() == "add")
-            {
-                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-added", ctx);
-                await AddWorkOrder(ctx);
-            }
-            else if(type.ToLower() == "view")
-            {
-                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
-                await ctx.RespondAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
-            }
-            else
-            {
-                var initialAccept = await AcceptDispatch(ctx, type);
-                if (initialAccept.Item1)
-                {
-                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                    controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
-                    await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
-                }
-                else
-                {
-                    await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
-                            $"you can can accept a previous work order by sending !Dispatch Accept [previous work order id]\n" +
-                            $"or can cancel the dispatch by simple allowing it to time out (two minutes)");
-                    for (int i = 3; i > 0; i--)
-                    {
-                        var subsequent = await AcceptDispatch(ctx, type);
-                        if (subsequent.Item1)
-                        {
-                            controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
-                            break;
-                        }
-                    }
-                }
+                await ctx.RespondAsync("Yo WNR someone broke me, check the logs");
             }
         }
 

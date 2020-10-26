@@ -91,5 +91,49 @@ namespace multicorp_bot.Controllers
 
             return builder.Build();
         }
+
+        public static DiscordEmbed DispatchEmbed()
+        {
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+            builder.Title = "Dispatch Helper";
+            builder.Description = "This is your one stop shop for all things dispatch related, adding, viewing and accepting dispatckes";
+            builder.AddField("Dispatch", "Dispatch will give you a random work order from the type you choose. currently supported types are: \n" +
+                "Trading, shipping, mining, roc mining, and hand mining\n" + 
+            "!dispatch or !dispatch mining"); ;
+            builder.AddField("Add", "This will walk you through the steps to add a new dispatch. \n" +
+                " Dispatches are used for earning XP or accomplishing org goals\n" +
+                "!dispatch Add");
+            builder.AddField("View", "Dispatch view will show a list of your accepted work orders and the remaining materials \n"
+                + "!Dispatch view");
+            builder.AddField("Accept", "You can use the emoji on the dispatch to accept or accept explicitely with the work order id\n"
+                + "!Dispatch view");
+            builder.AddField("Log", "You will be asked 3 questions, \n 1. the work order id \n" +
+                "2. the material you're delivering, such as hadanite, not the id\n " +
+                "3. The amount of units you delivered\n"+
+                "!Dispatch Log");
+
+
+            return builder.Build();
+        }
+
+        public static DiscordEmbed LogEmbed()
+        {
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+            builder.Title = "Log";
+            builder.Description = "This is your work order log. Use this to complete your work order";
+            builder.AddField("Log", "You will be asked 3 questions, \n 1. the work order id \n" +
+                "2. the material you're delivering, such as hadanite, not the id\n " +
+                "3. The amount of units you delivered\n" +
+                "!Log");
+            builder.AddField("!Dispatch Log", "Dispatch log works the same way, as Log, it just gives you another entry point"
+                + "!Dispatch Log");
+            builder.AddField("Complete", "This will close all ship requests in your org that have reached a zero balance\n"
+                + "!Fleet Complete");
+
+
+            return builder.Build();
+        }
     }
 }
