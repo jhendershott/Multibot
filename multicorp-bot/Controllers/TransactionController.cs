@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using Microsoft.EntityFrameworkCore.Internal;
 using multicorp_bot.POCO;
+using multicorp_bot.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +11,7 @@ namespace multicorp_bot.Controllers
     public class TransactionController
     {
         MultiBotDb MultiBotDb;
+        TelemetryHelper tHelper = new TelemetryHelper();
         public TransactionController()
         {
             MultiBotDb = new MultiBotDb();

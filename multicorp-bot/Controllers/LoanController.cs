@@ -12,6 +12,7 @@ namespace multicorp_bot.Controllers
     public class LoanController
     {
         MultiBotDb MultiBotDb;
+        TelemetryHelper tHelper = new TelemetryHelper();
         public LoanController()
         {
             MultiBotDb = new MultiBotDb();
@@ -100,6 +101,7 @@ namespace multicorp_bot.Controllers
             }
             catch (Exception e)
             {
+                tHelper.LogException($"Method: GetLoanEmbed; Org: {guild.Name};", e);
                 Console.WriteLine(e);
                 return null;
             }

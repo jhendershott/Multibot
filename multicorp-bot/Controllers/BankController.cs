@@ -14,6 +14,7 @@ namespace multicorp_bot
     public class BankController
     {
         MultiBotDb MultiBotDb;
+        TelemetryHelper tHelper = new TelemetryHelper();
 
         public BankController()
         {

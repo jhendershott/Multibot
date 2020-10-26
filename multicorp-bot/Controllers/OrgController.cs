@@ -1,14 +1,13 @@
 ﻿using DSharpPlus.Entities;
-using System;
-using System.Collections.Generic;
+using multicorp_bot.Helpers;
 using System.Linq;
-using System.Text;
 
 namespace multicorp_bot.Controllers
 {
     public class OrgController
     {
         MultiBotDb MultiBotDb;
+        TelemetryHelper tHelper = new TelemetryHelper();
         public OrgController()
         {
             MultiBotDb = new MultiBotDb();

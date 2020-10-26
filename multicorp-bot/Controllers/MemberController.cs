@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using multicorp_bot.Helpers;
 using multicorp_bot.Models;
 using multicorp_bot.POCO;
 using System;
@@ -13,6 +14,7 @@ namespace multicorp_bot.Controllers
     public class MemberController
     {
         MultiBotDb MultiBotDb;
+        TelemetryHelper tHelper = new TelemetryHelper();
         public MemberController() {
             MultiBotDb = new MultiBotDb();
         }

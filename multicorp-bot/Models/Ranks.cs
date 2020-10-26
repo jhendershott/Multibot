@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using multicorp_bot.Models;
+using multicorp_bot.Helpers;
 
 namespace multicorp_bot
 {
     public class Ranks
     {
+        TelemetryHelper tHelper = new TelemetryHelper();
 
         public List<Rank> MilRanks { get; set; } = new List<Rank>() {
             new Rank () { RankName = "Recruit", Abbreviation = "RCT", Number = 0 },

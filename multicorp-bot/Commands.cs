@@ -26,6 +26,10 @@ namespace multicorp_bot
         readonly LoanController LoanController;
         readonly FleetController FleetController;
         readonly OrgController OrgController;
+        readonly WorkOrderController WorkOrderController;
+
+
+        TelemetryHelper tHelper = new TelemetryHelper();
 
         public Commands()
         {
@@ -35,6 +39,7 @@ namespace multicorp_bot
             LoanController = new LoanController();
             FleetController = new FleetController();
             OrgController = new OrgController();
+            WorkOrderController = new WorkOrderController();
             PermissionsHelper.LoadPermissions();
         }
 
@@ -63,6 +68,7 @@ namespace multicorp_bot
             }
             catch (Exception e)
             {
+                tHelper.LogException($"Method: UpdateHandle; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e.Message);
             }
         }
@@ -367,6 +373,7 @@ namespace multicorp_bot
                             }
                             catch (Exception e)
                             {
+                                tHelper.LogException($"Method: Bank Deposit; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                                 await continueMsg.Message.DeleteAsync();
                                 await ctx.RespondAsync("Either there was no confirmation or there was an error, please try again when a Banker is available to assist you");
                                 break;
@@ -445,139 +452,170 @@ namespace multicorp_bot
                         }
                         break;
                     case "withdraw":
-                        if (bankers.Contains(ctx.Member.Id))
+                        try
                         {
-                            if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                            if (bankers.Contains(ctx.Member.Id))
                             {
-                                var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits?");
-                                var credEmojis = ConfirmEmojis(ctx, "credit");
-                                await currency.CreateReactionAsync(credEmojis[0]);
-                                await currency.CreateReactionAsync(credEmojis[1]);
-                                Thread.Sleep(500);
-
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(5));
-
-                                try
+                                if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
                                 {
-                                    if (creditmsg.Emoji.Name == "💰")
-                                        transaction = await BankController.GetBankActionAsync(ctx);
+                                    var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits?");
+                                    var credEmojis = ConfirmEmojis(ctx, "credit");
+                                    await currency.CreateReactionAsync(credEmojis[0]);
+                                    await currency.CreateReactionAsync(credEmojis[1]);
+                                    Thread.Sleep(500);
 
-                                    else if (creditmsg.Emoji.Name == "🎖")
+                                    var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(5));
+
+                                    try
                                     {
-                                        transaction = await BankController.GetBankActionAsync(ctx, false);
-                                        isCredit = false;
+                                        if (creditmsg.Emoji.Name == "💰")
+                                            transaction = await BankController.GetBankActionAsync(ctx);
+
+                                        else if (creditmsg.Emoji.Name == "🎖")
+                                        {
+                                            transaction = await BankController.GetBankActionAsync(ctx, false);
+                                            isCredit = false;
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
+                                        break;
                                     }
                                 }
-                                catch (Exception e)
+                                else if (ctx.Message.Content.ToLower().Contains("credit"))
                                 {
-                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
-                                    break;
+                                    transaction = await BankController.GetBankActionAsync(ctx);
                                 }
-                            }
-                            else if (ctx.Message.Content.ToLower().Contains("credit"))
-                            {
-                                transaction = await BankController.GetBankActionAsync(ctx);
-                            }
-                            else if (ctx.Message.Content.ToLower().Contains("merit"))
-                            {
-                                transaction = await BankController.GetBankActionAsync(ctx, false);
-                                isCredit = false;
-                            }
-                            newBalance = BankController.Withdraw(transaction);
-                            if (isCredit)
-                            {
-                                await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                else if (ctx.Message.Content.ToLower().Contains("merit"))
+                                {
+                                    transaction = await BankController.GetBankActionAsync(ctx, false);
+                                    isCredit = false;
+                                }
+                                newBalance = BankController.Withdraw(transaction);
+                                if (isCredit)
+                                {
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                }
                             }
                             else
                             {
-                                await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                await ctx.RespondAsync($"Only Bankers can make a withdrawal");
                             }
+                            break;
                         }
-                        else
+                        catch (Exception e)
                         {
-                            await ctx.RespondAsync($"Only Bankers can make a withdrawal");
+                            tHelper.LogException($"Method: Bank WithDraw; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
                         }
-                        break;
                     case "balance":
-                        var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
-                        await ctx.RespondAsync(embed: balanceembed);
-                        break;
+                        try
+                        {
+                            var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
+                            await ctx.RespondAsync(embed: balanceembed);
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Balance; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
                     case "reconcile":
-                        if (bankers.Contains(ctx.Member.Id))
+                        try
                         {
-                            await ctx.RespondAsync("How many merits are in the bank?");
-                            var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                            await ctx.RespondAsync("How many credits are in the bank?");
-                            var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                            if (bankers.Contains(ctx.Member.Id))
+                            {
+                                await ctx.RespondAsync("How many merits are in the bank?");
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                await ctx.RespondAsync("How many credits are in the bank?");
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
-                            var differences = BankController.Reconcile(ctx, merits.Message.Content, credits.Message.Content);
-                            await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
+                                var differences = BankController.Reconcile(ctx, merits.Message.Content, credits.Message.Content);
+                                await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
+                            }
+                            break;
+                        } catch(Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Reconcile; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
                         }
-                        break;
                     case "exchange":
-                        if (bankers.Contains(ctx.Member.Id))
+                        try
                         {
-                            var exchange = await ctx.RespondAsync("Are you Buying :regional_indicator_b: or Selling Merits?");
-                            var credEmojis = ConfirmEmojis(ctx, "exchange");
-                            await exchange.CreateReactionAsync(credEmojis[0]);
-                            await exchange.CreateReactionAsync(credEmojis[1]);
-
-                            var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(5));
-                            if (exMsg.Emoji.Name == "🇧")
+                            if (bankers.Contains(ctx.Member.Id))
                             {
-                                var buy = await ctx.RespondAsync("How many Merits are you buying?");
-                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                                var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
-                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                var exchange = await ctx.RespondAsync("Are you Buying :regional_indicator_b: or Selling Merits?");
+                                var credEmojis = ConfirmEmojis(ctx, "exchange");
+                                await exchange.CreateReactionAsync(credEmojis[0]);
+                                await exchange.CreateReactionAsync(credEmojis[1]);
 
-                                var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
-
-                                if(margin <= Convert.ToDecimal(1.5))
+                                var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(5));
+                                if (exMsg.Emoji.Name == "🇧")
                                 {
-                                    await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                    var buy = await ctx.RespondAsync("How many Merits are you buying?");
+                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                    var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
+                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+
+                                    var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+
+                                    if (margin <= Convert.ToDecimal(1.5))
+                                    {
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
+                                    }
+
+                                    buy.DeleteAsync();
+                                    sell.DeleteAsync();
+                                    merits.Message.DeleteAsync();
+                                    credits.Message.DeleteAsync();
                                 }
-                                else
+                                else if (exMsg.Emoji.Name == "🇸")
                                 {
-                                    await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
+                                    var sell = await ctx.RespondAsync("How many Merits are you selling?");
+                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                    var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
+                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+
+                                    var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+                                    if (margin >= Convert.ToDecimal(2.5))
+                                    {
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
+                                    }
+
+                                    buy.DeleteAsync();
+                                    sell.DeleteAsync();
+                                    merits.Message.DeleteAsync();
+                                    credits.Message.DeleteAsync();
                                 }
 
-                                buy.DeleteAsync();
-                                sell.DeleteAsync();
-                                merits.Message.DeleteAsync(); 
-                                credits.Message.DeleteAsync();
                             }
-                            else if (exMsg.Emoji.Name == "🇸")
-                            {
-                                var sell = await ctx.RespondAsync("How many Merits are you selling?");
-                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                                var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
-                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-
-                                var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
-                                if (margin >= Convert.ToDecimal(2.5))
-                                {
-                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
-                                }
-                                else
-                                {
-                                    await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
-                                }
-
-                                buy.DeleteAsync();
-                                sell.DeleteAsync();
-                                merits.Message.DeleteAsync();
-                                credits.Message.DeleteAsync();
-                            }
-
+                            break;
                         }
-                        break;
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
                 }
 
             }
 
             catch (Exception e)
             {
-                //await ctx.RespondAsync($"Unfortunately an error occured: {e}");
+                tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e.Message);
             }
         }
@@ -661,13 +699,14 @@ namespace multicorp_bot
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
         {
+            List<DiscordMessage> messages = new List<DiscordMessage>();
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch", ctx);
 
             var interactivity = ctx.Client.GetInteractivityModule();
             WorkOrderController controller = new WorkOrderController();
             if (type == null)
             {
-                await ctx.RespondAsync("What type of work are you interested in Mining, Trading, or Shipping?");
+                await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?");
                 type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
                 if(type.ToLower() != "add" && type.ToLower() != "accept")
                 {
@@ -678,14 +717,16 @@ namespace multicorp_bot
                     }
                     else
                     {
-                        await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
+                        messages.Add(await ctx.RespondAsync($"You can view up to 3 more work orders *NOTE* if there are less than 3 work orders you will get duplicates\n" +
                                 $"you can can accept a previous work order by sending !Dispatch Accept [previous work order id]\n" +
-                                $"or can cancel the dispatch by simple allowing it to time out (two minutes)");
+                                $"or can cancel the dispatch by simple allowing it to time out (two minutes)"));
                         for (int i = 3; i > 0; i--)
                         {
                             var subsequent = await AcceptDispatch(ctx, type);
                             if (subsequent.Item1)
                             {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
+                                await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
                                 controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
                                 break;
                             }
@@ -715,6 +756,11 @@ namespace multicorp_bot
             {
                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-added", ctx);
                 await AddWorkOrder(ctx);
+            }
+            else if(type.ToLower() == "view")
+            {
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
+                await ctx.RespondAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
             }
             else
             {
@@ -760,7 +806,7 @@ namespace multicorp_bot
 
             if (requirementId == null)
             {
-                await ctx.RespondAsync("What type or material would you like to log");
+                await ctx.RespondAsync("What type or material would you like to log (the material name, not the id");
                 material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
             else
