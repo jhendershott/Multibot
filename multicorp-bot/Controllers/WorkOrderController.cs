@@ -101,7 +101,11 @@ namespace multicorp_bot.Controllers
 
                 foreach(var o in memberOrders)
                 {
-                    wOrders.Add(MultiBotDb.WorkOrders.Where(x => x.Id == o.WorkOrderId).FirstOrDefault());
+                    var order = MultiBotDb.WorkOrders.Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
+                    if (!order.isCompleted)
+                    {
+                        wOrders.Add(order);
+                    }
                 }
                                 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -166,6 +170,7 @@ namespace multicorp_bot.Controllers
             var orderReqs = MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == id).ToList();
             var orderReq = orderReqs.Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
 
+
             var order = MultiBotDb.WorkOrders.Where(x => x.Id == id).SingleOrDefault();
             if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
             {
@@ -191,16 +196,33 @@ namespace multicorp_bot.Controllers
             }
 
             MultiBotDb.WorkOrderRequirements.Update(orderReq);
+            var Member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
+
 
             if (isCompleted)
             {
                 order.isCompleted = true;
                 MultiBotDb.WorkOrders.Update(order);
                 ctx.RespondAsync($"Great job you have completed the Work Order {type}");
+
+                var workOrderMember = GetWorkOrderMembers(order.Id);
+                foreach(var member in workOrderMember)
+                {
+                    var acceptedMember = new MemberController().GetMemberById(member.MemberId);
+                    acceptedMember.Xp = (acceptedMember.Xp + 50);
+                    MultiBotDb.Mcmember.Update(acceptedMember);
+                }
             }
 
-            var Member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
-            Member.Xp = (long?)(Member.Xp + (amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier));
+            var xpmod = MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
+            long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
+            if(adjustedXp < 1)
+            {
+                adjustedXp = 1;
+            }
+
+
+            Member.Xp = (long?)(Member.Xp + adjustedXp);
 
             MultiBotDb.Mcmember.Update(Member);
             MultiBotDb.SaveChanges();
