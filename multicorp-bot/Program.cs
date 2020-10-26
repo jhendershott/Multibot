@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
+using multicorp_bot.Helpers;
 
 namespace multicorp_bot {
     class Program {
@@ -12,6 +13,7 @@ namespace multicorp_bot {
         static InteractivityModule interactivity;
 
         static void Main (string[] args) {
+            TelemetryHelper.Singleton.LogEvent("BOT START");
             MainAsync (args).ConfigureAwait (false).GetAwaiter ().GetResult ();
         }
 
@@ -38,6 +40,11 @@ namespace multicorp_bot {
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);
+        }
+
+        static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            TelemetryHelper.Singleton.LogEvent("BOT STOP");
         }
     }
 }
