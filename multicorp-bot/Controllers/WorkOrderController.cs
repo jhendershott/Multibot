@@ -166,66 +166,76 @@ namespace multicorp_bot.Controllers
 
         public void LogWork(CommandContext ctx, int id, string type, int amount)
         {
-            bool isCompleted = true;
-            var orderReqs = MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == id).ToList();
-            var orderReq = orderReqs.Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
-
-
-            var order = MultiBotDb.WorkOrders.Where(x => x.Id == id).SingleOrDefault();
-            if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
+            try
             {
-                ctx.RespondAsync("Please try again with a valid Work Order Id");
-                return;
-            }
+                bool isCompleted = true;
+                var orderReqs = MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == id).ToList();
+                var orderReq = orderReqs.Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
 
-            orderReq.Amount = orderReq.Amount - amount;
-            if (orderReq.Amount <= 0)
-            {
-                orderReq.isCompleted = true;
-                ctx.RespondAsync($"Great job you have fulfilled work order for {type}");
-            }
-            else
-            {
-                ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} SCU of {type}");
-            }
-
-            foreach(WorkOrderRequirements item in orderReqs)
-            {
-                if (!item.isCompleted)
-                    isCompleted = false;
-            }
-
-            MultiBotDb.WorkOrderRequirements.Update(orderReq);
-            var Member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
-
-
-            if (isCompleted)
-            {
-                order.isCompleted = true;
-                MultiBotDb.WorkOrders.Update(order);
-                ctx.RespondAsync($"Great job you have completed the Work Order {type}");
-
-                var workOrderMember = GetWorkOrderMembers(order.Id);
-                foreach(var member in workOrderMember)
+                var order = MultiBotDb.WorkOrders.Where(x => x.Id == id).SingleOrDefault();
+                if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
                 {
-                    var acceptedMember = new MemberController().GetMemberById(member.MemberId);
-                    acceptedMember.Xp = (acceptedMember.Xp + 50);
-                    MultiBotDb.Mcmember.Update(acceptedMember);
+                    ctx.RespondAsync("Please try again with a valid Work Order Id");
+                    return;
                 }
-            }
 
-            var xpmod = MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
-            long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
-            if(adjustedXp < 1)
+                orderReq.Amount = orderReq.Amount - amount;
+                if (orderReq.Amount <= 0)
+                {
+                    orderReq.isCompleted = true;
+                    ctx.RespondAsync($"Great job you have fulfilled work order for {type}");
+                }
+                else
+                {
+                    ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} SCU of {type}");
+                }
+
+                foreach (WorkOrderRequirements item in orderReqs)
+                {
+                    if (!item.isCompleted)
+                        isCompleted = false;
+                }
+
+                MultiBotDb.WorkOrderRequirements.Update(orderReq);
+
+                if (isCompleted)
+                {
+                    order.isCompleted = true;
+                    MultiBotDb.WorkOrders.Update(order);
+                    ctx.RespondAsync($"Great job you have completed the Work Order {type}");
+                    CalcXpForCompletion(order);
+                }
+
+                var xpmod = MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
+                long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
+                if (adjustedXp < 1)
+                {
+                    adjustedXp = 1;
+                }
+
+                var newMbDb = new MultiBotDb();
+                var Member = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
+
+                Member.Xp = (long?)(Member.Xp + adjustedXp);
+
+                newMbDb.Mcmember.Update(Member);
+                newMbDb.SaveChanges();
+            } catch(Exception e)
             {
-                adjustedXp = 1;
+                Console.WriteLine(e);
             }
+        }
 
-
-            Member.Xp = (long?)(Member.Xp + adjustedXp);
-
-            MultiBotDb.Mcmember.Update(Member);
-            MultiBotDb.SaveChanges();
+        public async void CalcXpForCompletion(WorkOrders order)
+        {
+            var workOrderMember = GetWorkOrderMembers(order.Id);
+            foreach (var member in workOrderMember)
+            {
+                var acceptedMember = new MemberController().GetMemberById(member.MemberId);
+                acceptedMember.Xp = (acceptedMember.Xp + 50);
+                MultiBotDb.Mcmember.Update(acceptedMember);
+                MultiBotDb.SaveChanges();
+            }
         }
 
         public async Task<WorkOrderTypes> GetWorkOrderType(CommandContext ctx, string type)
@@ -280,7 +290,7 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.WorkOrderMembers.Where(x => x.WorkOrderId == workOrderId).ToList();
         }
 
-        public bool AcceptWorkOrder(CommandContext ctx, int workOrderId)
+        public async Task<bool> AcceptWorkOrder(CommandContext ctx, int workOrderId)
         {
             try
             {
@@ -290,6 +300,9 @@ namespace multicorp_bot.Controllers
                 workOrderMember.WorkOrderId = workOrderId;
                 MultiBotDb.WorkOrderMembers.Add(workOrderMember);
                 MultiBotDb.SaveChanges();
+
+
+                await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
                 return true;
             }
             catch (Exception e)

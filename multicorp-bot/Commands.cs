@@ -721,7 +721,7 @@ namespace multicorp_bot
                         var initialAccept = await AcceptDispatch(ctx, type);
                         if (initialAccept.Item1)
                         {
-                            controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                            await controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
                         }
                         else
                         {
@@ -734,8 +734,7 @@ namespace multicorp_bot
                                 if (subsequent.Item1)
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                                    await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
-                                    controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                                    await controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
                                     break;
                                 }
                             }
@@ -749,7 +748,7 @@ namespace multicorp_bot
                         messages.Add(await ctx.RespondAsync("What is the ID of the work order would you like accept?"));
                         id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
                     }
-                    if (controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
+                    if (await controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
                     {
                         TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
                         await ctx.RespondAsync("Work order has been accepted");
@@ -780,8 +779,7 @@ namespace multicorp_bot
                     if (initialAccept.Item1)
                     {
                         TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                        controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
-                        await ctx.RespondAsync("The work order is yours when you've complete either part or all of the work order please use !log to log your work");
+                        await controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
                     }
                     else
                     {
@@ -793,7 +791,7 @@ namespace multicorp_bot
                             var subsequent = await AcceptDispatch(ctx, type);
                             if (subsequent.Item1)
                             {
-                                controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                                await controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
                                 break;
                             }
                         }
