@@ -825,7 +825,7 @@ namespace multicorp_bot
 
             if (requirementId == null)
             {
-                await ctx.RespondAsync("What type or material would you like to log (the material name, not the id");
+                await ctx.RespondAsync("What type or material would you like to log (the material name, not the id)");
                 material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
             }
             else
@@ -836,7 +836,8 @@ namespace multicorp_bot
             if (amount == null)
             {
                 await ctx.RespondAsync("How much would you like to log?");
-                amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                var msg = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                amount = Regex.Replace(msg,  "[^0-9]", "");
             }
             controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
         }

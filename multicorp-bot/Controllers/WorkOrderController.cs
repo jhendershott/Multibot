@@ -187,7 +187,7 @@ namespace multicorp_bot.Controllers
                 }
                 else
                 {
-                    ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} SCU of {type}");
+                    ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} units of {type}");
                 }
 
                 foreach (WorkOrderRequirements item in orderReqs)
@@ -226,7 +226,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public async void CalcXpForCompletion(WorkOrders order)
+        public void CalcXpForCompletion(WorkOrders order)
         {
             var workOrderMember = GetWorkOrderMembers(order.Id);
             foreach (var member in workOrderMember)
