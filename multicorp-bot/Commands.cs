@@ -10,6 +10,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
 using multicorp_bot.POCO;
@@ -64,7 +65,7 @@ namespace multicorp_bot
                 }
 
                 MemberController.UpdateMemberName(Ranks.GetNickWithoutRank(member), Ranks.GetNickWithoutRank(newNick), ctx.Guild);
-                await member.ModifyAsync(nickname: newNick);
+                await member.ModifyAsync(x => x.Nickname = newNick);
             }
             catch (Exception e)
             {
@@ -79,10 +80,10 @@ namespace multicorp_bot
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "multibot-help", ctx);
 
             await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet, Dispatch or Log or Wipe?");
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
-            switch (optMessage.Message.Content.ToLower())
+            switch (optMessage.Result.Content.ToLower())
             {
                 case "bank": await ctx.RespondAsync(embed: HelpController.BankEmbed());
                     break;
@@ -122,7 +123,7 @@ namespace multicorp_bot
 
                 foreach (var item in Ranks.MilRanks)
                 {
-                    if (!ctx.Guild.Roles.Select(x => x.Name).Contains(item.RankName))
+                    if (!ctx.Guild.Roles.Select(x => x.Value.Name).Contains(item.RankName))
                         missingRequirements += $"Rank {item.RankName} missing\n";
                 }
 
@@ -179,27 +180,37 @@ namespace multicorp_bot
         [Command("promote")]
         public async Task PromoteMember(CommandContext ctx)
         {
-            if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
+            try
             {
-                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-denied", ctx);
-                await ctx.RespondAsync("You can't do that you don't have the power!");
-                return;
+                if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
+                {
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-denied", ctx);
+                    await ctx.RespondAsync("You can't do that you don't have the power!");
+                    return;
+                }
+
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote", ctx);
+
+                string congrats = $"Congratulations on your promotion :partying_face:";
+
+                foreach (var user in ctx.Message.MentionedUsers)
+                {
+
+                    DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
+                    await Ranks.Promote(member);
+                    await member.ModifyAsync(x => x.Nickname = Ranks.GetUpdatedNickname(member));
+                    congrats = congrats += $" {member.Mention}";
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-congrats", ctx, member);
+                }
+
+                await ctx.Message.DeleteAsync();
+                await ctx.RespondAsync(congrats);
             }
-
-            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote", ctx);
-
-            string congrats = $"Congratulations on your promotion :partying_face:";
-            foreach (var user in ctx.Message.MentionedUsers)
+            catch (Exception e)
             {
-                DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
-                await Ranks.Promote(member);
-                await member.ModifyAsync(Ranks.GetUpdatedNickname(member));
-                congrats = congrats += $" {member.Mention}";
-                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "promote-congrats", ctx, member);
+                tHelper.LogException($"Promote error {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                Console.WriteLine(e);
             }
-
-            await ctx.Message.DeleteAsync();
-            await ctx.RespondAsync(congrats);
         }
 
         [Command("demote")]
@@ -219,7 +230,8 @@ namespace multicorp_bot
             {
                 DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
                 await Ranks.Demote(member);
-                await member.ModifyAsync(Ranks.GetUpdatedNickname(member, -1));
+
+                await member.ModifyAsync(x => x.Nickname = Ranks.GetUpdatedNickname(member, -1));
                 congrats = congrats += $" {member.Mention}";
                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "demote-congrats", ctx, member);
             }
@@ -250,7 +262,7 @@ namespace multicorp_bot
             BankController BankController = new BankController();
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
             Tuple<string, string> newBalance;
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             BankTransaction transaction = null;
             var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
             bool isCredit = true;
@@ -268,13 +280,13 @@ namespace multicorp_bot
                             await confirmation.CreateReactionAsync(confirmEmojis[0]);
                             await confirmation.CreateReactionAsync(confirmEmojis[1]);
                             Thread.Sleep(500);
-                            var continueMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], confirmation, timeoutoverride: TimeSpan.FromMinutes(5));
+                            var continueMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], confirmation, ctx.User, timeoutoverride: TimeSpan.FromMinutes(5));
 
                             try
                             {
-                                if (continueMsg.Emoji.Name != "✅")
+                                if (continueMsg.Result.Emoji.Name != "✅")
                                 {
-                                    await continueMsg.Message.DeleteAsync();
+                                    await continueMsg.Result.Message.DeleteAsync();
                                     await ctx.RespondAsync("Please try again when you're ready");
                                     break;
                                 }
@@ -282,7 +294,7 @@ namespace multicorp_bot
                             }
                             catch (Exception e)
                             {
-                                await continueMsg.Message.DeleteAsync();
+                                await continueMsg.Result.Message.DeleteAsync();
                                 await ctx.RespondAsync("Please try again when you're ready");
                                 break;
                             }
@@ -295,14 +307,14 @@ namespace multicorp_bot
                                 await cred.CreateReactionAsync(credEmojis[1]);
                                 Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(5));
+                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], cred, ctx.User,timeoutoverride: TimeSpan.FromMinutes(5));
 
                                 try
                                 {
-                                    if (creditmsg.Emoji.Name == "💰")
+                                    if (creditmsg.Result.Emoji.Name == "💰")
                                         isCredit = true;
 
-                                    else if (creditmsg.Emoji.Name == "🎖")
+                                    else if (creditmsg.Result.Emoji.Name == "🎖")
                                         isCredit = false;
                                 }
                                 catch (Exception e)
@@ -332,10 +344,10 @@ namespace multicorp_bot
                             await approval.CreateReactionAsync(confirmEmojis[0]);
                             await approval.CreateReactionAsync(confirmEmojis[1]);
                             Thread.Sleep(500);
-                            var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], approval, timeoutoverride: TimeSpan.FromMinutes(20));
+                            var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(20));
                             try
                             {
-                                if (confirmMsg.Emoji.Name == "✅" && bankers.Contains(confirmMsg.User.Id))
+                                if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-action-confirm", ctx);
 
@@ -369,7 +381,7 @@ namespace multicorp_bot
                                         MemberController.UpdateExperiencePoints("merits", transaction);
                                     }
                                 }
-                                else if (!bankers.Contains(confirmMsg.User.Id))
+                                else if (!bankers.Contains(confirmMsg.Result.User.Id))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-unauth-approval", ctx);
                                     await ctx.RespondAsync("Looks like someone who isn't a banker attempted to approve the transactions. " +
@@ -380,7 +392,7 @@ namespace multicorp_bot
                             catch (Exception e)
                             {
                                 tHelper.LogException($"Method: Bank Deposit; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                                await continueMsg.Message.DeleteAsync();
+                                await continueMsg.Result.Message.DeleteAsync();
                                 await ctx.RespondAsync("Either there was no confirmation or there was an error, please try again when a Banker is available to assist you");
                                 break;
                             }
@@ -395,14 +407,14 @@ namespace multicorp_bot
                                 await cred.CreateReactionAsync(credEmojis[1]);
                                 Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], cred, timeoutoverride: TimeSpan.FromMinutes(5));
+                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
                                 try
                                 {
-                                    if (creditmsg.Emoji.Name == "💰")
+                                    if (creditmsg.Result.Emoji.Name == "💰")
                                         isCredit = true;
 
-                                    else if (creditmsg.Emoji.Name == "🎖")
+                                    else if (creditmsg.Result.Emoji.Name == "🎖")
                                         isCredit = false;
                                 }
                                 catch (Exception e)
@@ -470,14 +482,14 @@ namespace multicorp_bot
                                     await currency.CreateReactionAsync(credEmojis[1]);
                                     Thread.Sleep(500);
 
-                                    var creditmsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], currency, timeoutoverride: TimeSpan.FromMinutes(5));
+                                    var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
                                     try
                                     {
-                                        if (creditmsg.Emoji.Name == "💰")
+                                        if (creditmsg.Result.Emoji.Name == "💰")
                                             transaction = await BankController.GetBankActionAsync(ctx);
 
-                                        else if (creditmsg.Emoji.Name == "🎖")
+                                        else if (creditmsg.Result.Emoji.Name == "🎖")
                                         {
                                             transaction = await BankController.GetBankActionAsync(ctx, false);
                                             isCredit = false;
@@ -541,7 +553,7 @@ namespace multicorp_bot
                                 await ctx.RespondAsync("How many credits are in the bank?");
                                 var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
-                                var differences = BankController.Reconcile(ctx, merits.Message.Content, credits.Message.Content);
+                                var differences = BankController.Reconcile(ctx, merits.Result.Content, credits.Result.Content);
                                 await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
                             }
                             break;
@@ -560,51 +572,51 @@ namespace multicorp_bot
                                 await exchange.CreateReactionAsync(credEmojis[0]);
                                 await exchange.CreateReactionAsync(credEmojis[1]);
 
-                                var exMsg = await interactivity.WaitForMessageReactionAsync(r => r == credEmojis[0] || r == credEmojis[1], exchange, timeoutoverride: TimeSpan.FromMinutes(5));
-                                if (exMsg.Emoji.Name == "🇧")
+                                var exMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1],  timeoutoverride: TimeSpan.FromMinutes(5));
+                                if (exMsg.Result.Emoji.Name == "🇧")
                                 {
                                     var buy = await ctx.RespondAsync("How many Merits are you buying?");
                                     var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
                                     var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
                                     var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
-                                    var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+                                    var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
 
                                     if (margin <= Convert.ToDecimal(1.5))
                                     {
-                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
                                     }
                                     else
                                     {
-                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
                                     }
 
                                     buy.DeleteAsync();
                                     sell.DeleteAsync();
-                                    merits.Message.DeleteAsync();
-                                    credits.Message.DeleteAsync();
+                                    merits.Result.DeleteAsync();
+                                    credits.Result.DeleteAsync();
                                 }
-                                else if (exMsg.Emoji.Name == "🇸")
+                                else if (exMsg.Result.Emoji.Name == "🇸")
                                 {
                                     var sell = await ctx.RespondAsync("How many Merits are you selling?");
                                     var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
                                     var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
                                     var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
 
-                                    var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Message.Content), int.Parse(merits.Message.Content));
+                                    var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
                                     if (margin >= Convert.ToDecimal(2.5))
                                     {
-                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
                                     }
                                     else
                                     {
-                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Message.Content)} merits for {FormatHelpers.FormattedNumber(credits.Message.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
                                     }
 
                                     buy.DeleteAsync();
                                     sell.DeleteAsync();
-                                    merits.Message.DeleteAsync();
-                                    credits.Message.DeleteAsync();
+                                    merits.Result.DeleteAsync();
+                                    credits.Result.DeleteAsync();
                                 }
 
                             }
@@ -710,12 +722,12 @@ namespace multicorp_bot
                 List<DiscordMessage> messages = new List<DiscordMessage>();
                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch", ctx);
 
-                var interactivity = ctx.Client.GetInteractivityModule();
+                var interactivity = ctx.Client.GetInteractivity();
                 WorkOrderController controller = new WorkOrderController();
                 if (type == null)
                 {
                     messages.Add(await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?"));
-                    type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                    type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                     if (type.ToLower() != "add" && type.ToLower() != "accept")
                     {
                         var initialAccept = await AcceptDispatch(ctx, type);
@@ -746,7 +758,7 @@ namespace multicorp_bot
                     if (id == null)
                     {
                         messages.Add(await ctx.RespondAsync("What is the ID of the work order would you like accept?"));
-                        id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+                        id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
                     }
                     if (await controller.AcceptWorkOrder(ctx, id.GetValueOrDefault()))
                     {
@@ -808,25 +820,31 @@ namespace multicorp_bot
             }
         }
 
+        [Command("test")]
+        public async Task Test(CommandContext ctx)
+        {
+            await ctx.RespondAsync("I'm listening");
+        }
+
         [Command("log")]
         public async Task Log(CommandContext ctx, string workOrder = null, string requirementId = null, string amount = null)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "log", ctx);
 
             WorkOrderController controller = new WorkOrderController();
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             string material;
 
             if (workOrder == null)
             {
                 await ctx.RespondAsync("What order would you like log against?");
-                workOrder = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                workOrder = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             }
 
             if (requirementId == null)
             {
                 await ctx.RespondAsync("What type or material would you like to log (the material name, not the id)");
-                material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                material = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             }
             else
             {
@@ -836,7 +854,7 @@ namespace multicorp_bot
             if (amount == null)
             {
                 await ctx.RespondAsync("How much would you like to log?");
-                var msg = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                var msg = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                 amount = Regex.Replace(msg,  "[^0-9]", "");
             }
             controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
@@ -848,11 +866,11 @@ namespace multicorp_bot
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank", ctx);
             BankController bankController = new BankController();
 
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
             var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
      
-            if(confirmMsg.Message.Content.ToLower() == "yes")
+            if(confirmMsg.Result.Content.ToLower() == "yes")
             {
                 bankController.WipeBank(ctx.Guild);
                 TransactionController.WipeTransactions(ctx.Guild);
@@ -868,7 +886,7 @@ namespace multicorp_bot
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "get-reactions", ctx);
 
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             var test =await  ctx.RespondAsync("you pick one! :poop: :100:");
             await test.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":poop:"));
             await test.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":100:"));
@@ -880,15 +898,15 @@ namespace multicorp_bot
             };
 
             Thread.Sleep(500);
-            var test2 = await interactivity.WaitForMessageReactionAsync(i => i == emojis[0] || i == emojis [1],test, timeoutoverride: TimeSpan.FromSeconds(5));
+            var test2 = await interactivity.WaitForReactionAsync(i => i.Emoji == emojis[0] || i.Emoji == emojis [1], timeoutoverride: TimeSpan.FromSeconds(5));
 
             try
             {
-                if (test2.Emoji.Name == "💩")
+                if (test2.Result.Emoji.Name == "💩")
                 {
                     await test.RespondAsync("You know what screw you too buddy");
                 }
-                else if (test2.Emoji.Name == "💯")
+                else if (test2.Result.Emoji.Name == "💯")
                 {
                     await test.RespondAsync("You're the dopest there is");
                 }
@@ -906,7 +924,7 @@ namespace multicorp_bot
         private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)
         {
             var controller = new WorkOrderController();
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             var wOrder = await controller.GetWorkOrders(ctx, type);
             var msg = await ctx.RespondAsync(embed: wOrder.Item1);
             var confirmEmojis = ConfirmEmojis(ctx);
@@ -914,9 +932,9 @@ namespace multicorp_bot
             await msg.CreateReactionAsync(confirmEmojis[0]);
             await msg.CreateReactionAsync(confirmEmojis[1]);
             Thread.Sleep(500);
-            var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], msg, timeoutoverride: TimeSpan.FromMinutes(5));
+            var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
-            if (confirmMsg.Emoji.Name == "✅")
+            if (confirmMsg.Result.Emoji.Name == "✅")
             {
                 return new Tuple<bool, WorkOrders>(true, wOrder.Item2);
             }
@@ -931,25 +949,25 @@ namespace multicorp_bot
 
         private async Task AddWorkOrder(CommandContext ctx)
         {
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             await ctx.RespondAsync("Please add the title");
-            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a Description");
-            string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a type: trading, mining or shipping");
-            string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a location");
-            string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
 
             await ctx.RespondAsync("How many requirements will it have?");
-            int reqCount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+            int reqCount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
             List<Tuple<string, int>> req = new List<Tuple<string, int>>();
             for (int i = 0; i < reqCount; i++)
             {
                 await ctx.RespondAsync($"What is the material they will be {workOrdertype}?");
-                string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+                string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                 await ctx.RespondAsync($"What how much will they be {workOrdertype}?");
-                int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+                int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
 
                 req.Add(new Tuple<string, int>(reqMaterial, reqAmount));
             }
@@ -963,13 +981,13 @@ namespace multicorp_bot
         private async Task FleetRequest(CommandContext ctx)
         {
             await ctx.RespondAsync("What is the Make and Model of the ship you're requesting");
-            var interactivity = ctx.Client.GetInteractivityModule();
-            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            var interactivity = ctx.Client.GetInteractivity();
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
 
             await ctx.RespondAsync("What is the price of the ship in aUEC");
-            var price = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+            var price = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
             await ctx.RespondAsync("Please provide an image url of the ship you're requestion");
-            var image = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            var image = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             try
             {
                 FleetController.AddFleetRequest(item, price, image, ctx.Guild);
@@ -987,17 +1005,17 @@ namespace multicorp_bot
             BankController bankController = new BankController();
 
             await ctx.RespondAsync("What is the ID of the ship you would like to fun");
-            var interactivity = ctx.Client.GetInteractivityModule();
-            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content;
+            var interactivity = ctx.Client.GetInteractivity();
+            var item = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("How many credits you put towards the ship");
-            var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Message.Content);
+            var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
 
             await ctx.RespondAsync("Waiting for Banker to confirm the transfer");
             var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
             var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains(xm.Author.Id), TimeSpan.FromMinutes(10));
-            if (confirmMsg.Message.Content.ToLower().Contains("yes")
-                || confirmMsg.Message.Content.ToLower().Contains("confirm")
-                || confirmMsg.Message.Content.ToLower().Contains("approve"))
+            if (confirmMsg.Result.Content.ToLower().Contains("yes")
+                || confirmMsg.Result.Content.ToLower().Contains("confirm")
+                || confirmMsg.Result.Content.ToLower().Contains("approve"))
             {
                 BankTransaction trans = new BankTransaction("deposit", ctx.Member, ctx.Guild, credits);
                 bankController.Deposit(trans);
@@ -1015,7 +1033,7 @@ namespace multicorp_bot
 
             await ctx.RespondAsync("Which Loan would you like to fund", embed: LoanController.GetWaitingLoansEmbed(ctx.Guild));
 
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
             Loans loan = null;
@@ -1028,11 +1046,11 @@ namespace multicorp_bot
                 await approval.CreateReactionAsync(confirmEmojis[0]);
                 await approval.CreateReactionAsync(confirmEmojis[1]);
                 Thread.Sleep(500);
-                var confirmMsg = await interactivity.WaitForMessageReactionAsync(r => r == confirmEmojis[0] || r == confirmEmojis[1], approval, timeoutoverride: TimeSpan.FromMinutes(5));
+                var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
-                if (confirmMsg.Emoji.Name == "✅" && bankers.Contains(confirmMsg.User.Id))
+                if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
                 {
-                    loan = await LoanController.FundLoan(loanIdMsg);
+                    loan = await LoanController.FundLoan(ctx, loanIdMsg.Result);
                 }
                 else 
                 {
@@ -1042,7 +1060,7 @@ namespace multicorp_bot
             }
             else
             {
-                loan = await LoanController.FundLoan(loanIdMsg);
+                loan = await LoanController.FundLoan(ctx, loanIdMsg.Result);
             }
 
             await ctx.RespondAsync($"Congratulations " +
@@ -1055,10 +1073,10 @@ namespace multicorp_bot
         {
             await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));
 
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
             var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
             
-            var loan = LoanController.CompleteLoan(int.Parse(loanIdMsg.Message.Content));
+            var loan = LoanController.CompleteLoan(int.Parse(loanIdMsg.Result.Content));
 
             await ctx.RespondAsync($"Congratulations " +
                 $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention}! \n" +
@@ -1087,16 +1105,16 @@ namespace multicorp_bot
 
                 if (loans != null)
                 {
-                    var interactivity = ctx.Client.GetInteractivityModule();
+                    var interactivity = ctx.Client.GetInteractivity();
 
                     if(loans.Count > 1)
                     {
                         var loanCntMgs = await ctx.RespondAsync($"You have {loans.Count} outstanding loans. What is the is the id of the loan which you'd like to make a payment?");
                         var viewEmbed = await LoanView(ctx);
                         var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
-                        loan = loans.Find(x => x.LoanId == int.Parse(loanIdMsg.Message.Content));
+                        loan = loans.Find(x => x.LoanId == int.Parse(loanIdMsg.Result.Content));
 
-                        loanIdMsg.Message.DeleteAsync();
+                        loanIdMsg.Result.DeleteAsync();
                     }
 
                     
@@ -1106,17 +1124,17 @@ namespace multicorp_bot
                     var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
                     var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
                     var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10)));
-                    if (confirm.Message.Content.Contains("yes") || confirm.Message.Content.Contains("confirm"))
+                    if (confirm.Result.Content.Contains("yes") || confirm.Result.Content.Contains("confirm"))
                     {
-                        LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Message.Content));
-                        await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Message.Content)} has been confirmed for loan - {loan.LoanId}: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
+                        LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Result.Content));
+                        await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Result.Content)} has been confirmed for loan - {loan.LoanId}: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
                     }
 
                     pullingMsg.DeleteAsync();
                     balmsg.DeleteAsync();
-                    amountmsg.Message.DeleteAsync();
+                    amountmsg.Result.DeleteAsync();
                     confirmMsg.DeleteAsync();
-                    confirm.Message.DeleteAsync();
+                    confirm.Result.DeleteAsync();
                 }
                 else
                 {
@@ -1133,32 +1151,32 @@ namespace multicorp_bot
 
         private async Task<List<ulong>> GetMembersWithRolesAsync(string roleLevel, DiscordGuild guild)
         {
-            var bankerRole = guild.Roles.FirstOrDefault(x => x.Name == roleLevel);
+            var bankerRole = guild.Roles.FirstOrDefault(x => x.Value.Name == roleLevel);
             var members = guild.Members.ToList();
             List<ulong> bankersIds = new List<ulong>();
             foreach(var member in members)
             {
-                if (member.Roles.Contains(bankerRole))
+                if (member.Value.Roles.Contains(bankerRole.Value))
                 {
-                    bankersIds.Add(member.Id);
+                    bankersIds.Add(member.Value.Id);
                 }
             }
             return bankersIds;
         }
         private async Task LoanRequest(CommandContext ctx)
         {
-            var interactivity = ctx.Client.GetInteractivityModule();
+            var interactivity = ctx.Client.GetInteractivity();
            
             await ctx.RespondAsync("Thank you for banking with MultiBot. \nI'll need some info to process your request. \n\nHow much are you looking to borrow?");
             var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
             try
             {
-                int amount = int.Parse(amountmsg.Message.Content);
+                int amount = int.Parse(amountmsg.Result.Content);
                 await ctx.RespondAsync("Excellent! Do you prefer your interested to be 'percentage' or 'flat' rate?");
 
                 var typemsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                 string type = "";
-                switch (typemsg.Message.Content.ToLower())
+                switch (typemsg.Result.Content.ToLower())
                 {
                     case string a when a.Contains("percentage"):
                         type = "percent";
@@ -1176,7 +1194,7 @@ namespace multicorp_bot
                     await ctx.RespondAsync("What % interest are you offering. Please use whole numbers: e.g. 3");
                     var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                     
-                    var interestamount = LoanController.CalculateInterest(amount, int.Parse(interest.Message.Content));
+                    var interestamount = LoanController.CalculateInterest(amount, int.Parse(interest.Result.Content));
                     await ctx.RespondAsync("Please hold your application is being processed");
                     LoanController.AddLoan(ctx.Member, ctx.Guild, amount, interestamount);
                     await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + interestamount} is waiting for funding");
@@ -1186,7 +1204,7 @@ namespace multicorp_bot
                 {
                     await ctx.RespondAsync("What amount interest are you offering. Please use whole numbers: e.g. 20000");
                     var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
-                    var interestAmount = int.Parse(interest.Message.Content);
+                    var interestAmount = int.Parse(interest.Result.Content);
                     await ctx.RespondAsync("Please hold your application is being processed");
 
                     try

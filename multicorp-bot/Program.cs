@@ -1,16 +1,17 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Helpers;
 
 namespace multicorp_bot {
     class Program {
         static DiscordClient discord;
-        static CommandsNextModule commands;
-        static InteractivityModule interactivity;
+        static CommandsNextExtension commands;
+        static InteractivityExtension interactivity;
+        
 
         static void Main (string[] args) {
             TelemetryHelper.Singleton.LogEvent("BOT START");
@@ -18,25 +19,20 @@ namespace multicorp_bot {
         }
 
         static async Task MainAsync (string[] args) {
-            discord = new DiscordClient (new DiscordConfiguration {
-                Token = Environment.GetEnvironmentVariable("BOTTOKEN"),
-                    TokenType = TokenType.Bot,
-                    UseInternalLogHandler = true,
-                    LogLevel = LogLevel.Debug
-            });
-            interactivity = discord.UseInteractivity(
-                new InteractivityConfiguration()
-                {
-                    Timeout = TimeSpan.FromMinutes(1),
-                    PaginationTimeout = TimeSpan.FromMinutes(1),
-                    PaginationBehaviour = TimeoutBehaviour.Ignore
-                });
+            discord = new DiscordClient(new DiscordConfiguration {
+                Token = Environment.GetEnvironmentVariable("BotToken2"),
+                TokenType = TokenType.Bot,
 
-            commands = discord.UseCommandsNext(new CommandsNextConfiguration {
-                StringPrefix = "!",
+            });
+
+            interactivity = discord.UseInteractivity(new InteractivityConfiguration());
+
+            commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
+                StringPrefixes = new string[] { "." },
                 CaseSensitive = false
             });
-            commands.RegisterCommands<Commands> ();
+
+            commands.RegisterCommands<Commands>();
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);

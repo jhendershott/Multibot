@@ -1,12 +1,11 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using multicorp_bot.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace multicorp_bot.Controllers
 {
@@ -21,7 +20,7 @@ namespace multicorp_bot.Controllers
 
         public double GetExpModifier(string modName)
         {
-            return MultiBotDb.WorkOrderTypes.Where(x => x.Name == modName).FirstOrDefault().XpModifier;
+            return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == modName).FirstOrDefault().XpModifier;
         }
 
         public async Task<Tuple<DiscordEmbed, WorkOrders>> GetWorkOrders(CommandContext ctx, string workOrderType)
@@ -30,7 +29,7 @@ namespace multicorp_bot.Controllers
             {
                 WorkOrders order = null;
                 var orderType = await GetWorkOrderType(ctx, workOrderType);
-                var wOrders = MultiBotDb.WorkOrders.Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted).ToList();
+                var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted).ToList();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
                 var type = FormatHelpers.Capitalize(orderType.Name);
@@ -96,12 +95,12 @@ namespace multicorp_bot.Controllers
             try
             {
                 Mcmember mem = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
-                List<WorkOrderMembers> memberOrders = MultiBotDb.WorkOrderMembers.Where(x => x.MemberId == mem.UserId).ToList();
+                List<WorkOrderMembers> memberOrders = MultiBotDb.WorkOrderMembers.AsQueryable().Where(x => x.MemberId == mem.UserId).ToList();
                 List<WorkOrders> wOrders = new List<WorkOrders>();
 
                 foreach(var o in memberOrders)
                 {
-                    var order = MultiBotDb.WorkOrders.Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
+                    var order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
                     if (!order.isCompleted)
                     {
                         wOrders.Add(order);
@@ -169,10 +168,10 @@ namespace multicorp_bot.Controllers
             try
             {
                 bool isCompleted = true;
-                var orderReqs = MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == id).ToList();
-                var orderReq = orderReqs.Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
+                var orderReqs = MultiBotDb.WorkOrderRequirements.AsQueryable().Where(x => x.WorkOrderId == id).ToList();
+                var orderReq = orderReqs.AsQueryable().Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
 
-                var order = MultiBotDb.WorkOrders.Where(x => x.Id == id).SingleOrDefault();
+                var order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id == id).SingleOrDefault();
                 if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
                 {
                     ctx.RespondAsync("Please try again with a valid Work Order Id");
@@ -206,8 +205,8 @@ namespace multicorp_bot.Controllers
                     CalcXpForCompletion(order);
                 }
 
-                var xpmod = MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
-                long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
+                var xpmod = MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
+                long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
                 if (adjustedXp < 1)
                 {
                     adjustedXp = 1;
@@ -245,21 +244,21 @@ namespace multicorp_bot.Controllers
                 switch (type.ToLower())
                 {
                     case "trading":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "trading").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "trading").SingleOrDefault();
                     case "trade":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "trading").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "trading").SingleOrDefault();
                     case "mining":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "mining").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "mining").SingleOrDefault();
                     case "mine":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "mining").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "mining").SingleOrDefault();
                     case "shipping":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "shipping").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "shipping").SingleOrDefault();
                     case "ship":
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "shipping").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "shipping").SingleOrDefault();
                     case var hand when type.ToLower().Contains("hand"):
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "Hand Mineables").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
                     case var roc when type.ToLower().Contains("roc"):
-                        return MultiBotDb.WorkOrderTypes.Where(x => x.Name == "Hand Mineables").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
 
                     default:
                         await ctx.RespondAsync("Please specify type, trading, mining, hand mining or roc mining, or shipping");
@@ -277,17 +276,17 @@ namespace multicorp_bot.Controllers
 
         public List<WorkOrderRequirements> GetRequirements(int workOrderId)
         {
-            return MultiBotDb.WorkOrderRequirements.Where(x => x.WorkOrderId == workOrderId && !x.isCompleted).ToList();
+            return MultiBotDb.WorkOrderRequirements.AsQueryable().Where(x => x.WorkOrderId == workOrderId && !x.isCompleted).ToList();
         }
 
         public WorkOrderRequirements GetRequirementById(int requirementId)
         {
-            return MultiBotDb.WorkOrderRequirements.Where(x => x.Id == requirementId).SingleOrDefault();
+            return MultiBotDb.WorkOrderRequirements.AsQueryable().Where(x => x.Id == requirementId).SingleOrDefault();
         }
 
         public List<WorkOrderMembers> GetWorkOrderMembers(int workOrderId)
         {
-            return MultiBotDb.WorkOrderMembers.Where(x => x.WorkOrderId == workOrderId).ToList();
+            return MultiBotDb.WorkOrderMembers.AsQueryable().Where(x => x.WorkOrderId == workOrderId).ToList();
         }
 
         public async Task<bool> AcceptWorkOrder(CommandContext ctx, int workOrderId)

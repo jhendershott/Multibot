@@ -1,7 +1,9 @@
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -63,7 +65,7 @@ namespace multicorp_bot
 
             for (int i = 0; i < GuildPermissions.Count; i++)
             {
-                if (guild.Members.Where(u => u == user).FirstOrDefault().Roles.Contains(GuildPermissions[i]))
+                if (guild.Members.Where(u => u.Value == user).FirstOrDefault().Value.Roles.Contains(GuildPermissions[i]))
                     return i;
             }
 
@@ -73,9 +75,23 @@ namespace multicorp_bot
 
         public static bool CheckPermissions(CommandContext ctx, Permissions perm)
         {
-            var perms = ctx.Member.PermissionsIn(ctx.Channel);
-            var test = perms.HasPermission(perm);
-            return perms.HasPermission(perm);
+            try
+            {
+                var roles = ctx.Member.Roles;
+                foreach (var role in roles)
+                {
+                    if (role.CheckPermission(perm) == PermissionLevel.Allowed)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch(Exception e) {
+                Console.WriteLine(e);
+            }
+
+            return false;
         }
     }
 }

@@ -66,7 +66,7 @@ namespace multicorp_bot.Controllers
             {
                 var loanCtx = MultiBotDb.Loans;
                 int orgId = new OrgController().GetOrgId(guild);
-                var loanList = loanCtx.Where(x => x.OrgId == orgId && x.IsCompleted == 0).ToList();
+                var loanList = loanCtx.AsQueryable().AsQueryable().Where(x => x.OrgId == orgId && x.IsCompleted == 0).ToList();
                 var memberController = new MemberController();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -78,7 +78,7 @@ namespace multicorp_bot.Controllers
 
                 builder.AddField("Status: Not Funded", "Waiting To Be Funded").WithColor(DiscordColor.Green);
 
-                foreach (var item in loanList.Where(x => x.Status == "Waiting To Be Funded"))
+                foreach (var item in loanList.AsQueryable().Where(x => x.Status == "Waiting To Be Funded"))
                 {
                     builder.AddField($"Loan ID: {item.LoanId} \nApplicant: {memberController.GetMemberById(item.ApplicantId).Username}",
                         $"Asking for ${FormatHelpers.FormattedNumber(item.RequestedAmount.ToString())} for interest payment of " +
@@ -88,7 +88,7 @@ namespace multicorp_bot.Controllers
 
                 builder.AddField("\u200b\n Status: Funded", "Awaiting Repayment").WithColor(DiscordColor.Green);
 
-                foreach (var item in loanList.Where(x => x.Status == "Funded"))
+                foreach (var item in loanList.AsQueryable().Where(x => x.Status == "Funded"))
                 {
                     builder.AddField($"Loan ID: {item.LoanId} \nApplicant: {memberController.GetMemberById(item.ApplicantId).Username}" +
                         $"\nFunded by {memberController.GetMemberById(item.FunderId.GetValueOrDefault()).Username}",
@@ -109,7 +109,7 @@ namespace multicorp_bot.Controllers
 
         public List<Loans> GetWaitingLoans(DiscordGuild guild)
         {
-            var loanList = MultiBotDb.Loans.Where(x =>
+            var loanList = MultiBotDb.Loans.AsQueryable().Where(x =>
             x.OrgId == new OrgController().GetOrgId(guild)
             && x.IsCompleted == 0
             && x.Status == "Waiting To Be Funded").ToList();
@@ -119,7 +119,7 @@ namespace multicorp_bot.Controllers
 
         public List<Loans> GetFundedLoans(DiscordGuild guild)
         {
-            var loanList = MultiBotDb.Loans.Where(x =>
+            var loanList = MultiBotDb.Loans.AsQueryable().Where(x =>
             x.OrgId == new OrgController().GetOrgId(guild)
             && x.IsCompleted == 0
             && x.Status == "Funded").ToList();
@@ -163,9 +163,9 @@ namespace multicorp_bot.Controllers
             return builder.Build();
         }
 
-        public async Task<Loans> FundLoan(MessageContext ctx, bool isBank = false)
+        public async Task<Loans> FundLoan(CommandContext ctx, DiscordMessage response, bool isBank = false)
         {
-            var loan = GetLoanById(int.Parse(ctx.Message.Content));
+            var loan = GetLoanById(int.Parse(response.Content));
             if (isBank)
             {
                 loan.FunderId = 0;
@@ -178,12 +178,12 @@ namespace multicorp_bot.Controllers
             loan.Status = "Funded";
             await MultiBotDb.SaveChangesAsync();
 
-            return GetLoanById(int.Parse(ctx.Message.Content));
+            return loan;
         }
 
         public List<Loans> GetLoanByApplicantId(int appId)
         {
-            return MultiBotDb.Loans.Where(x => x.ApplicantId == appId && x.IsCompleted == 0).ToList();
+            return MultiBotDb.Loans.AsQueryable().Where(x => x.ApplicantId == appId && x.IsCompleted == 0).ToList();
         }
 
         public Loans GetLoanById(int id)
@@ -202,7 +202,7 @@ namespace multicorp_bot.Controllers
 
         public void WipeLoans(CommandContext ctx)
         {
-            var loans = MultiBotDb.Loans.Where(x => x.IsCompleted == 0 && x.OrgId == new OrgController().GetOrgId(ctx.Guild));
+            var loans = MultiBotDb.Loans.AsQueryable().Where(x => x.IsCompleted == 0 && x.OrgId == new OrgController().GetOrgId(ctx.Guild));
             foreach(var loan in loans)
             {
                 loan.IsCompleted = 1;

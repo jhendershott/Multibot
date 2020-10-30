@@ -40,7 +40,7 @@ namespace multicorp_bot
 
         public int GetHighestBankId()
         {
-            return MultiBotDb.Bank.OrderByDescending(x => x.AccountId).First().AccountId;
+            return MultiBotDb.Bank.AsQueryable().OrderByDescending(x => x.AccountId).First().AccountId;
         }
 
         public Bank GetBankByOrg(DiscordGuild guild)

@@ -64,7 +64,7 @@ namespace multicorp_bot.Controllers
 
         public List<TransactionItem> GetTopTransactions(DiscordGuild guild)
         {
-            var data = MultiBotDb.Transactions
+            var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
                     MultiBotDb.Mcmember,
                     trans => trans.UserId,
@@ -103,7 +103,7 @@ namespace multicorp_bot.Controllers
 
         public List<TransactionItem> GetTopMeritTransactions(DiscordGuild guild)
         {
-            var data = MultiBotDb.Transactions
+            var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
                     MultiBotDb.Mcmember,
                     trans => trans.UserId,

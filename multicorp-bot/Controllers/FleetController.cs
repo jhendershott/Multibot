@@ -36,12 +36,12 @@ namespace multicorp_bot.Controllers
 
         public List<WantedShips> GetOrgFleetRequests(DiscordGuild guild)
         {
-            return MultiBotDb.WantedShips.Where(x => x.OrgId == new OrgController().GetOrgId(guild) && !x.IsCompleted).ToList();
+            return MultiBotDb.WantedShips.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild) && !x.IsCompleted).ToList();
         }
 
         public int CompleteFleetRequest(DiscordGuild guild)
         {
-            var zeroBalanceShips = MultiBotDb.WantedShips.Where(x => x.OrgId == new OrgController().GetOrgId(guild) && !x.IsCompleted && x.RemainingPrice == 0).ToList();
+            var zeroBalanceShips = MultiBotDb.WantedShips.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild) && !x.IsCompleted && x.RemainingPrice == 0).ToList();
             foreach(var ship in zeroBalanceShips)
             {
                 ship.IsCompleted = true;
@@ -79,7 +79,7 @@ namespace multicorp_bot.Controllers
 
         public WantedShips GetFleetReqById(int fleetId)
         {
-            return MultiBotDb.WantedShips.Where(x => x.Id == fleetId && !x.IsCompleted).FirstOrDefault();
+            return MultiBotDb.WantedShips.AsQueryable().Where(x => x.Id == fleetId && !x.IsCompleted).FirstOrDefault();
         }
 
         private int GetHighestRequestid()

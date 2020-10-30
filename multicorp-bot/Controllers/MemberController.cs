@@ -97,7 +97,7 @@ namespace multicorp_bot.Controllers
         public List<Mcmember> GetMembersByOrgId(int orgId)
         {
             var memberContext = MultiBotDb.Mcmember;
-            return memberContext.Where(x => x.OrgId == orgId).ToList();
+            return memberContext.AsQueryable().Where(x => x.OrgId == orgId).ToList();
         }
 
         private int GetHighestUserId()

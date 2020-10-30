@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.Net.Models;
 using multicorp_bot.Helpers;
 
 namespace multicorp_bot
@@ -61,10 +62,11 @@ namespace multicorp_bot
         {
             foreach (var member in guild.Members)
             {
-                var rank = GetMatchingRank(member);
+                var rank = GetMatchingRank(member.Value);
 
                 if (rank != null)
-                    member.ModifyAsync($"[{rank.Abbreviation}] {member.Username}");
+                    member.Value.ModifyAsync(x => x.Nickname = $"[{rank.Abbreviation}] {member.Value.Username}");
+                
             }
 
         }
@@ -81,8 +83,8 @@ namespace multicorp_bot
                     newRank = CommerceRanks.Where(x => x.Number == currentRank.Number + 1).FirstOrDefault();
                 }
 
-                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Name == newRank.RankName).FirstOrDefault());
-                await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Name == currentRank.RankName).FirstOrDefault());
+                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Value.Name == newRank.RankName).FirstOrDefault().Value);
+                await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Value.Name == currentRank.RankName).FirstOrDefault().Value);
                 return true;
             }
             catch (Exception)
@@ -103,8 +105,8 @@ namespace multicorp_bot
                     newRank = CommerceRanks.Where(x => x.Number == currentRank.Number - 1).FirstOrDefault();
                 }
 
-                await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Name == currentRank.RankName).FirstOrDefault());
-                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Name == newRank.RankName).FirstOrDefault());
+                await member.RevokeRoleAsync(member.Guild.Roles.Where(x => x.Value.Name == currentRank.RankName).FirstOrDefault().Value);
+                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Value.Name == newRank.RankName).FirstOrDefault().Value);
                 return true;
             }
             catch (Exception)
@@ -118,7 +120,7 @@ namespace multicorp_bot
         {
             try
             {
-                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Name == MilRanks.OrderBy(y => y.Number).First().RankName).FirstOrDefault());
+                await member.GrantRoleAsync(member.Guild.Roles.Where(x => x.Value.Name == MilRanks.OrderBy(y => y.Number).First().RankName).FirstOrDefault().Value);
                 return true;
             }
             catch (Exception)
