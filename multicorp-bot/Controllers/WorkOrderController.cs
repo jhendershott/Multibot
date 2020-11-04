@@ -218,6 +218,7 @@ namespace multicorp_bot.Controllers
                 Member.Xp = (long?)(Member.Xp + adjustedXp);
 
                 newMbDb.Mcmember.Update(Member);
+                newMbDb.WorkOrderRequirements.Update(orderReq);
                 newMbDb.SaveChanges();
             } catch(Exception e)
             {
