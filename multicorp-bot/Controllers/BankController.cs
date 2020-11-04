@@ -218,7 +218,7 @@ namespace multicorp_bot
             return Math.Round(Math.Abs(margin), 2);
         }
 
-        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, bool isCredits = true)
+        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string amount, bool isCredits = true)
         {
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
 
@@ -227,12 +227,12 @@ namespace multicorp_bot
             {
                 if (isCredits)
                 {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, int.Parse(args[2]));
+                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, int.Parse(amount));
                     return trans;
                 }
                 else
                 {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, merits: int.Parse(args[2]));
+                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, merits: int.Parse(amount));
                     return trans;
                 }
             }

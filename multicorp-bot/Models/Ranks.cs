@@ -138,6 +138,9 @@ namespace multicorp_bot
                 roleNamesForMember.Add(role.Name); 
             }
             //var roleNamesForMember = member.Roles.ToList();
+
+            var roles = MilRanks.Where(x => roleNamesForMember.Contains(x.RankName)).ToList();
+
             var matchingRole = MilRanks.Where(x => roleNamesForMember.Contains(x.RankName)).FirstOrDefault();
             if(matchingRole == null)
             {

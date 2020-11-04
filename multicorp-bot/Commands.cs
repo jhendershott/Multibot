@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
@@ -17,7 +17,7 @@ using multicorp_bot.POCO;
 
 namespace multicorp_bot
 {
-    public class Commands
+    public class Commands: BaseCommandModule
     {
 
         readonly Ranks Ranks;
@@ -75,15 +75,19 @@ namespace multicorp_bot
         }
 
         [Command("multibot-help")]
-        public async Task Help(CommandContext ctx)
+        public async Task Help(CommandContext ctx, string helpCommand = null)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "multibot-help", ctx);
 
-            await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet, Dispatch or Log or Wipe?");
-            var interactivity = ctx.Client.GetInteractivity();
-            var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
+            if (helpCommand == null) { 
 
-            switch (optMessage.Result.Content.ToLower())
+                await ctx.RespondAsync("Which command would you like help with? Bank, Loans, Handle, Promotion, Fleet, Dispatch or Log or Wipe?");
+                var interactivity = ctx.Client.GetInteractivity();
+                var optMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
+                helpCommand = optMessage.Result.Content;
+            }
+
+            switch (helpCommand.ToLower())
             {
                 case "bank": await ctx.RespondAsync(embed: HelpController.BankEmbed());
                     break;
@@ -178,7 +182,7 @@ namespace multicorp_bot
         }
 
         [Command("promote")]
-        public async Task PromoteMember(CommandContext ctx)
+        public async Task PromoteMember(CommandContext ctx, params DiscordMember[] members)
         {
             try
             {
@@ -193,7 +197,7 @@ namespace multicorp_bot
 
                 string congrats = $"Congratulations on your promotion :partying_face:";
 
-                foreach (var user in ctx.Message.MentionedUsers)
+                foreach (var user in members)
                 {
 
                     DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
@@ -214,7 +218,7 @@ namespace multicorp_bot
         }
 
         [Command("demote")]
-        public async Task DemoteMember(CommandContext ctx)
+        public async Task DemoteMember(CommandContext ctx, params DiscordMember[] members)
         {
             if (!PermissionsHelper.CheckPermissions(ctx, Permissions.ManageRoles) && !PermissionsHelper.CheckPermissions(ctx, Permissions.ManageNicknames))
             {
@@ -226,7 +230,7 @@ namespace multicorp_bot
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "demote", ctx);
 
             string congrats = $"Oh no you've been demoted! What have you done :disappointed_relieved:";
-            foreach (var user in ctx.Message.MentionedUsers)
+            foreach (var user in members)
             {
                 DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id);
                 await Ranks.Demote(member);
@@ -255,7 +259,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx)
+        public async Task Bank(CommandContext ctx, string command)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
 
@@ -269,12 +273,135 @@ namespace multicorp_bot
 
             try
             {
-                switch (args[1].ToLower())
+                switch (command.ToLower())
+                {
+                    case "balance":
+                        try
+                        {
+                            var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
+                            await ctx.RespondAsync(embed: balanceembed);
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Balance; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
+                    case "reconcile":
+                        try
+                        {
+                            if (bankers.Contains(ctx.Member.Id))
+                            {
+                                await ctx.RespondAsync("How many merits are in the bank?");
+                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                await ctx.RespondAsync("How many credits are in the bank?");
+                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+
+                                var differences = BankController.Reconcile(ctx, merits.Result.Content, credits.Result.Content);
+                                await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
+                            }
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Reconcile; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
+                    case "exchange":
+                        try
+                        {
+                            if (bankers.Contains(ctx.Member.Id))
+                            {
+                                var exchange = await ctx.RespondAsync("Are you Buying :regional_indicator_b: or Selling Merits?");
+                                var credEmojis = ConfirmEmojis(ctx, "exchange");
+                                await exchange.CreateReactionAsync(credEmojis[0]);
+                                await exchange.CreateReactionAsync(credEmojis[1]);
+                                Thread.Sleep(500);
+                                    
+                                var exMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+                                if (exMsg.Result.Emoji.Name == "🇧")
+                                {
+                                    var buy = await ctx.RespondAsync("How many Merits are you buying?");
+                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                    var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
+                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+
+                                    var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
+
+                                    if (margin <= Convert.ToDecimal(1.5))
+                                    {
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
+                                    }
+
+                                    buy.DeleteAsync();
+                                    sell.DeleteAsync();
+                                    merits.Result.DeleteAsync();
+                                    credits.Result.DeleteAsync();
+                                }
+                                else if (exMsg.Result.Emoji.Name == "🇸")
+                                {
+                                    var sell = await ctx.RespondAsync("How many Merits are you selling?");
+                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+                                    var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
+                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
+
+                                    var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
+                                    if (margin >= Convert.ToDecimal(2.5))
+                                    {
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
+                                    }
+
+                                    buy.DeleteAsync();
+                                    sell.DeleteAsync();
+                                    merits.Result.DeleteAsync();
+                                    credits.Result.DeleteAsync();
+                                }
+
+                            }
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+            }
+        }
+        
+        [Command("bank")]
+        public async Task Bank(CommandContext ctx, string command, string amount) 
+        {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
+
+            BankController BankController = new BankController();
+            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            Tuple<string, string> newBalance;
+            var interactivity = ctx.Client.GetInteractivity();
+            BankTransaction transaction = null;
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+            bool isCredit = true;
+
+            try
+            {
+                switch (command.ToLower())
                 {
                     case "deposit":
                         TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit", ctx);
-                        if (!bankers.Contains(ctx.Member.Id)){
-
+                        if (!bankers.Contains(ctx.Member.Id))
+                        {
                             var confirmation = await ctx.RespondAsync("Please Make sure a Banker is online to assist you. Do you want to continue?");
                             var confirmEmojis = ConfirmEmojis(ctx);
                             await confirmation.CreateReactionAsync(confirmEmojis[0]);
@@ -314,7 +441,7 @@ namespace multicorp_bot
                                     if (creditmsg.Result.Emoji.Name == "💰")
                                         isCredit = true;
 
-                                    else if (creditmsg.Result.Emoji.Name == "🎖")
+                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
                                         isCredit = false;
                                 }
                                 catch (Exception e)
@@ -331,12 +458,12 @@ namespace multicorp_bot
                             if (isCredit)
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount);
                             }
                             else
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                 isCredit = false;
                             }
 
@@ -414,7 +541,7 @@ namespace multicorp_bot
                                     if (creditmsg.Result.Emoji.Name == "💰")
                                         isCredit = true;
 
-                                    else if (creditmsg.Result.Emoji.Name == "🎖")
+                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
                                         isCredit = false;
                                 }
                                 catch (Exception e)
@@ -430,11 +557,11 @@ namespace multicorp_bot
 
                             if (isCredit)
                             {
-                                transaction = await BankController.GetBankActionAsync(ctx);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount);
                             }
                             else
                             {
-                                transaction = await BankController.GetBankActionAsync(ctx, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                 isCredit = false;
                             }
                             newBalance = BankController.Deposit(transaction);
@@ -487,11 +614,11 @@ namespace multicorp_bot
                                     try
                                     {
                                         if (creditmsg.Result.Emoji.Name == "💰")
-                                            transaction = await BankController.GetBankActionAsync(ctx);
+                                            transaction = await BankController.GetBankActionAsync(ctx, amount);
 
-                                        else if (creditmsg.Result.Emoji.Name == "🎖")
+                                        else if (creditmsg.Result.Emoji.Name == "🎖️")
                                         {
-                                            transaction = await BankController.GetBankActionAsync(ctx, false);
+                                            transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                             isCredit = false;
                                         }
                                     }
@@ -503,11 +630,11 @@ namespace multicorp_bot
                                 }
                                 else if (ctx.Message.Content.ToLower().Contains("credit"))
                                 {
-                                    transaction = await BankController.GetBankActionAsync(ctx);
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
                                 }
                                 else if (ctx.Message.Content.ToLower().Contains("merit"))
                                 {
-                                    transaction = await BankController.GetBankActionAsync(ctx, false);
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                     isCredit = false;
                                 }
                                 newBalance = BankController.Withdraw(transaction);
@@ -529,102 +656,6 @@ namespace multicorp_bot
                         catch (Exception e)
                         {
                             tHelper.LogException($"Method: Bank WithDraw; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                            break;
-                        }
-                    case "balance":
-                        try
-                        {
-                            var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
-                            await ctx.RespondAsync(embed: balanceembed);
-                            break;
-                        }
-                        catch (Exception e)
-                        {
-                            tHelper.LogException($"Method: Bank Balance; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                            break;
-                        }
-                    case "reconcile":
-                        try
-                        {
-                            if (bankers.Contains(ctx.Member.Id))
-                            {
-                                await ctx.RespondAsync("How many merits are in the bank?");
-                                var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                                await ctx.RespondAsync("How many credits are in the bank?");
-                                var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-
-                                var differences = BankController.Reconcile(ctx, merits.Result.Content, credits.Result.Content);
-                                await ctx.RespondAsync($"Unaccounted for differences: \n {differences.Item1} credits, \n {differences.Item2} merits");
-                            }
-                            break;
-                        } catch(Exception e)
-                        {
-                            tHelper.LogException($"Method: Bank Reconcile; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                            break;
-                        }
-                    case "exchange":
-                        try
-                        {
-                            if (bankers.Contains(ctx.Member.Id))
-                            {
-                                var exchange = await ctx.RespondAsync("Are you Buying :regional_indicator_b: or Selling Merits?");
-                                var credEmojis = ConfirmEmojis(ctx, "exchange");
-                                await exchange.CreateReactionAsync(credEmojis[0]);
-                                await exchange.CreateReactionAsync(credEmojis[1]);
-
-                                var exMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1],  timeoutoverride: TimeSpan.FromMinutes(5));
-                                if (exMsg.Result.Emoji.Name == "🇧")
-                                {
-                                    var buy = await ctx.RespondAsync("How many Merits are you buying?");
-                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                                    var sell = await ctx.RespondAsync("What is the total amount you are spending to buy them?");
-                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-
-                                    var margin = BankController.ExchangeTransaction(ctx, "buy", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
-
-                                    if (margin <= Convert.ToDecimal(1.5))
-                                    {
-                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
-                                    }
-                                    else
-                                    {
-                                        await ctx.RespondAsync($"You bought {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} please try to buy below 1.5");
-                                    }
-
-                                    buy.DeleteAsync();
-                                    sell.DeleteAsync();
-                                    merits.Result.DeleteAsync();
-                                    credits.Result.DeleteAsync();
-                                }
-                                else if (exMsg.Result.Emoji.Name == "🇸")
-                                {
-                                    var sell = await ctx.RespondAsync("How many Merits are you selling?");
-                                    var merits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-                                    var buy = await ctx.RespondAsync("What is the total amount you are receiving?");
-                                    var credits = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5)));
-
-                                    var margin = BankController.ExchangeTransaction(ctx, "sell", int.Parse(credits.Result.Content), int.Parse(merits.Result.Content));
-                                    if (margin >= Convert.ToDecimal(2.5))
-                                    {
-                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin} that's a great deal!");
-                                    }
-                                    else
-                                    {
-                                        await ctx.RespondAsync($"You sold {FormatHelpers.FormattedNumber(merits.Result.Content)} merits for {FormatHelpers.FormattedNumber(credits.Result.Content)} aUEC at a margin of {margin}, please try to sell greater than 2.5");
-                                    }
-
-                                    buy.DeleteAsync();
-                                    sell.DeleteAsync();
-                                    merits.Result.DeleteAsync();
-                                    credits.Result.DeleteAsync();
-                                }
-
-                            }
-                            break;
-                        }
-                        catch (Exception e)
-                        {
-                            tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                             break;
                         }
                 }
@@ -668,49 +699,68 @@ namespace multicorp_bot
         [Command("loan")]
         public async Task Loan(CommandContext ctx)
         {
+            await ctx.RespondAsync($"Please try again: Options for loans is 'request', 'view', 'payment' (or 'pay', 'fund', and 'complete'\n For Example !loan request");
+        }
+
+        [Command("loan")]
+        public async Task Loan(CommandContext ctx, string command)
+        {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan", ctx);
-
-            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
-
-            if (args.Length == 1)
+            switch (command.ToLower())
             {
-                await ctx.RespondAsync($"Options for loans is 'request', 'view', 'payment' (or 'pay', 'fund', and 'complete'\n For Example !loan request");
+                case "request":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-request", ctx);
+                    await LoanRequest(ctx);
+                    break;
+                case "view":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-view", ctx);
+                    await LoanView(ctx);
+                    break;
+                case "payment":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-payment", ctx);
+                    await LoanPayment(ctx);
+                    break;
+                case "pay":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-pay", ctx);
+                    await LoanPayment(ctx);
+                    break;
+                case "fund":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-fund", ctx);
+                    await LoanFund(ctx);
+                    break;
+                case "complete":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-complete", ctx);
+                    await LoanComplete(ctx);
+                    break;
+                //case "add": LoanController.AddLoan(ctx.Member, ctx.Guild, 50000, 1000);
+                //    break;
+                default:
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-options", ctx);
+                    await ctx.RespondAsync("Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'");
+                    break;
             }
-            else
-            { 
-                switch (args[1].ToLower())
-                {
-                    case "request":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-request", ctx);
-                        await LoanRequest(ctx);
-                        break;
-                    case "view":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-view", ctx);
-                        await LoanView(ctx);
-                        break;
-                    case "payment":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-payment", ctx);
-                        await LoanPayment(ctx);
-                        break;
-                    case "pay":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-pay", ctx);
-                        await LoanPayment(ctx);
-                        break;
-                    case "fund":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-fund", ctx);
-                        await LoanFund(ctx);
-                        break;
-                    case "complete":
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-complete", ctx);
-                        await LoanComplete(ctx);
-                        break;
-                    //case "add": LoanController.AddLoan(ctx.Member, ctx.Guild, 50000, 1000);
-                    //    break;
-                    default:
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-options", ctx);
-                        await ctx.RespondAsync("Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'");
-                        break;
-                }
+        }
+        
+        [Command("loan")]
+        public async Task Loan(CommandContext ctx, string command, string qualifier)
+        {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan", ctx);
+            switch (command.ToLower())
+            {
+                case "fund":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-fund", ctx);
+                    await LoanFund(ctx, qualifier);
+                    break;
+                case "complete":
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-complete", ctx);
+                    await LoanComplete(ctx, qualifier);
+                    break;
+                //case "add": LoanController.AddLoan(ctx.Member, ctx.Guild, 50000, 1000);
+                //    break;
+                default:
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan-options", ctx);
+                    await ctx.RespondAsync("Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'");
+                    break;
             }
         }
 
@@ -1027,56 +1077,71 @@ namespace multicorp_bot
 
         }
 
-        private async Task LoanFund(CommandContext ctx)
+        private async Task LoanFund(CommandContext ctx, string bank = null)
         {
-            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+            try {
+                var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
 
-            await ctx.RespondAsync("Which Loan would you like to fund", embed: LoanController.GetWaitingLoansEmbed(ctx.Guild));
+                await ctx.RespondAsync("Which Loan would you like to fund", embed: LoanController.GetWaitingLoansEmbed(ctx.Guild));
 
-            var interactivity = ctx.Client.GetInteractivity();
-            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
+                var interactivity = ctx.Client.GetInteractivity();
+                var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
-            Loans loan = null;
+                Loans loan = null;
 
-            if (bankers.Contains(ctx.Member.Id) && ctx.Message.Content.Contains("bank"))
-            {
-                var confirmEmojis = ConfirmEmojis(ctx);
+                if (bankers.Contains(ctx.Member.Id) && bank == "bank")
+                {
+                    var confirmEmojis = ConfirmEmojis(ctx);
 
-                var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds?");
-                await approval.CreateReactionAsync(confirmEmojis[0]);
-                await approval.CreateReactionAsync(confirmEmojis[1]);
-                Thread.Sleep(500);
-                var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+                    var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds?");
+                    await approval.CreateReactionAsync(confirmEmojis[0]);
+                    await approval.CreateReactionAsync(confirmEmojis[1]);
+                    Thread.Sleep(500);
+                    var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
-                if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
+                    if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
+                    {
+                        loan = await LoanController.FundLoan(ctx, loanIdMsg.Result, true);
+                        await ctx.RespondAsync($"Congratulations " +
+                            $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
+                            $" MultiCorpBank is willing to fund your loan!" +
+                            $" Reach out to them to a banker to receive your funds");
+                    }
+                    else
+                    {
+                        await ctx.RespondAsync("Loan funding with bank credits has been cancelled");
+
+                    }
+
+                }
+                else
                 {
                     loan = await LoanController.FundLoan(ctx, loanIdMsg.Result);
+                    await ctx.RespondAsync($"Congratulations " +
+                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
+                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention} is willing to fund your loan!" +
+                    $" Reach out to them to receive your funds");
                 }
-                else 
-                {
-                    await ctx.RespondAsync("Loan funding with bank credits has been cancelled");
-                }
-
-            }
-            else
+            } catch(Exception e)
             {
-                loan = await LoanController.FundLoan(ctx, loanIdMsg.Result);
+                tHelper.LogException("Loan Fund Exception", e);
+                Console.WriteLine(e);
+                await ctx.RespondAsync("Sorry something went wrong with your request");
             }
-
-            await ctx.RespondAsync($"Congratulations " +
-                $"{(await MemberController.GetDiscordMemberByMemberId(ctx ,loan.FunderId.GetValueOrDefault())).Mention}! \n" +
-                $"{(await MemberController.GetDiscordMemberByMemberId(ctx ,loan.ApplicantId)).Mention} is willing to fund your loan!" +
-                $" Reach out to them to receive your funds");
         }
 
-        private async Task LoanComplete(CommandContext ctx)
+        private async Task LoanComplete(CommandContext ctx, string id = null)
         {
-            await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));
+            if(id == null)
+            {
+                await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));
 
-            var interactivity = ctx.Client.GetInteractivity();
-            var loanIdMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
-            
-            var loan = LoanController.CompleteLoan(int.Parse(loanIdMsg.Result.Content));
+                var interactivity = ctx.Client.GetInteractivity();
+                id = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+
+            }
+
+            var loan = LoanController.CompleteLoan(int.Parse(id));
 
             await ctx.RespondAsync($"Congratulations " +
                 $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention}! \n" +
@@ -1151,17 +1216,24 @@ namespace multicorp_bot
 
         private async Task<List<ulong>> GetMembersWithRolesAsync(string roleLevel, DiscordGuild guild)
         {
-            var bankerRole = guild.Roles.FirstOrDefault(x => x.Value.Name == roleLevel);
-            var members = guild.Members.ToList();
-            List<ulong> bankersIds = new List<ulong>();
-            foreach(var member in members)
+            try
             {
-                if (member.Value.Roles.Contains(bankerRole.Value))
+                var bankerRole = guild.Roles.FirstOrDefault(x => x.Value.Name == roleLevel);
+                var members = await guild.GetAllMembersAsync();
+                List<ulong> bankersIds = new List<ulong>();
+                foreach (var member in members)
                 {
-                    bankersIds.Add(member.Value.Id);
+                    if (member.Roles.Contains(bankerRole.Value))
+                    {
+                        bankersIds.Add(member.Id);
+                    }
                 }
+                return bankersIds;
+            } catch (Exception e)
+            {
+                Console.Write(e);
             }
-            return bankersIds;
+            return null;
         }
         private async Task LoanRequest(CommandContext ctx)
         {

@@ -165,20 +165,28 @@ namespace multicorp_bot.Controllers
 
         public async Task<Loans> FundLoan(CommandContext ctx, DiscordMessage response, bool isBank = false)
         {
-            var loan = GetLoanById(int.Parse(response.Content));
-            if (isBank)
+            try
             {
-                loan.FunderId = 0;
-            }
-            else
-            {
-                loan.FunderId = new MemberController().GetMemberbyDcId(await ctx.Guild.GetMemberAsync(ctx.User.Id), ctx.Guild).UserId;
-            }
-            
-            loan.Status = "Funded";
-            await MultiBotDb.SaveChangesAsync();
+                var loan = GetLoanById(int.Parse(response.Content));
+                if (isBank)
+                {
+                    loan.FunderId = 0;
+                }
+                else
+                {
+                    loan.FunderId = new MemberController().GetMemberbyDcId(await ctx.Guild.GetMemberAsync(ctx.User.Id), ctx.Guild).UserId;
+                }
 
-            return loan;
+                loan.Status = "Funded";
+                await MultiBotDb.SaveChangesAsync();
+
+                return loan;
+            } catch( Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return null;
         }
 
         public List<Loans> GetLoanByApplicantId(int appId)
