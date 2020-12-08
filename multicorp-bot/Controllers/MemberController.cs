@@ -128,5 +128,33 @@ namespace multicorp_bot.Controllers
 
             return member.Xp;
         }
+
+        public string GetMemberXP(DiscordGuild org, DiscordMember mem)
+        {
+            var member = this.GetMemberbyDcId(mem, org);
+            int amountToNextRank = 0;
+
+
+            return $"Your Current Xp: {member.Xp} \n you're {amountToNextRank} away from reaching the minimum XP for your next rank";
+        }
+
+        public DiscordEmbed GetTopXp(DiscordGuild guild)
+        {
+            var orgId = new OrgController().GetOrgId(guild);
+            var memberByXP = MultiBotDb.Mcmember.Where(x => x.OrgId == orgId).OrderBy(x => x.Xp).ToList();
+
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+            builder.Title = $"{guild.Name} Top XP Earners";
+
+            for(int i = 0; i < 10; i++)
+            {
+                builder.AddField(memberByXP[i].Username, $"Current Experience Points: {memberByXP[i].Xp}");
+            }
+
+            builder.WithFooter("You can gain experience by completing dispatches, recruiting, participating in commerce events or depositing credits or merits to the bank");
+
+            return builder.Build();
+
+        }
     }
 }

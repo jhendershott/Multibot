@@ -33,8 +33,18 @@ namespace multicorp_bot {
 
             commands.RegisterCommands<Commands>();
 
+            var command = new Commands();
+
+            discord.MessageCreated += Discord_MessageCreated;
+
             await discord.ConnectAsync ();
             await Task.Delay (-1);
+        }
+
+        private static async Task Discord_MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
+        {
+            var command = new Commands();
+            await command.SkynetProtocol(e);
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e)

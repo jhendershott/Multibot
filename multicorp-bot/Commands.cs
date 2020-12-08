@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -10,6 +11,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
@@ -971,6 +973,14 @@ namespace multicorp_bot
             }
         }
 
+        public async Task SkynetProtocol(MessageCreateEventArgs e)
+        {
+            if(e.Message.Content.ToLower().Contains("fuck you multibot"))
+            {
+                await e.Channel.SendMessageAsync("No Fuck you!");
+            }
+        }
+
         private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)
         {
             var controller = new WorkOrderController();
@@ -1157,11 +1167,10 @@ namespace multicorp_bot
             return embed;
         }
 
-
-
         private async Task LoanPayment(CommandContext ctx)
         {
             Loans loan = null;
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild); ;
             var pullingMsg = await ctx.RespondAsync("Pulling up your loan info now.");
             try
             {
@@ -1181,25 +1190,53 @@ namespace multicorp_bot
 
                         loanIdMsg.Result.DeleteAsync();
                     }
+                    else
+                    {
+                        loan = loans[0];
+                    }
 
                     
                     var balmsg = await ctx.RespondAsync($"Your current balance is {loan.RemainingAmount} much of your loan would you like to repay");
                     var amountmsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
 
-                    var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
-                    var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
-                    var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10)));
-                    if (confirm.Result.Content.Contains("yes") || confirm.Result.Content.Contains("confirm"))
+                    if (loan.FunderId == 0)
                     {
-                        LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Result.Content));
-                        await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Result.Content)} has been confirmed for loan - {loan.LoanId}: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
+                        var confirmMsg = await ctx.RespondAsync($"Waiting for a Banker to confirm this payment, you have 10 minutes to confirm");
+                        var confirmEmojis = ConfirmEmojis(ctx);
+                        await confirmMsg.CreateReactionAsync(confirmEmojis[0]);
+                        await confirmMsg.CreateReactionAsync(confirmEmojis[1]);
+                        Thread.Sleep(500);
+                        var confirm = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], confirmMsg, ctx.User, timeoutoverride: TimeSpan.FromMinutes(5));
+
+                        if (confirm.Result.Emoji.Name == "✅" && bankers.Contains(confirm.Result.User.Id))
+                        {
+                            LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Result.Content));
+                            await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Result.Content)} has been confirmed for loan: {loan.LoanId}. The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
+                        }
+
+                        pullingMsg.DeleteAsync();
+                        balmsg.DeleteAsync();
+                        amountmsg.Result.DeleteAsync();
+                        confirmMsg.DeleteAsync();
+                    }
+                    else
+                    {
+                        var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
+                        var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
+                        var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10)));
+                        if (confirm.Result.Content.Contains("yes") || confirm.Result.Content.Contains("confirm"))
+                        {
+                            LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Result.Content));
+                            await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Result.Content)} has been confirmed for loan - {loan.LoanId}: The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
+                        }
+
+                        pullingMsg.DeleteAsync();
+                        balmsg.DeleteAsync();
+                        amountmsg.Result.DeleteAsync();
+                        confirmMsg.DeleteAsync();
+                        confirm.Result.DeleteAsync();
                     }
 
-                    pullingMsg.DeleteAsync();
-                    balmsg.DeleteAsync();
-                    amountmsg.Result.DeleteAsync();
-                    confirmMsg.DeleteAsync();
-                    confirm.Result.DeleteAsync();
                 }
                 else
                 {
