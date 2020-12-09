@@ -721,7 +721,7 @@ namespace multicorp_bot
                                         if (creditmsg.Result.Emoji.Name == "💰")
                                             transaction = await BankController.GetBankActionAsync(ctx, amount);
 
-                                        else if (creditmsg.Result.Emoji.Name == "🎖️")
+                                        else if (creditmsg.Result.Emoji.Name == "🎖")
                                         {
                                             transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                             isCredit = false;
