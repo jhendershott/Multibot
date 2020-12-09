@@ -382,7 +382,112 @@ namespace multicorp_bot
                 tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
             }
         }
-        
+
+        [Command("bank")]
+        public async Task Bank(CommandContext ctx, string command, DiscordUser user, string amount)
+        {
+            BankController BankController = new BankController();
+            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            Tuple<string, string> newBalance;
+            var interactivity = ctx.Client.GetInteractivity();
+            BankTransaction transaction = null;
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+            bool isCredit = true;
+
+            try
+            {
+                switch (command.ToLower())
+                {
+                    case "deposit":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit", ctx);
+                        if (!bankers.Contains(ctx.Member.Id))
+                        {
+                            await ctx.RespondAsync("I'm sorry only a Banker can deposit on another members behalf");
+                        }
+                        else
+                        {
+                            if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                            {
+                                var cred = await ctx.RespondAsync("Are you depositing Credits or Merits?");
+                                var credEmojis = ConfirmEmojis(ctx, "credit");
+                                await cred.CreateReactionAsync(credEmojis[0]);
+                                await cred.CreateReactionAsync(credEmojis[1]);
+                                Thread.Sleep(500);
+
+                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+
+                                try
+                                {
+                                    if (creditmsg.Result.Emoji.Name == "💰")
+                                        isCredit = true;
+
+                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
+                                        isCredit = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
+                                    break;
+                                }
+                            }
+                            else if (ctx.Message.Content.ToLower().Contains("merit"))
+                            {
+                                isCredit = false;
+                            }
+
+                            if (isCredit)
+                            {
+                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                            }
+                            else
+                            {
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                isCredit = false;
+                            }
+                            newBalance = BankController.Deposit(transaction);
+                            BankController.UpdateTransaction(transaction);
+                            MemberController.UpdateExperiencePoints("credits", transaction);
+
+                            if (isCredit)
+                            {
+                                if (transaction.Member != ctx.Member)
+                                {
+                                    await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                }
+
+                                MemberController.UpdateExperiencePoints("credits", transaction);
+                            }
+                            else
+                            {
+                                if (transaction.Member != ctx.Member)
+                                {
+                                    await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"Thank you for your contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                }
+                                MemberController.UpdateExperiencePoints("merits", transaction);
+
+                            }
+                        }
+                        break;
+
+                }
+
+            }
+
+            catch (Exception e)
+            {
+                tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                Console.WriteLine(e.Message);
+            }
+        }
+
         [Command("bank")]
         public async Task Bank(CommandContext ctx, string command, string amount) 
         {
@@ -469,14 +574,12 @@ namespace multicorp_bot
                                 isCredit = false;
                             }
 
-                            var approval = await ctx.RespondAsync("Waiting for Banker to Approve your request");
-                            await approval.CreateReactionAsync(confirmEmojis[0]);
-                            await approval.CreateReactionAsync(confirmEmojis[1]);
-                            Thread.Sleep(500);
-                            var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(20));
+                            var approval = await ctx.RespondAsync("Banker please confirmed this request by replying with 'approve', 'yes' or 'confirm'");
+                            var confirmMsg = await interactivity.WaitForMessageAsync(r => bankers.Contains(r.Author.Id),  timeoutoverride: TimeSpan.FromMinutes(20));
                             try
                             {
-                                if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
+                                var confirmText = confirmMsg.Result.Content.ToLower();
+                                if (confirmText.Contains("yes") || confirmText.Contains("confirm") || confirmText.Contains("approve"))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-action-confirm", ctx);
 
@@ -510,7 +613,7 @@ namespace multicorp_bot
                                         MemberController.UpdateExperiencePoints("merits", transaction);
                                     }
                                 }
-                                else if (!bankers.Contains(confirmMsg.Result.User.Id))
+                                else if (!bankers.Contains(confirmMsg.Result.Author.Id))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-unauth-approval", ctx);
                                     await ctx.RespondAsync("Looks like someone who isn't a banker attempted to approve the transactions. " +

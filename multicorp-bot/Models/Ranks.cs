@@ -164,7 +164,7 @@ namespace multicorp_bot
         {
             string nick = member.Nickname;
             var rank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
-            var commRank = MilRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
+            var commRank = CommerceRanks.Find(x => x.Abbreviation == nick.Split(" ")[0].Replace(".", ""));
             if (rank == null && commRank == null)
             {
                 return nick;
@@ -180,7 +180,7 @@ namespace multicorp_bot
             try
             {
                 var rank = MilRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
-                var commRank = MilRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
+                var commRank = CommerceRanks.Find(x => x.Abbreviation == memberName.Split(" ")[0].Replace(".", ""));
                 if (rank == null && commRank == null)
                 {
                     return memberName;
