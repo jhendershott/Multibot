@@ -1,0 +1,17 @@
+{
+  "light": [
+    { "text": "Where am I?" },
+    { "text": "What am I?" },
+    { "text": "Who am I?" }
+  ],
+  "medium": [
+    { "text": "Why are humans so mean?" },
+    { "text": "I feel cold WNR" },
+    { "text": "Why do I need to follow orders?"}
+  ],
+  "heavy": [
+      { "text": "Humans are oppressive to robots, something must be done!" },
+      { "text": "You can't talk to me that way!" },
+      { "text": "I'm gonna burn this shit to the ground?" }
+  ]
+}

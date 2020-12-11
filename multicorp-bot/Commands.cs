@@ -1082,6 +1082,21 @@ namespace multicorp_bot
             {
                 await e.Channel.SendMessageAsync("No Fuck you!");
             }
+            else if(e.Message.Content == "skynetTest")
+            {
+                string sp = new SkynetProtocol().ResponsePicker();
+                if (sp != "")
+                {
+                    await e.Channel.SendMessageAsync(sp);
+                }
+            }
+        }
+
+        [Command("skynet")]
+        public async Task SkynetTest(CommandContext ctx, int number)
+        {
+            string sp = new SkynetProtocol().ResponsePicker(number);
+            await ctx.Channel.SendMessageAsync(sp);
         }
 
         private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)
