@@ -113,8 +113,16 @@ namespace multicorp_bot
 
         public long? GetBankBalance(DiscordGuild guild)
         {
-            var bankItem = GetBankByOrg(guild);
-            return bankItem.Balance;
+            try
+            {
+                var bankItem = GetBankByOrg(guild);
+                return bankItem.Balance;
+            } catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return 0;
         }
 
         public long? GetBankMeritBalance(DiscordGuild guild)

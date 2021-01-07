@@ -719,9 +719,11 @@ namespace multicorp_bot
                                     try
                                     {
                                         if (creditmsg.Result.Emoji.Name == "💰")
+                                        {
                                             transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                        }
 
-                                        else if (creditmsg.Result.Emoji.Name == "🎖")
+                                        else if (creditmsg.Result.Emoji.Name == "🎖️")
                                         {
                                             transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                             isCredit = false;
@@ -745,11 +747,11 @@ namespace multicorp_bot
                                 newBalance = BankController.Withdraw(transaction);
                                 if (isCredit)
                                 {
-                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount} aUEC! The new bank balance is {newBalance.Item1} aUEC");
                                 }
                                 else
                                 {
-                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits} Merits! The new bank balance is {newBalance.Item2} Merits");
                                 }
                             }
                             else

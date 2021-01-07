@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.Entities;
 using multicorp_bot.Helpers;
+using System;
 using System.Linq;
 
 namespace multicorp_bot.Controllers
@@ -36,8 +37,9 @@ namespace multicorp_bot.Controllers
             {
                 return orgContext.Single(x => x.OrgName == guild.Name).Id;
             }
-            catch
+            catch(Exception e)
             {
+                Console.WriteLine(e);
                 return AddOrg(guild);
             }
         }
