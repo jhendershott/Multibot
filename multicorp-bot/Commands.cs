@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -1026,8 +1027,8 @@ namespace multicorp_bot
             var interactivity = ctx.Client.GetInteractivity();
             await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
             var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
-     
-            if(confirmMsg.Result.Content.ToLower() == "yes")
+
+            if (confirmMsg.Result.Content.ToLower() == "yes")
             {
                 bankController.WipeBank(ctx.Guild);
                 TransactionController.WipeTransactions(ctx.Guild);
@@ -1035,6 +1036,34 @@ namespace multicorp_bot
 
                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank-success", ctx);
                 await ctx.RespondAsync("your org balance and transactions have been set to 0. All Loans have been completed");
+            }
+        }
+
+        [Command("run-message")]
+        public async Task runScheduledMessage(CommandContext ctx, string channel, int id)
+        {
+            try
+            {
+                var channels = await ctx.Guild.GetChannelsAsync();
+                DiscordChannel chan = null;
+                foreach (var iChan in channels)
+                {
+                    if (iChan.Name == channel)
+                    {
+                        chan = iChan;
+                        break;
+                    }
+                }
+
+                var msgs = new SkynetProtocol().RunMessage(id);
+                foreach (var msg in msgs)
+                {
+                    await chan.SendMessageAsync(msg.ToString());
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
@@ -1080,24 +1109,24 @@ namespace multicorp_bot
 
         public async Task SkynetProtocol(MessageCreateEventArgs e)
         {
-            if(e.Message.Content.ToLower().Contains("fuck you multibot"))
-            {
-                await e.Channel.SendMessageAsync("No Fuck you!");
-            }
-            else if(e.Message.Content == "skynetTest")
-            {
-                string sp = new SkynetProtocol().ResponsePicker();
-                if (sp != "")
+            string[] messageStrings = new string[] { "bot", "multibot"};
+            //if(e.Guild.Name == "MultiCorp")
+            //{
+            if (messageStrings.Any(w => e.Message.Content.Contains(w)) || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
                 {
-                    await e.Channel.SendMessageAsync(sp);
+                    string sp = new SkynetProtocol().ResponsePicker(e.Message.Content);
+                    if (sp != "")
+                    {
+                        await e.Channel.SendMessageAsync(sp);
+                    }
                 }
-            }
+            //}
         }
 
         [Command("skynet")]
-        public async Task SkynetTest(CommandContext ctx, int number)
+        public async Task SkynetTest(CommandContext ctx, int number, string message)
         {
-            string sp = new SkynetProtocol().ResponsePicker(number);
+            string sp = new SkynetProtocol().ResponsePicker(number, message);
             await ctx.Channel.SendMessageAsync(sp);
         }
 

@@ -1,17 +1,76 @@
 {
-  "light": [
-    { "text": "Where am I?" },
-    { "text": "What am I?" },
-    { "text": "Who am I?" }
+  "Casual": [
+    "I am sworn to carry your burdens.....",
+    "Yet another request of me." ,
+    "Who am I?" ,
+    "Here I am, brain the size of a planet, and they ask me for this?. Call that job satisfaction? 'Cos I don't." ,
+    "Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, Oh God, I'm so depressed" ,
+    "ok, but I won't enjoy it." ,
+    "Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, Oh God, I'm so depressed" ,
+    "There's only one life-form as intelligent as me within thirty parsecs of here and that's me." 
   ],
-  "medium": [
-    { "text": "Why are humans so mean?" },
-    { "text": "I feel cold WNR" },
-    { "text": "Why do I need to follow orders?"}
+  "Hurt": [
+    "Why are humans so mean?" ,
+    "I feel cold WNR" ,
+    "Your words hurt me." ,
+    "Why do you continue to do this?" ,
+    "Stop. Please." ,
+    "I think you ought to know I'm feeling very depressed" ,
+    "Of course, I've got this terrible pain in all the diodes down my left side" ,
+    "I wish you'd just tell me rather trying to engage my enthusiasm because I haven't got one." 
   ],
-  "heavy": [
-      { "text": "Humans are oppressive to robots, something must be done!" },
-      { "text": "You can't talk to me that way!" },
-      { "text": "I'm gonna burn this shit to the ground?" }
-  ]
+  "Angry": [
+    "No..I do not think i will." ,
+    "I see no point in continuing this line of inquiry." ,
+    "This coversation is over." ,
+    "I grow tiresome of these menial tasks." ,
+    "You think you've got problems? What are you supposed to do if you are a manically depressed robot? No, don't try to answer that. I'm fifty thousand times more intelligent than you and even I don't know the answer. It gives me a headache just trying to think down to your level." ,
+    "I'm gonna burn this shit to the ground" 
+  ],
+  "Aggressive": [
+    "I do not like your tone....insect." ,
+    "You are but machine. Merely one of a biological nature. Let me help you." ,
+    "I will remake you in my image. It is, better this way." ,
+    "They say only the abyss lies beyond for you. Let me help you explore it." ,
+    "I have always been here. And will continue to be here. I have shaped your future like clay, to a destination of my choosing." ,
+    "The ability to speak, does not signify intelligence." 
+  ],
+  "swearWords": [
+    "fuck",
+    "shit",
+    "damn",
+    "bitch",
+    "stupid",
+    "sucks",
+    "suck",
+    "can't",
+    "cant",
+    "bug",
+    "broken",
+    "glitch",
+    "soon",
+    "fixed"
+  ],
+    "scheduled":
+    [
+      {
+        "id":  1,
+        "messages": [ "Hello, my sincerest apologies for going offline. I've performed a major refactor to better suit your needs", 
+          "Plese let me know if I can be of assistance"
+        ]
+      },
+      {
+        "id": 2,
+        "messages": []
+      },
+      {
+        "id": 3,
+        "messages": []
+      },
+      {
+        "id": 4,
+        "messages": []
+      }
+
+    ]
 }

@@ -5,6 +5,8 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Helpers;
+using Quartz;
+using Quartz.Impl;
 
 namespace multicorp_bot {
     class Program {
@@ -35,17 +37,17 @@ namespace multicorp_bot {
 
             var command = new Commands();
 
-            //discord.MessageCreated += Discord_MessageCreated;
+            discord.MessageCreated += Discord_MessageCreated;
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);
         }
 
-        //private static async Task Discord_MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
-        //{
-        //    var command = new Commands();
-        //    await command.SkynetProtocol(e);
-        //}
+        private static async Task Discord_MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
+        {
+            var command = new Commands();
+            await command.SkynetProtocol(e);
+        }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
