@@ -22,14 +22,14 @@ namespace multicorp_bot {
 
         static async Task MainAsync (string[] args) {
             discord = new DiscordClient(new DiscordConfiguration {
-                Token = Environment.GetEnvironmentVariable("BotToken2"),
+                Token = Environment.GetEnvironmentVariable("BOTTOKEN"),
                 TokenType = TokenType.Bot
             });
 
             interactivity = discord.UseInteractivity(new InteractivityConfiguration());
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-                StringPrefixes = new string[] { "." },
+                StringPrefixes = new string[] { "!" },
                 CaseSensitive = false
             });
 
