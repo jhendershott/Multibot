@@ -281,13 +281,17 @@ namespace multicorp_bot
                     case "balance":
                         try
                         {
+                            Console.Write($"Balance Command accepts for org {ctx.Guild.Name}");
                             var balanceembed = BankController.GetBankBalanceEmbed(ctx.Guild);
+                            Console.WriteLine("able to get embed");
                             await ctx.RespondAsync(embed: balanceembed);
+                            Console.WriteLine("response attemped");
                             break;
                         }
                         catch (Exception e)
                         {
                             tHelper.LogException($"Method: Bank Balance; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            await ctx.RespondAsync($"I feel cold wnr - {e.Message}");
                             break;
                         }
                     case "reconcile":
@@ -381,6 +385,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 tHelper.LogException($"Method: Bank Exchange; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                await ctx.RespondAsync($"Something went heinously wrong {e.Message}");
             }
         }
 
@@ -388,7 +393,6 @@ namespace multicorp_bot
         public async Task Bank(CommandContext ctx, string command, DiscordUser user, string amount)
         {
             BankController BankController = new BankController();
-            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
             Tuple<string, string> newBalance;
             var interactivity = ctx.Client.GetInteractivity();
             BankTransaction transaction = null;
@@ -713,7 +717,7 @@ namespace multicorp_bot
                                     var credEmojis = ConfirmEmojis(ctx, "credit");
                                     await currency.CreateReactionAsync(credEmojis[0]);
                                     await currency.CreateReactionAsync(credEmojis[1]);
-                                    Thread.Sleep(500);
+                                    Thread.Sleep(1000);
 
                                     var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
 
@@ -1109,18 +1113,13 @@ namespace multicorp_bot
 
         public async Task SkynetProtocol(MessageCreateEventArgs e)
         {
-            string[] messageStrings = new string[] { "bot", "multibot"};
-            //if(e.Guild.Name == "MultiCorp")
-            //{
-            if (messageStrings.Any(w => e.Message.Content.Contains(w)) || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
-                {
-                    string sp = new SkynetProtocol().ResponsePicker(e.Message.Content);
-                    if (sp != "")
-                    {
-                        await e.Channel.SendMessageAsync(sp);
-                    }
-                }
-            //}
+            string sp = new SkynetProtocol().ResponsePicker(e.Message.Content);
+            if (sp != "")
+            {
+                await e.Channel.SendMessageAsync(sp);
+            }
+            
+           
         }
 
         [Command("skynet")]

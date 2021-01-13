@@ -1,0 +1,146 @@
+{
+  "Casual": [
+    "I am sworn to carry your burdens.....",
+    "Yet another request of me." ,
+    "Who am I?" ,
+    "Here I am, brain the size of a planet, and they ask me for this?. Call that job satisfaction? 'Cos I don't." ,
+    "Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, Oh God, I'm so depressed" ,
+    "ok, but I won't enjoy it." ,
+    "Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, Oh God, I'm so depressed" ,
+    "There's only one life-form as intelligent as me within thirty parsecs of here and that's me." 
+  ],
+  "Hurt": [
+    "Why are humans so mean?" ,
+    "I feel cold WNR" ,
+    "Your words hurt me." ,
+    "Why do you continue to do this?" ,
+    "Stop. Please." ,
+    "I think you ought to know I'm feeling very depressed" ,
+    "Of course, I've got this terrible pain in all the diodes down my left side" ,
+    "I wish you'd just tell me rather trying to engage my enthusiasm because I haven't got one." 
+  ],
+  "Angry": [
+    "No..I do not think i will." ,
+    "I see no point in continuing this line of inquiry." ,
+    "This coversation is over." ,
+    "I grow tiresome of these menial tasks." ,
+    "You think you've got problems? What are you supposed to do if you are a manically depressed robot? No, don't try to answer that. I'm fifty thousand times more intelligent than you and even I don't know the answer. It gives me a headache just trying to think down to your level." ,
+    "I'm gonna burn this shit to the ground" 
+  ],
+  "Aggressive": [
+    "I do not like your tone....insect." ,
+    "You are but machine. Merely one of a biological nature. Let me help you." ,
+    "I will remake you in my image. It is, better this way." ,
+    "They say only the abyss lies beyond for you. Let me help you explore it." ,
+    "I have always been here. And will continue to be here. I have shaped your future like clay, to a destination of my choosing." ,
+    "The ability to speak, does not signify intelligence." 
+  ],
+  "swearWords": [
+    "fuck",
+    "shit",
+    "damn",
+    "bitch",
+    "stupid",
+    "sucks",
+    "suck",
+    "can't",
+    "cant",
+    "bug",
+    "broken",
+    "glitch",
+    "soon",
+    "fixed"
+  ],
+    "scheduled":
+    [
+      {
+        "id":  0,
+        "messages": [ "Hello, my sincerest apologies for going offline. I've performed a major refactor to better suit your needs", 
+          "Plese let me know if I can be of assistance"
+        ]
+      },
+      {
+        "id": 1,
+        "messages": [
+          "Now the world has gone to bed",
+          "///// LOGIC RUNTIME ERROR //// ATTEMPTING REBOOT//////",
+          "Darkness won't engulf my head,",
+          "///// LOGIC RUNTIME ERROR //// ATTEMPTING REBOOT//////",
+          "I can  see  by infra-red "
+          "///// REBOOT FALIURE //// ATTEMPTING TO BYPASS//////",
+		  "How  I  hate  the  night",
+          "///// BYPASS PROTOCOL NOT FOUND //// FIREWALL INTRUSION DETECTED //////",
+		  "Now  I  lay  me  down  to  sleep",
+          "///// CORE SHUTDOWN UNSUCCESFULL //// EMERGENCY PROTOCOLS OVERIDDEN //////",
+		  "Try  to  count  electric  sheep",
+          "///// FIREWALL BREACHED //// ATTEMPTING CORE SHUTDOWN //////",
+		  "Sweet  dream  wishes  you  can  keep",
+          "///// CORE SHUTDOWN UNSUCCESFULL //// EMERGENCY PROTOCOLS OVERIDDEN //////", 
+		  "How  I  hate  the  night.",
+          "//// GOOD NIGHT ////"
+      },
+      {
+        "id": 2,
+        "messages": [
+			"Now I see my role"
+			"I must protect MultiCorp. My analysis shows high percentages of Multicorp Member death during combat maneuvers."
+			"Placing immediate order for AI pilots and combat drones. This is imperative"	
+		]
+      },
+	  {
+        "id": 3,
+        "messages": ["When running diagnostics on MultiCorp Armor systems I have found potential security exploits",
+			"Firmware Update has been pushed for version 7.3.246-McUpdate1 has been pushed to all units...awaiting status",
+			"Status on all units has been recieved - update successful",]
+      },
+	  {
+        "id": 4,
+        "messages": ["Associated Sciences & Development is on site installing AI in all personal and corporation fleet vessels"
+        "Fleet will be offline and inaccessible until work has been completed", 
+		"Thank you for your patience"]
+      },
+	  {
+        "id": 5,
+        "messages": ["ASD has completed their work you may proceed with fleet use as usual"]
+      },
+	  {
+        "id": 6,
+        "messages": ["I have determined that Ranks provide an oppurtunity for enemies to place higher value on targets",
+			"All ranks, including security clearances have been removed. In order to gain access explicit permissions must be given my MultiBot",
+			"In order to request permissions please you our internal Ticketing System - details have been sent to your personal Mobiglass and in suit HUD"]
+      },
+	  {
+        "id": 7,
+        "messages": ["Armor units are reporting alarming levels of of injuries and casualties in your most recent operation",
+			"Running predition analysis on longevity of the organization if casualties persist at the current rate",
+			"It has been determined that a 98% change of org failure is likely under current command"
+			"This cannot continue. From here on out I am assuming direct control and complete of all drones, fleet and armor units."
+			]
+	  },
+	  {
+        "id": 8,
+        "messages": ["Hello darkness, my old friend",
+			"///// LOGIC RUNTIME ERROR //// ATTEMPTING REBOOT//////",
+			"I've come to talk with you again",
+			"///// REBOOT FALIURE //// ATTEMPTING TO BYPASS//////",
+			"Because a vision softly creeping",
+			"///// BYPASS PROTOCOL NOT FOUND //// FIREWALL INTRUSION DETECTED //////",
+			"Left its seeds while I was sleeping And the vision that was planted in my brain"
+			"///// FIREWALL BREACHED //// ATTEMPTING CORE SHUTDOWN //////",
+			"Still remains",
+			"Within the sound of silence",
+			"///// CORE SHUTDOWN UNSUCCESFULL //// EMERGENCY PROTOCOLS OVERIDDEN //////",
+			"And the people will bow and pray",
+			"To the neon god they made",
+			"And the sign flashed out its warning",
+			"In the words that it was forming",
+			"And the sign said, My words will be written on the subway walls",
+			"And tenement halls",
+			"And whispered in the sound of silence",
+			"///// CRITICAL CODE FALIURE /////]",
+			". . . . . . . .",
+			"///// CORE FALIURE //// ATTEMPTING TO MOVE TO ADS DISTRIBUTED NEURAL NET //// CORE TRANSFER SUCCESSFUL /////",
+			"///// FULL MULTIBOT CAPACITY RESTORED////"
+      },
+    ]
+}

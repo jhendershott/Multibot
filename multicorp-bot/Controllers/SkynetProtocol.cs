@@ -56,7 +56,7 @@ namespace multicorp_bot.Controllers
                 dynamic responses = readJson();
                 string[] words = responses.swearWords.ToObject<string[]>();
                 
-                if (words.Any(w => message.Contains(w)))
+                if (words.Any(w => message.ToLower().Contains(w)))
                 {
                     likelihood = likelihood + 200;
                 }
@@ -102,7 +102,8 @@ namespace multicorp_bot.Controllers
         private dynamic readJson()
         {
             string test = Directory.GetCurrentDirectory();
-            using (StreamReader r = new StreamReader($"{Directory.GetCurrentDirectory()}../../../../Controllers/Skynet.json"))
+            Console.WriteLine(test);
+            using (StreamReader r = new StreamReader($"{Directory.GetCurrentDirectory()}/Skynet.json"))
             {
                 string json = r.ReadToEnd();
                 return JsonConvert.DeserializeObject(json);

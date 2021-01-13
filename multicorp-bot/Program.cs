@@ -1,12 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Helpers;
-using Quartz;
-using Quartz.Impl;
 
 namespace multicorp_bot {
     class Program {
@@ -21,8 +20,10 @@ namespace multicorp_bot {
         }
 
         static async Task MainAsync (string[] args) {
+
+            string token = Environment.GetEnvironmentVariable("BOTTOKEN");
             discord = new DiscordClient(new DiscordConfiguration {
-                Token = Environment.GetEnvironmentVariable("BOTTOKEN"),
+                Token = token,
                 TokenType = TokenType.Bot
             });
 
@@ -46,7 +47,18 @@ namespace multicorp_bot {
         private static async Task Discord_MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs e)
         {
             var command = new Commands();
-            await command.SkynetProtocol(e);
+            string[] messageStrings = new string[] { "bot", "multibot" };
+            if (e.Guild.Name == "MultiCorp" || e.Guild.Name == "Man vs Owlbear")
+            {
+                if (messageStrings.Any(w => e.Message.Content.ToLower().Contains(w)) || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
+                {
+                    await command.SkynetProtocol(e);
+                }
+            }
+            else
+            {
+                await Task.CompletedTask;
+            }       
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e)

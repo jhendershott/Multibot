@@ -30,6 +30,7 @@ namespace multicorp_bot
         {
             if (!optionsBuilder.IsConfigured)
             {
+                Console.WriteLine(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
                 optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
             }
         }
