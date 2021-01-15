@@ -38,7 +38,7 @@ namespace multicorp_bot {
 
             var command = new Commands();
 
-            discord.MessageCreated += Discord_MessageCreated;
+            await Task.Run(() => discord.MessageCreated += Discord_MessageCreated);
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);
@@ -52,7 +52,7 @@ namespace multicorp_bot {
             {
                 if (messageStrings.Any(w => e.Message.Content.ToLower().Contains(w)) || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
                 {
-                    await command.SkynetProtocol(e);
+                    await Task.Run(() => command.SkynetProtocol(e));
                 }
             }
             else
