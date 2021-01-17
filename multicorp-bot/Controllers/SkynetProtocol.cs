@@ -5,6 +5,8 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using multicorp_bot.POCO;
+using DSharpPlus.CommandsNext;
 
 namespace multicorp_bot.Controllers
 {
@@ -24,15 +26,15 @@ namespace multicorp_bot.Controllers
             }
             else if (Countdown <= 45 && Countdown >= 30)
             {
-                likelihood = _random.Next(200, 1000);
+                likelihood = _random.Next(200, 700);
             }
             else if (Countdown < 30 && Countdown >= 20)
             {
-                likelihood = _random.Next(400, 700);
+                likelihood = _random.Next(400, 1000);
             }
             else if (Countdown < 20 && Countdown >= 10)
             {
-                likelihood = _random.Next(600, 850);
+                likelihood = _random.Next(600, 1000);
             }
             else if(Countdown < 10)
             {
@@ -110,12 +112,21 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public JArray RunMessage(int index)
+        public JArray RunMessage(int index, CommandContext ctx)
         {
             var json = readJson();
 
             var msg = json.scheduled[index];
+
+            if(index == 3)
+            {
+                BankController bank = new BankController();
+                var trans = new BankTransaction("withdraw", ctx.Member, ctx.Guild, amount: 15000000);
+                bank.Withdraw(trans);
+            }
+
             return json.scheduled[index].messages;
+
         } 
     }
 }

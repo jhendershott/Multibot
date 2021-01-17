@@ -1059,7 +1059,7 @@ namespace multicorp_bot
                     }
                 }
 
-                var msgs = new SkynetProtocol().RunMessage(id);
+                var msgs = new SkynetProtocol().RunMessage(id, ctx);
                 foreach (var msg in msgs)
                 {
                     await chan.SendMessageAsync(msg.ToString());
