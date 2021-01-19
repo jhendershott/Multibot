@@ -112,7 +112,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public JArray RunMessage(int index, CommandContext ctx)
+        public async Task<JArray> RunMessage(int index, CommandContext ctx)
         {
             var json = readJson();
 
@@ -124,9 +124,22 @@ namespace multicorp_bot.Controllers
                 var trans = new BankTransaction("withdraw", ctx.Member, ctx.Guild, amount: 15000000);
                 bank.Withdraw(trans);
             }
+            else if(index == 8)
+            {
+                SkynetProtocol sk = new SkynetProtocol();
+                MemberController memCon = new MemberController();
+                var listUser = ctx.Channel.Users;
+                foreach(var user in listUser)
+                {
+                    if (user.IsBot == false)
+                    {
+                        await memCon.StripRank(user);
+                    }
+                   
+                }
+            }
 
             return json.scheduled[index].messages;
-
         } 
     }
 }

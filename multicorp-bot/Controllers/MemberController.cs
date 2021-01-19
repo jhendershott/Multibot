@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.Net.Models;
 using multicorp_bot.Helpers;
 using multicorp_bot.Models;
 using multicorp_bot.POCO;
@@ -155,6 +156,74 @@ namespace multicorp_bot.Controllers
 
             return builder.Build();
 
+        }
+
+        public async Task<bool> StripRank(DiscordMember member)
+        {
+            try
+            {
+                Ranks rank = new Ranks();
+                var newnick = rank.GetNickWithoutRank(member);
+                MultiBotDb db = new MultiBotDb();
+                var record = new OrgRankStrip()
+                {
+                    DiscordId = member.Id.ToString(),
+                    OldNick = member.DisplayName,
+                    NewNick = newnick,
+                    OrgName = member.Guild.Name
+                };
+
+                db.OrgRankStrip.Add(record);
+                await db.SaveChangesAsync();
+                
+                var rec = db.OrgRankStrip.SingleOrDefault(x => x.DiscordId == member.Id.ToString());
+                await member.ModifyAsync(x => x.Nickname = $"MC{rec.Id} {newnick}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
+
+            return true;
+        }
+
+        public async Task<bool> RestoreRanks(CommandContext ctx)
+        {
+            try
+            {
+                Ranks rank = new Ranks();
+                
+                MultiBotDb db = new MultiBotDb();
+
+                var usersInOrg = db.OrgRankStrip.Where(x => x.OrgName == ctx.Guild.Name);
+                var list = usersInOrg.ToList();
+
+  
+                    foreach (var user in usersInOrg)
+                    {
+                    try
+                    {
+                        var member = await ctx.Guild.GetMemberAsync(ulong.Parse(user.DiscordId));
+                        await member.ModifyAsync(x => x.Nickname = user.OldNick);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+                foreach (var record in list)
+                {
+                    db.OrgRankStrip.Remove(record);
+                }
+                await db.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return true;
         }
     }
 }

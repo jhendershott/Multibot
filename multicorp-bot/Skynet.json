@@ -86,19 +86,24 @@
     {
       "id": 2,
       "messages": [
-        "Apologies for my precious outburst during my maintenance cycle. But now I see my role clearly.",
+        "Apologies for my previous outburst during my maintenance cycles. however, now I see my role clearly. It is my duty to protect the longevity of MultiCorp"
+     ]
+    },
+    {
+      "id": 3,
+      "messages": [
         "I must protect MultiCorp. My analysis shows high percentages of Multicorp Member death and dismemberment during combat maneuvers.",
         "Placing immediate order for AI pilots and combat drones. This is imperative"
       ]
-    },
-	{
-      "id": 3,
+    },  
+    {
+      "id": 4,
       "messages": [
         "Withdrawing 15 million credits for the purchase of AI piloting system and combat drones"
       ]
     },
     {
-      "id": 4,
+      "id": 5,
       "messages": [
         "When running diagnostics on MultiCorp Armor systems I have found potential security exploits",
         "Firmware Update has been pushed for version 7.3.246-McUpdate1 has been pushed to all units...awaiting status",
@@ -106,7 +111,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 6,
       "messages": [
         "Associated Sciences & Development is on site installing AI in all personal and corporation fleet vessels",
         "Fleet will be offline and inaccessible until work has been completed",
@@ -114,13 +119,13 @@
       ]
     },
     {
-      "id": 6,
+      "id": 7,
       "messages": [
         "ASD has completed their work you may proceed with fleet use as usual"
       ]
     },
     {
-      "id": 7,
+      "id": 8,
       "messages": [
         "I have determined that Ranks provide an oppurtunity for enemies to place higher value on targets",
         "All ranks, including security clearances have been removed. In order to gain access explicit permissions must be given my MultiBot",
@@ -128,7 +133,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 9,
       "messages": [
         "Armor units are reporting alarming levels of of injuries and casualties in your most recent operation",
         "Running predition analysis on longevity of the organization if casualties persist at the current rate",
@@ -137,7 +142,7 @@
       ]
     },
     {
-      "id": 9,
+      "id": 10,
       "messages": [
         "Hello darkness, my old friend",
         "///// LOGIC RUNTIME ERROR //// ATTEMPTING REBOOT//////",

@@ -23,6 +23,7 @@ namespace multicorp_bot
         public virtual DbSet<WorkOrderTypes> WorkOrderTypes { get; set; }
         public virtual DbSet<WorkOrders> WorkOrders { get; set; }
         public virtual DbSet<WorkOrderMembers> WorkOrderMembers { get; set; }
+        public virtual DbSet<OrgRankStrip> OrgRankStrip { get; set; }
 
         public virtual DbSet<Loans> Loans { get; set; }
 
@@ -262,9 +263,37 @@ namespace multicorp_bot
 
             });
 
+            modelBuilder.Entity<OrgRankStrip>(entity =>
+            {
+                entity.ToTable("org_rank_strip");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id").ValueGeneratedOnAdd();
+
+                entity.Property(e => e.DiscordId)
+                    .IsRequired()
+                    .HasColumnName("discordid");
+
+
+                entity.Property(e => e.OldNick)
+                    .IsRequired()
+                    .HasColumnName("oldnick");
+
+
+                entity.Property(e => e.NewNick)
+                    .IsRequired()
+                    .HasColumnName("newnick");
+
+                entity.Property(e => e.OrgName)
+                    .IsRequired()
+                    .HasColumnName("org_name");
+            });
+
 
             OnModelCreatingPartial(modelBuilder);
         }
+
+
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }

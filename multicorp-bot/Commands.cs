@@ -713,22 +713,20 @@ namespace multicorp_bot
                             {
                                 if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
                                 {
-                                    var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits?");
-                                    var credEmojis = ConfirmEmojis(ctx, "credit");
-                                    await currency.CreateReactionAsync(credEmojis[0]);
-                                    await currency.CreateReactionAsync(credEmojis[1]);
+                                    var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits? please respond with 'credits' or 'merits'");
+
                                     Thread.Sleep(1000);
 
-                                    var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+                                    var creditmsg = await interactivity.WaitForMessageAsync(r => (r.Content.ToLower().Contains("credit") || r.Content.ToLower().Contains("merit")) && !r.Author.Username.ToLower().Contains("multibot"));
 
                                     try
                                     {
-                                        if (creditmsg.Result.Emoji.Name == "💰")
+                                       if (creditmsg.Result.Content.ToLower().Contains("credit"))
                                         {
                                             transaction = await BankController.GetBankActionAsync(ctx, amount);
                                         }
 
-                                        else if (creditmsg.Result.Emoji.Name == "🎖️")
+                                        else if (creditmsg.Result.Content.ToLower().Contains("merit"))
                                         {
                                             transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                             isCredit = false;
@@ -988,6 +986,12 @@ namespace multicorp_bot
             await ctx.RespondAsync("I'm listening");
         }
 
+        [Command("restoreNicknames")]
+        public async Task RestoreNicks(CommandContext ctx)
+        {
+            await MemberController.RestoreRanks(ctx);
+        }
+
         [Command("log")]
         public async Task Log(CommandContext ctx, string workOrder = null, string requirementId = null, string amount = null)
         {
@@ -1059,7 +1063,7 @@ namespace multicorp_bot
                     }
                 }
 
-                var msgs = new SkynetProtocol().RunMessage(id, ctx);
+                var msgs = await( new SkynetProtocol().RunMessage(id, ctx));
                 foreach (var msg in msgs)
                 {
                     await chan.SendMessageAsync(msg.ToString());
