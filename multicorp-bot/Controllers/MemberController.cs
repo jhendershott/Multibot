@@ -200,8 +200,8 @@ namespace multicorp_bot.Controllers
                 var list = usersInOrg.ToList();
 
   
-                    foreach (var user in usersInOrg)
-                    {
+                foreach (var user in usersInOrg)
+                {
                     try
                     {
                         var member = await ctx.Guild.GetMemberAsync(ulong.Parse(user.DiscordId));
