@@ -3,3 +3,6 @@ services:
   bot:
     build: .
     image: multibot
+    environment:
+       - BOTTOKEN=$BOTTOKEN
+       - POSTGRESCONNECTIONSTRING=$POSTGRESCONNECTIONSTRING
