@@ -1122,8 +1122,25 @@ namespace multicorp_bot
             {
                 await e.Channel.SendMessageAsync(sp);
             }
-            
-           
+
+
+        }
+
+        [Command("echo")]
+        public async Task Echo(CommandContext ctx, string channel, params string[] message)
+        {
+            var channels = await ctx.Guild.GetChannelsAsync();
+            DiscordChannel chan = null;
+            foreach (var iChan in channels)
+            {
+                if (iChan.Name == channel)
+                {
+                    chan = iChan;
+                    break;
+                }
+            }
+
+            await chan.SendMessageAsync(string.Join(" ", message));
         }
 
         [Command("skynet")]
