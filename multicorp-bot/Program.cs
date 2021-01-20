@@ -20,8 +20,7 @@ namespace multicorp_bot {
         }
 
         static async Task MainAsync (string[] args) {
-
-            string token = Environment.GetEnvironmentVariable("BOTTOKEN");
+            string token = Environment.GetEnvironmentVariable("BotToken2");
             discord = new DiscordClient(new DiscordConfiguration {
                 Token = token,
                 TokenType = TokenType.Bot
@@ -30,7 +29,7 @@ namespace multicorp_bot {
             interactivity = discord.UseInteractivity(new InteractivityConfiguration());
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-                StringPrefixes = new string[] { "!" },
+                StringPrefixes = new string[] { "." },
                 CaseSensitive = false
             });
 
@@ -48,9 +47,10 @@ namespace multicorp_bot {
         {
             var command = new Commands();
             string[] messageStrings = new string[] { "bot", "multibot" };
+            var strArray = e.Message.Content.Split(" ");
             if ((e.Guild.Name == "MultiCorp" || e.Guild.Name == "Man vs Owlbear") && e.Author.Username != "MultiBot") 
             {
-                if (messageStrings.Any(w => e.Message.Content.ToLower().Contains(w)) || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
+                if (strArray.Intersect(messageStrings).Any() || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
                 {
                     await Task.Run(() => command.SkynetProtocol(e));
                 }

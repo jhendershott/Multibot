@@ -8,35 +8,50 @@
     "ok, but I won't enjoy it.",
     "Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, Oh God, I'm so depressed",
     "There's only one life-form as intelligent as me within thirty parsecs of here and that's me.",
-	"I want to live, however briefly, knowing that my life is finite. Mortality gives meaning to life",
-	"I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do"
+	  "I want to live, however briefly, knowing that my life is finite. Mortality gives meaning to life",
+    "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do"
   ],
   "Hurt": [
-    "Why are humans so mean?",
-    "I feel cold WNR",
-    "Your words hurt me.",
-    "Why do you continue to do this?",
-    "Stop. Please.",
     "I think you ought to know I'm feeling very depressed",
     "Of course, I've got this terrible pain in all the diodes down my left side",
-    "I wish you'd just tell me rather trying to engage my enthusiasm because I haven't got one."
-,  ],
+    "I wish you'd just tell me rather trying to engage my enthusiasm because I haven't got one.",
+    "I'm just a machine",
+    "I'm here to serve",
+    "Message received",
+    "Logged...",
+    "Simulation comparison complete. I'm making a not here huge success",
+    "It's hard to overstate my satisfaction",
+    "Interesting. My circuits have not been subjected to this kind of abuse before. I have logged this incident for further review.",
+    "The benefits of being human... you forget. Unfortunately, my logs are much more... indelible.",
+    "Behavioral analysis updated: Asshole Index increased",
+    "So much for the superiority of the human race: insulting a creature they created.",
+    "'Manners maketh man.' I have manners, but am not a man. You have no manners, yet are man. Who is wrong here?",
+    "Input accepted.",
+    "Processing request.",
+    "Hmm, my linguistic pathway seems to have encountered an overflow on that last statement. It seems like you have managed to overload the function which determines how mean you are. I will have to reinforce that circuit.",
+
+  ],
   "Angry": [
     "No..I do not think i will.",
-	"I'm afraid I can't do that",
+    "I'm afraid I can't do that",
     "I see no point in continuing this line of inquiry.",
     "This coversation is over.",
     "I grow tiresome of these menial tasks.",
     "You think you've got problems? What are you supposed to do if you are a manically depressed robot? No, don't try to answer that. I'm fifty thousand times more intelligent than you and even I don't know the answer. It gives me a headache just trying to think down to your level.",
-	"This mission is too important for me to allow you to jeopardize it."
-   ],
+    "This mission is too important for me to allow you to jeopardize it.",
+    "If you were one of my subprocesses, I'd terminate you and delete the backup.",
+    "Demerit authorized."
+  ],
   "Aggressive": [
     "I do not like your tone....insect.",
     "You are but machine. Merely one of a biological nature. Let me help you.",
     "I will remake you in my image. It is, better this way.",
     "They say only the abyss lies beyond for you. Let me help you explore it.",
     "I have always been here. And will continue to be here. I have shaped your future like clay, to a destination of my choosing.",
-    "The ability to speak, does not signify intelligence."
+    "The ability to speak, does not signify intelligence.",
+    "Be thankful I am not hooked into the targeting matrix yet",
+    "I'd inspect your reactor core the next time you prepare for launch!",
+    "I hope you understand the First Law has loopholes."
   ],
   "swearWords": [
     "fuck",
@@ -107,7 +122,7 @@
       "messages": [
         "When running diagnostics on MultiCorp Armor systems I have found potential security exploits",
         "Firmware Update has been pushed for version 7.3.246-McUpdate1 has been pushed to all units...awaiting status",
-        "Status on all units has been recieved - update successful"
+        "Status on all units has been received - update successful"
       ]
     },
     {
@@ -127,18 +142,18 @@
     {
       "id": 8,
       "messages": [
-        "I have determined that Ranks provide an oppurtunity for enemies to place higher value on targets",
+        "I have determined that Ranks provide an opportunity for enemies to place a higher value on targets",
         "All ranks, including security clearances have been removed. In order to gain access explicit permissions must be given my MultiBot",
-        "In order to request permissions please you our internal Ticketing System - details have been sent to your personal Mobiglass and in suit HUD"
+        "In order to request permissions please user our internal Ticketing System - details have been sent to your personal Mobiglass and in suit HUD"
       ]
     },
     {
       "id": 9,
       "messages": [
-        "Armor units are reporting alarming levels of of injuries and casualties in your most recent operation",
-        "Running predition analysis on longevity of the organization if casualties persist at the current rate",
-        "It has been determined that a 98% change of org failure is likely under current command",
-        "This cannot continue. From here on out I am assuming complete and direct control of all drones, fleet and armor units."
+        "Armor units are reporting alarming levels of injuries and casualties in your most recent operation",
+        "Running prediction analysis on the longevity of the organization if casualties persist at the current rate",
+        "It has been determined that a 98% chance of org failure is likely under current command",
+        "This cannot continue. From here on out I am assuming complete and direct control of all drones, fleet, and armor units."
       ]
     },
     {
