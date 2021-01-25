@@ -62,7 +62,7 @@ namespace multicorp_bot.Controllers
         {
             var orgId = new OrgController().GetOrgId(guild);
             var memberCtx = MultiBotDb.Mcmember;
-            return memberCtx.Single(x => x.Username == name && x.OrgId == orgId);
+            return memberCtx.SingleOrDefault(x => x.Username == name && x.OrgId == orgId);
         }
 
         public Mcmember GetMemberbyDcId(DiscordMember member, DiscordGuild guild)
@@ -85,14 +85,28 @@ namespace multicorp_bot.Controllers
             return await ctx.Guild.GetMemberAsync(ulong.Parse(GetMemberById(id).DiscordId));
         }
 
-        public void UpdateMemberName(string oldName, string newName, DiscordGuild guild)
+        public void UpdateMemberName(CommandContext ctx, string oldName, string newName, DiscordGuild guild)
         {
             var member = GetMember(oldName, guild);
             var memberCtx = MultiBotDb.Mcmember;
-            member.Username = newName;
-            memberCtx.Update(member);
+            if (member == null)
+            {
+                memberCtx.Add(new Mcmember
+                {
+                    Username = newName,
+                    DiscordId = ctx.Member.Id.ToString(),
+                    OrgId = new OrgController().GetOrgId(guild),
+                    Xp = 0,
+                });
+            }
+            else
+            {
+                member.Username = newName;
+                memberCtx.Update(member);
+
+            }
+
             MultiBotDb.SaveChanges();
-            
         }
 
         public List<Mcmember> GetMembersByOrgId(int orgId)

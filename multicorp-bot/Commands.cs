@@ -48,26 +48,19 @@ namespace multicorp_bot
         }
 
         [Command("handle")]
-        public async Task UpdateHandle(CommandContext ctx)
+        public async Task UpdateHandle(CommandContext ctx, params string [] handle)
         {
-            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "handle", ctx);
+             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "handle", ctx);
             DiscordMember member = null;
             try
             {
-                string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+                string handlestr = string.Join(" ", handle);
                 string newNick = null;
-                if (args.Length == 2)
-                {
-                    member = ctx.Member;
-                    newNick = Ranks.GetUpdatedNickname(member, args[1]);
-                }
-                else if (args.Length >= 3)
-                {
-                    member = await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id);
-                    newNick = Ranks.GetUpdatedNickname(member, args[2]);
-                }
 
-                MemberController.UpdateMemberName(Ranks.GetNickWithoutRank(member), Ranks.GetNickWithoutRank(newNick), ctx.Guild);
+                member = ctx.Member;
+                 newNick = Ranks.GetUpdatedNickname(member, handlestr);
+
+                MemberController.UpdateMemberName(ctx, Ranks.GetNickWithoutRank(member), Ranks.GetNickWithoutRank(newNick), ctx.Guild);
                 await member.ModifyAsync(x => x.Nickname = newNick);
             }
             catch (Exception e)
@@ -411,44 +404,28 @@ namespace multicorp_bot
                         }
                         else
                         {
-                            if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                            await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
+
+                            var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
+
+                            if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
-                                var cred = await ctx.RespondAsync("Are you depositing Credits or Merits?");
-                                var credEmojis = ConfirmEmojis(ctx, "credit");
-                                await cred.CreateReactionAsync(credEmojis[0]);
-                                await cred.CreateReactionAsync(credEmojis[1]);
-                                Thread.Sleep(500);
-
-                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
-
-                                try
-                                {
-                                    if (creditmsg.Result.Emoji.Name == "💰")
-                                        isCredit = true;
-
-                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
-                                        isCredit = false;
-                                }
-                                catch (Exception e)
-                                {
-                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
-                                    break;
-                                }
-                            }
-                            else if (ctx.Message.Content.ToLower().Contains("merit"))
-                            {
-                                isCredit = false;
+                                await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
                             }
 
-                            if (isCredit)
+
+                            if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, amount);
                             }
-                            else
+                            else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
                             {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                 isCredit = false;
                             }
+
                             newBalance = BankController.Deposit(transaction);
                             BankController.UpdateTransaction(transaction);
                             MemberController.UpdateExperiencePoints("credits", transaction);
@@ -494,7 +471,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx, string command, string amount) 
+        public async Task Bank(CommandContext ctx, string command, string amount)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
 
@@ -514,73 +491,31 @@ namespace multicorp_bot
                         TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit", ctx);
                         if (!bankers.Contains(ctx.Member.Id))
                         {
-                            var confirmation = await ctx.RespondAsync("Please Make sure a Banker is online to assist you. Do you want to continue?");
-                            var confirmEmojis = ConfirmEmojis(ctx);
-                            await confirmation.CreateReactionAsync(confirmEmojis[0]);
-                            await confirmation.CreateReactionAsync(confirmEmojis[1]);
-                            Thread.Sleep(500);
-                            var continueMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], confirmation, ctx.User, timeoutoverride: TimeSpan.FromMinutes(5));
+                            await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
 
-                            try
+                            var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
+
+                            if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
-                                if (continueMsg.Result.Emoji.Name != "✅")
-                                {
-                                    await continueMsg.Result.Message.DeleteAsync();
-                                    await ctx.RespondAsync("Please try again when you're ready");
-                                    break;
-                                }
-                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-continue", ctx);
-                            }
-                            catch (Exception e)
-                            {
-                                await continueMsg.Result.Message.DeleteAsync();
-                                await ctx.RespondAsync("Please try again when you're ready");
-                                break;
+                                await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
                             }
 
-                            if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
-                            {
-                                var cred = await ctx.RespondAsync("Are you depositing Credits or Merits?");
-                                var credEmojis = ConfirmEmojis(ctx, "credit");
-                                await cred.CreateReactionAsync(credEmojis[0]);
-                                await cred.CreateReactionAsync(credEmojis[1]);
-                                Thread.Sleep(500);
 
-                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], cred, ctx.User,timeoutoverride: TimeSpan.FromMinutes(5));
-
-                                try
-                                {
-                                    if (creditmsg.Result.Emoji.Name == "💰")
-                                        isCredit = true;
-
-                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
-                                        isCredit = false;
-                                }
-                                catch (Exception e)
-                                {
-                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
-                                    break;
-                                }
-                            }
-                            else if (ctx.Message.Content.ToLower().Contains("merit"))
-                            {
-                                isCredit = false;
-                            }
-
-                            if (isCredit)
+                            if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, amount);
                             }
-                            else
+                            else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                 isCredit = false;
                             }
 
+
                             var approval = await ctx.RespondAsync("Banker please confirmed this request by replying with 'approve', 'yes' or 'confirm'");
-                            var confirmMsg = await interactivity.WaitForMessageAsync(r => bankers.Contains(r.Author.Id),  timeoutoverride: TimeSpan.FromMinutes(20));
+                            var bankConfirmMsg = await interactivity.WaitForMessageAsync(r => bankers.Contains(r.Author.Id), timeoutoverride: TimeSpan.FromMinutes(20));
                             try
                             {
                                 var confirmText = confirmMsg.Result.Content.ToLower();
@@ -629,7 +564,6 @@ namespace multicorp_bot
                             catch (Exception e)
                             {
                                 tHelper.LogException($"Method: Bank Deposit; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                                await continueMsg.Result.Message.DeleteAsync();
                                 await ctx.RespondAsync("Either there was no confirmation or there was an error, please try again when a Banker is available to assist you");
                                 break;
                             }
@@ -638,42 +572,251 @@ namespace multicorp_bot
                         {
                             if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
                             {
-                                var cred = await ctx.RespondAsync("Are you depositing Credits or Merits?");
-                                var credEmojis = ConfirmEmojis(ctx, "credit");
-                                await cred.CreateReactionAsync(credEmojis[0]);
-                                await cred.CreateReactionAsync(credEmojis[1]);
-                                Thread.Sleep(500);
+                                await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
 
-                                var creditmsg = await interactivity.WaitForReactionAsync(r => r.Emoji == credEmojis[0] || r.Emoji == credEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+                                var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
 
-                                try
+                                if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
                                 {
-                                    if (creditmsg.Result.Emoji.Name == "💰")
-                                        isCredit = true;
-
-                                    else if (creditmsg.Result.Emoji.Name == "🎖️")
-                                        isCredit = false;
+                                    await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
                                 }
-                                catch (Exception e)
+
+
+                                if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                                 {
-                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
-                                    break;
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
                                 }
-                            }
-                            else if (ctx.Message.Content.ToLower().Contains("merit"))
-                            {
-                                isCredit = false;
-                            }
+                                else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
+                                {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                    isCredit = false;
+                                }
+                                newBalance = BankController.Deposit(transaction);
+                                BankController.UpdateTransaction(transaction);
+                                MemberController.UpdateExperiencePoints("credits", transaction);
 
-                            if (isCredit)
+                                if (isCredit)
+                                {
+                                    if (transaction.Member != ctx.Member)
+                                    {
+                                        await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                    }
+
+                                    MemberController.UpdateExperiencePoints("credits", transaction);
+                                }
+                                else
+                                {
+                                    if (transaction.Member != ctx.Member)
+                                    {
+                                        await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                    }
+                                    else
+                                    {
+                                        await ctx.RespondAsync($"Thank you for your contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                    }
+                                    MemberController.UpdateExperiencePoints("merits", transaction);
+
+                                }
+
+                            }
+                        }
+                        break;
+                        
+                    case "withdraw":
+                        try
+                        {
+                            if (bankers.Contains(ctx.Member.Id))
                             {
-                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                                {
+                                    var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits? please respond with 'credits' or 'merits'");
+
+                                    Thread.Sleep(1000);
+
+                                    var creditmsg = await interactivity.WaitForMessageAsync(r => (r.Content.ToLower().Contains("credit") || r.Content.ToLower().Contains("merit")) && !r.Author.Username.ToLower().Contains("multibot"));
+
+                                    try
+                                    {
+                                        if (creditmsg.Result.Content.ToLower().Contains("credit"))
+                                        {
+                                            transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                        }
+
+                                        else if (creditmsg.Result.Content.ToLower().Contains("merit"))
+                                        {
+                                            transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                            isCredit = false;
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
+                                        break;
+                                    }
+                                }
+                                else if (ctx.Message.Content.ToLower().Contains("credit"))
+                                {
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                }
+                                else if (ctx.Message.Content.ToLower().Contains("merit"))
+                                {
+                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                    isCredit = false;
+                                }
+                                newBalance = BankController.Withdraw(transaction);
+                                if (isCredit)
+                                {
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Amount} aUEC! The new bank balance is {newBalance.Item1} aUEC");
+                                }
+                                else
+                                {
+                                    await ctx.RespondAsync($"You have successfully withdrawn {transaction.Merits} Merits! The new bank balance is {newBalance.Item2} Merits");
+                                }
                             }
                             else
                             {
+                                await ctx.RespondAsync($"Only Bankers can make a withdrawal");
+                            }
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            tHelper.LogException($"Method: Bank WithDraw; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                            break;
+                        }
+                }
+
+            }
+
+            catch (Exception e)
+            {
+                tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        [Command("bank")]
+        public async Task Bank(CommandContext ctx, string command, string amount, string type)
+        {
+            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
+
+            BankController BankController = new BankController();
+            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            Tuple<string, string> newBalance;
+            var interactivity = ctx.Client.GetInteractivity();
+            BankTransaction transaction = null;
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+            bool isCredit = true;
+
+            try
+            {
+                switch (command.ToLower())
+                {
+                    case "deposit":
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit", ctx);
+                        if (!bankers.Contains(ctx.Member.Id))
+                        {
+                            var confirm = await ctx.RespondAsync("Starting your deposit, please be aware if a banker is not present the transaction will timeout");
+
+                            if (!type.ToLower().Contains("merit") && !type.ToLower().Contains("credit"))
+                            {
+                                await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
+                            }
+                                
+
+                            if (type.ToLower().Contains("credit"))
+                            {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                            }
+                            else if(type.ToLower().Contains("merit"))
+                            {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
                                 transaction = await BankController.GetBankActionAsync(ctx, amount, false);
                                 isCredit = false;
                             }
+
+                            var approval = await ctx.RespondAsync("Banker please confirmed this request by replying with 'approve', 'yes' or 'confirm'");
+                            var confirmMsg = await interactivity.WaitForMessageAsync(r => bankers.Contains(r.Author.Id), timeoutoverride: TimeSpan.FromMinutes(20));
+                            try
+                            {
+                                var confirmText = confirmMsg.Result.Content.ToLower();
+                                if (confirmText.Contains("yes") || confirmText.Contains("confirm") || confirmText.Contains("approve"))
+                                {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-action-confirm", ctx);
+
+                                    newBalance = BankController.Deposit(transaction);
+                                    BankController.UpdateTransaction(transaction);
+                                    MemberController.UpdateExperiencePoints("credits", transaction);
+
+                                    if (isCredit)
+                                    {
+                                        if (transaction.Member != ctx.Member)
+                                        {
+                                            await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                        }
+                                        else
+                                        {
+                                            await ctx.RespondAsync($"Thank you for your contribution of {transaction.Amount}! The new bank balance is {newBalance.Item1} aUEC");
+                                        }
+
+                                        MemberController.UpdateExperiencePoints("credits", transaction);
+                                    }
+                                    else
+                                    {
+                                        if (transaction.Member != ctx.Member)
+                                        {
+                                            await ctx.RespondAsync($"Thank you for your {transaction.Member.Mention} contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                        }
+                                        else
+                                        {
+                                            await ctx.RespondAsync($"Thank you for your contribution of {transaction.Merits}! The new bank balance is {newBalance.Item2} Merits");
+                                        }
+                                        MemberController.UpdateExperiencePoints("merits", transaction);
+                                    }
+                                }
+                                else if (!bankers.Contains(confirmMsg.Result.Author.Id))
+                                {
+                                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-unauth-approval", ctx);
+                                    await ctx.RespondAsync("Looks like someone who isn't a banker attempted to approve the transactions. " +
+                                        "Only bankers can approve transactions");
+                                }
+
+                                await confirm.DeleteAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                tHelper.LogException($"Method: Bank Deposit; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
+                                await ctx.RespondAsync("Either there was no confirmation or there was an error, please try again when a Banker is available to assist you");
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (!type.ToLower().Contains("merit") && !type.ToLower().Contains("credit"))
+                            {
+                                await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
+                            }
+
+
+                            if (type.ToLower().Contains("credit"))
+                            {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                            }
+                            else if (type.ToLower().Contains("merit"))
+                            {
+                                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                isCredit = false;
+                            }
+
                             newBalance = BankController.Deposit(transaction);
                             BankController.UpdateTransaction(transaction);
                             MemberController.UpdateExperiencePoints("credits", transaction);
@@ -711,42 +854,33 @@ namespace multicorp_bot
                         {
                             if (bankers.Contains(ctx.Member.Id))
                             {
-                                if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
+                                if (!type.ToLower().Contains("merit") && !type.ToLower().Contains("credit"))
                                 {
-                                    var currency = await ctx.RespondAsync("Are you withdrawing Credits or Merits? please respond with 'credits' or 'merits'");
+                                    await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
+                                }
 
-                                    Thread.Sleep(1000);
-
-                                    var creditmsg = await interactivity.WaitForMessageAsync(r => (r.Content.ToLower().Contains("credit") || r.Content.ToLower().Contains("merit")) && !r.Author.Username.ToLower().Contains("multibot"));
-
-                                    try
+                                try
+                                {
+                                    if (type.ToLower().Contains("credit"))
                                     {
-                                       if (creditmsg.Result.Content.ToLower().Contains("credit"))
-                                        {
-                                            transaction = await BankController.GetBankActionAsync(ctx, amount);
-                                        }
-
-                                        else if (creditmsg.Result.Content.ToLower().Contains("merit"))
-                                        {
-                                            transaction = await BankController.GetBankActionAsync(ctx, amount, false);
-                                            isCredit = false;
-                                        }
+                                        transaction = await BankController.GetBankActionAsync(ctx, amount);
                                     }
-                                    catch (Exception e)
+
+                                    else if (type.ToLower().Contains("merit"))
                                     {
-                                        await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
-                                        break;
+                                        transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                        isCredit = false;
                                     }
                                 }
-                                else if (ctx.Message.Content.ToLower().Contains("credit"))
+                                catch (Exception e)
                                 {
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                    await ctx.RespondAsync("Please confirm Credits or Merits by clicking the appropriate reaction");
+                                    break;
                                 }
-                                else if (ctx.Message.Content.ToLower().Contains("merit"))
-                                {
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
-                                    isCredit = false;
-                                }
+
+
+
+
                                 newBalance = BankController.Withdraw(transaction);
                                 if (isCredit)
                                 {
