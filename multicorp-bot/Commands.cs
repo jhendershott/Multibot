@@ -1020,6 +1020,16 @@ namespace multicorp_bot
                 WorkOrderController controller = new WorkOrderController();
                 if (type == null)
                 {
+                    messages.Add(await ctx.RespondAsync("Are you looking to 'Add' or 'Accept' a dispatch"));
+                    type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+                    if (type.ToLower() != "add" && type.ToLower() != "accept")
+                    {
+                        messages.Add(await ctx.RespondAsync("Please start over and use either 'add' or 'accept' at the prompt or try '!dispatch add' or '!dispatch accept'"));
+                    }                   
+                }
+                
+                if (type.ToLower() == "accept")
+                {
                     messages.Add(await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?"));
                     type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                     if (type.ToLower() != "add" && type.ToLower() != "accept")
@@ -1027,7 +1037,8 @@ namespace multicorp_bot
                         var initialAccept = await AcceptDispatch(ctx, type);
                         if (initialAccept.Item1)
                         {
-                            await controller.AcceptWorkOrder(ctx, initialAccept.Item2.Id);
+                            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
+                            id = initialAccept.Item2.Id;
                         }
                         else
                         {
@@ -1040,15 +1051,15 @@ namespace multicorp_bot
                                 if (subsequent.Item1)
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
-                                    await controller.AcceptWorkOrder(ctx, subsequent.Item2.Id);
+                                    id = subsequent.Item2.Id;
                                     break;
                                 }
+
+                                
                             }
                         }
                     }
-                }
-                else if (type.ToLower() == "accept")
-                {
+
                     if (id == null)
                     {
                         messages.Add(await ctx.RespondAsync("What is the ID of the work order would you like accept?"));
@@ -1290,23 +1301,22 @@ namespace multicorp_bot
             var interactivity = ctx.Client.GetInteractivity();
             var wOrder = await controller.GetWorkOrders(ctx, type);
             var msg = await ctx.RespondAsync(embed: wOrder.Item1);
-            var confirmEmojis = ConfirmEmojis(ctx);
 
-            await msg.CreateReactionAsync(confirmEmojis[0]);
-            await msg.CreateReactionAsync(confirmEmojis[1]);
-            Thread.Sleep(500);
-            var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
+            var confirmDeny = await ctx.RespondAsync("Please respond with 'accept' or 'deny'"); 
 
-            if (confirmMsg.Result.Emoji.Name == "✅")
+            var confirmMsg = await interactivity.WaitForMessageAsync(r => (r.Content.ToLower().Contains("accept") || r.Content.ToLower().Contains("deny")) && r.Author.Id == ctx.User.Id, timeoutoverride: TimeSpan.FromMinutes(5));
+
+        
+                if (confirmMsg.Result.Content.ToLower().Contains("accept"))
             {
                 return new Tuple<bool, WorkOrders>(true, wOrder.Item2);
             }
             else
-            {
+            { 
                 await msg.DeleteAsync();
+                await confirmDeny.DeleteAsync();
                 return new Tuple<bool, WorkOrders>(false, null);
             }
-
 
         }
 
@@ -1317,7 +1327,7 @@ namespace multicorp_bot
             string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a Description");
             string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
-            await ctx.RespondAsync("Please add a type: trading, mining or shipping");
+            await ctx.RespondAsync("Please add a type: trading, mining shipping or military");
             string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a location");
             string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
@@ -1327,9 +1337,21 @@ namespace multicorp_bot
             List<Tuple<string, int>> req = new List<Tuple<string, int>>();
             for (int i = 0; i < reqCount; i++)
             {
-                await ctx.RespondAsync($"What is the material they will be {workOrdertype}?");
+                string matMessage = "";
+                string amntMessage = "";
+                if (workOrdertype.Contains("military"))
+                {
+                    matMessage = "What type of Objectives will they be completing?";
+                    amntMessage = "How many Objectives will they be completing?";
+                }
+                else
+                {
+                    matMessage = $"What is the material they will be {workOrdertype}?";
+                    amntMessage = $"What how much of the material will they be {workOrdertype}?";
+                }
+                await ctx.RespondAsync(matMessage);
                 string reqMaterial = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
-                await ctx.RespondAsync($"What how much will they be {workOrdertype}?");
+                await ctx.RespondAsync(amntMessage);
                 int reqAmount = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
 
                 req.Add(new Tuple<string, int>(reqMaterial, reqAmount));

@@ -48,7 +48,19 @@ namespace multicorp_bot {
             var command = new Commands();
             string[] messageStrings = new string[] { "bot", "multibot" };
             var strArray = e.Message.Content.Split(" ");
-            if ((e.Guild.Name == "MultiCorp" || e.Guild.Name == "Man vs Owlbear") && e.Author.Username != "MultiBot") 
+            string[] prohibChannelArr = new string[]
+            {
+                "command-chat",
+                "officer-quarters",
+                "op-planning",
+                "frontline-news",
+                "war-room-rp",
+                "dispatch-rp",
+                "war-assets-rp",
+                "meta"
+            };
+
+            if ((e.Guild.Name == "MultiCorp" || e.Guild.Name == "Man vs Owlbear") && e.Author.Username != "MultiBot" && !prohibChannelArr.Contains(e.Channel.Name)) 
             {
                 if (strArray.Intersect(messageStrings).Any() || e.MentionedUsers.Any(x => x.Username == "MultiBot"))
                 {
