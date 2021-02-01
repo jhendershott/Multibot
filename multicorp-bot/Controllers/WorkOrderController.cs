@@ -92,15 +92,17 @@ namespace multicorp_bot.Controllers
 
         public async Task<DiscordEmbed> GetWorkOrderByMember(CommandContext ctx)
         {
+            var mbDb = new MultiBotDb();
             try
             {
+
                 Mcmember mem = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
-                List<WorkOrderMembers> memberOrders = MultiBotDb.WorkOrderMembers.AsQueryable().Where(x => x.MemberId == mem.UserId).ToList();
+                List<WorkOrderMembers> memberOrders = mbDb.WorkOrderMembers.AsQueryable().Where(x => x.MemberId == mem.UserId).ToList();
                 List<WorkOrders> wOrders = new List<WorkOrders>();
 
                 foreach(var o in memberOrders)
                 {
-                    var order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
+                    var order = mbDb.WorkOrders.AsQueryable().Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
                     if (!order.isCompleted)
                     {
                         wOrders.Add(order);
