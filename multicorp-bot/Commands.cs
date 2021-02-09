@@ -1030,7 +1030,7 @@ namespace multicorp_bot
                 
                 if (type.ToLower() == "accept")
                 {
-                    messages.Add(await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, or Shipping?"));
+                    messages.Add(await ctx.RespondAsync("What type of work are you interested in Mining, Roc Mining, Hand Mining, Trading, Shipping, or Military?"));
                     type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                     if (type.ToLower() != "add" && type.ToLower() != "accept")
                     {

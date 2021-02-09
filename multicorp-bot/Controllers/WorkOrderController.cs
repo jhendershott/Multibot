@@ -262,9 +262,11 @@ namespace multicorp_bot.Controllers
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
                     case var roc when type.ToLower().Contains("roc"):
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
+                    case "military":
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "military").SingleOrDefault();
 
                     default:
-                        await ctx.RespondAsync("Please specify type, trading, mining, hand mining or roc mining, or shipping");
+                        await ctx.RespondAsync("Please specify type, trading, mining, hand mining or roc mining, shipping, military");
                         throw new InvalidOperationException("Unspecified Work Order Type");
 
                 }
