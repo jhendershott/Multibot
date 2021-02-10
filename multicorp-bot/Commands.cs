@@ -1008,6 +1008,28 @@ namespace multicorp_bot
             }
         }
 
+        [Command("accept")]
+        public async Task Dispatch(CommandContext ctx, int? id = null)
+        {
+            try
+            {
+                var interactivity = ctx.Client.GetInteractivity();
+
+                if (id == null)
+                {
+                    await ctx.RespondAsync("What is the id you would like to accept?");
+                    id = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
+                }
+
+                WorkOrderController controller = new WorkOrderController();
+                await controller.AcceptWorkOrder(ctx, id.GetValueOrDefault());
+            } catch (Exception e)
+            {
+                await ctx.RespondAsync("I'm sorry, I was unable to process your request due to an error");
+            }
+
+        }
+
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
         {
@@ -1138,7 +1160,7 @@ namespace multicorp_bot
         }
 
         [Command("log")]
-        public async Task Log(CommandContext ctx, string workOrder = null, string requirementId = null, string amount = null)
+        public async Task Log(CommandContext ctx, string? workOrder = null, string? requirementId = null, string? amount = null)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "log", ctx);
 
