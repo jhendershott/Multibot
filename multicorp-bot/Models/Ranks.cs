@@ -28,16 +28,16 @@ namespace multicorp_bot
             new Rank () { RankName = "Lieutenant Commander", Abbreviation = "LCDR", Number = 12 },
             new Rank () { RankName = "Commander", Abbreviation = "CMDR", Number = 13 },
             new Rank () { RankName = "Captain", Abbreviation = "CAPT", Number = 14 },
-            new Rank () { RankName = "Vice Admiral", Abbreviation = "VADM", Number = 15 },
-            new Rank () { RankName = "Admiral", Abbreviation = "ADM", Number = 16 },
-            new Rank () { RankName = "High Admiral", Abbreviation = "HADM", Number = 17 },
+            new Rank () { RankName = "Vice Admiral", Abbreviation = "Vice Admiral", Number = 15 },
+            new Rank () { RankName = "Admiral", Abbreviation = "Admiral", Number = 16 },
+            new Rank () { RankName = "High Admiral", Abbreviation = "High Admiral", Number = 17 },
         };
 
         public List<Rank> CommerceRanks { get; set; } = new List<Rank>()
         {
-            new Rank () { RankName = "Freelancer I", Abbreviation = "FLNCR", Number = 20 },
-            new Rank () { RankName = "Freelancer II", Abbreviation = "2FLNCR" , Number = 21 },
-            new Rank () { RankName = "Freelancer III", Abbreviation = "3FLNCR", Number = 22 },
+            new Rank () { RankName = "Freelancer I", Abbreviation = "FRLNCR", Number = 20 },
+            new Rank () { RankName = "Freelancer II", Abbreviation = "FRLNCR2" , Number = 21 },
+            new Rank () { RankName = "Freelancer III", Abbreviation = "FRLNCR3", Number = 22 },
             new Rank () { RankName = "Junior Associate", Abbreviation = "JASSC", Number = 23 },
             new Rank () { RankName = "Associate I", Abbreviation = "ASSC", Number = 24 },
             new Rank () { RankName = "Associate II", Abbreviation = "2ASSC", Number = 25 },
