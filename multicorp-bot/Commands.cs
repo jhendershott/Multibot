@@ -574,7 +574,7 @@ namespace multicorp_bot
                             {
                                 await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
 
-                                var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
+                                var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && (r.Content.ToLower().Contains("merit") || r.Content.ToLower().Contains("credit")), timeoutoverride: TimeSpan.FromMinutes(20));
 
                                 if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
                                 {
