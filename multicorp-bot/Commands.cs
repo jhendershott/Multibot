@@ -31,6 +31,7 @@ namespace multicorp_bot
         readonly FleetController FleetController;
         readonly OrgController OrgController;
         readonly WorkOrderController WorkOrderController;
+        readonly DispatchController DispatchController;
 
 
         TelemetryHelper tHelper = new TelemetryHelper();
@@ -44,6 +45,7 @@ namespace multicorp_bot
             FleetController = new FleetController();
             OrgController = new OrgController();
             WorkOrderController = new WorkOrderController();
+            DispatchController = new DispatchController();
             PermissionsHelper.LoadPermissions();
         }
 
@@ -1315,6 +1317,66 @@ namespace multicorp_bot
         {
             string sp = new SkynetProtocol().ResponsePicker(number, message);
             await ctx.Channel.SendMessageAsync(sp);
+        }
+
+        [Command("rescue")]
+        public async Task RequestRescue(CommandContext ctx)
+        {
+            var orgs = DispatchController.GetRescueOrgs();
+            List<DiscordMessage> messages = new List<DiscordMessage>();
+            foreach(var org in orgs)
+            {
+               messages.Add(await DispatchController.SendOrgMessage(ctx, org));
+            }
+
+            DiscordUser acceptedUser = null;
+            foreach(var mess in messages) {
+                if (acceptedUser == null)
+                {
+                    await mess.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
+                    var inter = ctx.Client.GetInteractivity();
+                    var accepted = await inter.WaitForReactionAsync(x => x.User.Id != mess.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
+                    acceptedUser = accepted.Result.User;
+                }
+                else
+                {
+                    await mess.DeleteAsync();
+                }
+            };
+
+            if (acceptedUser != null)
+            {
+                DiscordDmChannel dm = new DiscordDmChannel();
+                try
+                {
+                    await dm.SendMessageAsync("test");
+                    await dm.AddDmRecipientAsync(ctx.Member.Id, "yghH12HhkiPiP4QwX2V_mEu9E43uie2Z", ctx.Member.DisplayName);
+                    await dm.AddDmRecipientAsync(acceptedUser.Id, "yghH12HhkiPiP4QwX2V_mEu9E43uie2Z", acceptedUser.Username);
+                    await dm.SendMessageAsync("Please provide your RSI handle, Approximate Location, and Remaining Time");
+
+                    var text = await dm.GetNextMessageAsync(x => x.Content.ToLower() == "rescue completed");
+                    if (text.Result.Content.ToLower() == "rescue completed")
+                    {
+                        await dm.DeleteAsync();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Well shit, that didn't work");
+            }
+        }
+
+        [Command("updateId")]
+        public Task UpdateDiscordid(CommandContext ctx)
+        {
+            OrgController.UpdateDiscordId(ctx.Guild);
+
+            return Task.CompletedTask;
         }
 
         private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)

@@ -12,6 +12,7 @@ namespace multicorp_bot
 
         public string OrgName { get; set; }
         public int Id { get; set; }
+        public string? DiscordId { get; set; }
 
         public virtual ICollection<Bank> Bank { get; set; }
     }
