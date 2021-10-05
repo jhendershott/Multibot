@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
+using multicorp_bot.Models.DbModels;
 
 namespace multicorp_bot
 {
@@ -24,15 +25,17 @@ namespace multicorp_bot
         public virtual DbSet<WorkOrders> WorkOrders { get; set; }
         public virtual DbSet<WorkOrderMembers> WorkOrderMembers { get; set; }
         public virtual DbSet<OrgRankStrip> OrgRankStrip { get; set; }
-
         public virtual DbSet<Loans> Loans { get; set; }
+        public virtual DbSet<OrgDispatch> OrgDispatch { get; set;}
+        public virtual DbSet<DispatchType> DispatchType { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
                 Console.WriteLine(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
-                optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
+                //optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
+                optionsBuilder.UseNpgsql("Server=ec2-52-87-58-157.compute-1.amazonaws.com; Port=5432; User Id=otaezimgjezlqz; Password=e1229aee93dabd15a5747c19cb63857c3669137d147df681c5d501f1df2e6a70; Database=d7rat0uua58ok5; SSL Mode=Require;Trust Server Certificate=true");
             }
         }
 
@@ -93,6 +96,10 @@ namespace multicorp_bot
                 entity.Property(e => e.OrgName)
                     .IsRequired()
                     .HasColumnName("org_name")
+                    .HasColumnType("character varying");
+
+                entity.Property(e => e.DiscordId)
+                    .HasColumnName("discord_id")
                     .HasColumnType("character varying");
             });
 
@@ -289,6 +296,31 @@ namespace multicorp_bot
                     .HasColumnName("org_name");
             });
 
+            modelBuilder.Entity<DispatchType>(entity =>
+            {
+                entity.ToTable("dispatch_type");
+
+                entity.Property(e => e.DispatchTypeId)
+                .IsRequired()
+                .HasColumnName("dispatch_type_id");
+
+                entity.Property(e => e.Description)
+                .IsRequired()
+                .HasColumnName("description");
+            });
+
+            modelBuilder.Entity<OrgDispatch>(entity =>
+            {
+                entity.ToTable("org_dispatch");
+
+                entity.Property(e => e.OrgDispatchId)
+                .IsRequired()
+                .HasColumnName("org_dispatch_id");
+
+                entity.Property(e => e.OrgId)
+                .IsRequired()
+                .HasColumnName("org_id");
+            });
 
             OnModelCreatingPartial(modelBuilder);
         }

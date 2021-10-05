@@ -20,7 +20,7 @@ namespace multicorp_bot {
         }
 
         static async Task MainAsync (string[] args) {
-            string token = Environment.GetEnvironmentVariable("BOTTOKEN");
+            string token = "NzI5ODI3NjAwMzM5MzA0NTY4.XwOm6w.j4MjCxWYEObv5slu_Agrk7ACGgI";//Environment.GetEnvironmentVariable("BOTTOKEN");
             discord = new DiscordClient(new DiscordConfiguration {
                 Token = token,
                 TokenType = TokenType.Bot
@@ -29,7 +29,7 @@ namespace multicorp_bot {
             interactivity = discord.UseInteractivity(new InteractivityConfiguration());
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-                StringPrefixes = new string[] { "!" },
+                StringPrefixes = new string[] { "." },
                 CaseSensitive = false
             });
 

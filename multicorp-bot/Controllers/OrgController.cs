@@ -20,7 +20,8 @@ namespace multicorp_bot.Controllers
             var orgContext = MultiBotDb.Orgs;
             var org = new Orgs()
             {
-                OrgName = guild.Name
+                OrgName = guild.Name,
+                DiscordId = guild.Id.ToString()
              };
 
             orgContext.Add(org);
@@ -28,6 +29,24 @@ namespace multicorp_bot.Controllers
             return GetOrgId(guild);
         }
 
+        public void UpdateDiscordId(DiscordGuild guild)
+        {
+            var orgContext = MultiBotDb.Orgs;
+            try
+            {
+                var org = orgContext.Single(x => x.OrgName == guild.Name);
+                if (org.DiscordId == null)
+                {
+                    org.DiscordId = guild.Id.ToString();
+                    orgContext.Update(org);
+                    MultiBotDb.SaveChanges();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
 
 
         public int GetOrgId(DiscordGuild guild)
@@ -35,7 +54,14 @@ namespace multicorp_bot.Controllers
             var orgContext = MultiBotDb.Orgs;
             try
             {
-                return orgContext.Single(x => x.OrgName == guild.Name).Id;
+                var org = orgContext.Single(x => x.OrgName == guild.Name);
+                if(org.DiscordId == null)
+                {
+                    org.DiscordId = guild.Id.ToString();
+                    orgContext.Update(org);
+                    MultiBotDb.SaveChanges();
+                }
+                return org.Id;
             }
             catch(Exception e)
             {
