@@ -22,13 +22,12 @@ namespace multicorp_bot.Controllers
         public List<Orgs> GetRescueOrgs()
         {
             var orgD = MultiBotDb.OrgDispatch.AsQueryable().Where(x => x.OrgDispatchId == 1).ToList();
+
             List<Orgs> orgs = new List<Orgs>();
             foreach (var org in orgD)
             {
                 orgs.Add(MultiBotDb.Orgs.Single(x => x.Id == org.OrgId));
             }
-
-            Console.Write(orgs);
 
             return orgs;
         }

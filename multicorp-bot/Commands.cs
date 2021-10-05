@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -1322,47 +1318,116 @@ namespace multicorp_bot
         [Command("rescue")]
         public async Task RequestRescue(CommandContext ctx)
         {
+            //getting orgs that have medical
             var orgs = DispatchController.GetRescueOrgs();
             List<DiscordMessage> messages = new List<DiscordMessage>();
-            foreach(var org in orgs)
+            var dispatchInter = ctx.Client.GetInteractivity();
+
+            var handlemsg = await ctx.RespondAsync("Please post your RSI handle");
+            var handleResp = await dispatchInter.WaitForMessageAsync(d => d.Author.Id == ctx.User.Id);
+
+            var locationMessage = await ctx.RespondAsync("Please provide your approximate location - Planetary body and distance to nearest landmarks");
+            var locationResp = await dispatchInter.WaitForMessageAsync(d => d.Author.Id == ctx.User.Id);
+
+            var otherMessage = await ctx.RespondAsync("Other Pertinent Information: Injury? Hostiles Present? Time remaining?");
+            var otherResponse = await dispatchInter.WaitForMessageAsync(d => d.Author.Id == ctx.User.Id);
+
+
+            if (handleResp.Result.Content != null && locationResp.Result.Content != null)
             {
-               messages.Add(await DispatchController.SendOrgMessage(ctx, org));
+                await handlemsg.DeleteAsync();
+                await handleResp.Result.DeleteAsync();
+                await locationResp.Result.DeleteAsync();
+                await locationMessage.DeleteAsync();
+                await otherMessage.DeleteAsync();
+                await otherResponse.Result.DeleteAsync();
+
+                await ctx.RespondAsync("Please hold while I find an available unit. Look for a Direct message with your rescue unit information");
             }
 
-            DiscordUser acceptedUser = null;
-            foreach(var mess in messages) {
-                if (acceptedUser == null)
+            //send a message to those discords
+            var qjm = orgs.First(x => x.OrgName == "QUANTUM JUMP MEDICAL");
+            var qjmmsg = await DispatchController.SendOrgMessage(ctx, qjm);
+            orgs.Remove(qjm);
+
+            //wait until someone accepts
+            DiscordMember acceptedUser = null;
+            await qjmmsg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
+            var qjmAcceptedInter = ctx.Client.GetInteractivity();
+            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(5));
+            if (qjmAccepted.Result.User.Id.ToString() == null)
+            {
+                Random rand = new Random();
+                while(acceptedUser == null)
                 {
-                    await mess.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
-                    var inter = ctx.Client.GetInteractivity();
-                    var accepted = await inter.WaitForReactionAsync(x => x.User.Id != mess.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
-                    acceptedUser = accepted.Result.User;
+                    var org = orgs[rand.Next(orgs.Count - 1)];
+
+                    var msg = await DispatchController.SendOrgMessage(ctx, org);
+                    await msg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
+                    var acceptedInter = ctx.Client.GetInteractivity();
+                    var accepted = await acceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(2));
+                    if (accepted.Result.User.Id.ToString() == null)
+                    {
+                        acceptedUser = await qjmAccepted.Result.Guild.GetMemberAsync(qjmAccepted.Result.User.Id);
+                    }
+                    else
+                    {
+                        orgs.Remove(org);
+                        await msg.DeleteAsync();
+                    }
+                }
+            }
+            else
+            {
+                acceptedUser = await qjmAccepted.Result.Guild.GetMemberAsync(qjmAccepted.Result.User.Id);
+                await qjmmsg.DeleteAsync();
+            }
+
+            //delete all the message from the discord channels
+
+            //create a dm
+            if (acceptedUser != null)
+            {
+                var acceptorDm = await acceptedUser.CreateDmChannelAsync();
+                await acceptorDm.SendMessageAsync($"You've accepted a rescue from member please send them a friend request ASAP: {ctx.Member} " +
+                    $"\n RSI Handle: {handleResp.Result.Content} " +
+                    $"\n Location: {locationResp.Result.Content}" +
+                    $"\n Other Pertinent Info: {otherResponse.Result.Content}");
+                
+                var requestorDm = await ctx.Member.CreateDmChannelAsync();
+                await requestorDm.SendMessageAsync($"Please stand by, User: {acceptedUser.Username} from {acceptedUser.Guild.Name} has accepted and is on his way. Please look for discord and RSI invites");
+                await requestorDm.SendMessageAsync($"Would you like an invite to {acceptedUser.Guild.Name}? " +
+                    $"\nYes = you will be put in a specific patient channel " +
+                    $"\nNo = you agree to wait for a discord/RSI friend request from {acceptedUser.Username}");
+                var confirm = await requestorDm.GetNextMessageAsync(timeoutOverride: TimeSpan.FromMinutes(5));
+
+                if(confirm.Result.Content != null && confirm.Result.Content.ToLower() == "yes")
+                {
+                    var invites = await acceptedUser.Guild.GetInvitesAsync();
+                    var channel = (await acceptedUser.Guild.GetChannelsAsync()).First(x => x.Name == "Patient");
+                    foreach (var inv in invites)
+                    {
+                        if (inv.Channel.Name == "patient")
+                        {
+                            await requestorDm.SendMessageAsync(inv.ToString());
+                            await acceptorDm.SendMessageAsync($"{ctx.Member.Username} will be joining you server as a 'patient'");
+                        }
+                    }
+
+                    bool userInChannel = false;
+                    int i = 0;
+                    while (userInChannel == false || i < 300000) {
+                        var users = channel.Users;
+                        var use = users.FirstOrDefault(x => x.Id == ctx.Member.Id);
+                        if(use != null)
+                        {
+                            await use.GrantRoleAsync(acceptedUser.Guild.Roles.First(x => x.Value.Name == "patient").Value, "New Patient");
+                        }
+                    }
                 }
                 else
                 {
-                    await mess.DeleteAsync();
-                }
-            };
-
-            if (acceptedUser != null)
-            {
-                DiscordDmChannel dm = new DiscordDmChannel();
-                try
-                {
-                    await dm.SendMessageAsync("test");
-                    await dm.AddDmRecipientAsync(ctx.Member.Id, "yghH12HhkiPiP4QwX2V_mEu9E43uie2Z", ctx.Member.DisplayName);
-                    await dm.AddDmRecipientAsync(acceptedUser.Id, "yghH12HhkiPiP4QwX2V_mEu9E43uie2Z", acceptedUser.Username);
-                    await dm.SendMessageAsync("Please provide your RSI handle, Approximate Location, and Remaining Time");
-
-                    var text = await dm.GetNextMessageAsync(x => x.Content.ToLower() == "rescue completed");
-                    if (text.Result.Content.ToLower() == "rescue completed")
-                    {
-                        await dm.DeleteAsync();
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
+                    await acceptorDm.SendMessageAsync($"{ctx.Member.Username} does not wish to join your discord, please reach out to them directly");
                 }
             }
             else
