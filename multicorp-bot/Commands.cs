@@ -1379,7 +1379,7 @@ namespace multicorp_bot
                 while(acceptedUser == null)
                 {
                     await qjmmsg.DeleteAsync();
-                    var org = orgs[rand.Next(0, orgs.Count)];
+                    var org = orgs[rand.Next(orgs.Count)];
 
                     var msg = await DispatchController.SendOrgMessage(ctx, org);
                     await msg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
