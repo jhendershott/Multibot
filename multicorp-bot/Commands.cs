@@ -1360,7 +1360,7 @@ namespace multicorp_bot
                 await otherMessage.DeleteAsync();
                 await otherResponse.Result.DeleteAsync();
 
-                await ctx.RespondAsync("Please hold while I find an available unit. Look for a Direct message with your rescue unit information");
+                await ctx.RespondAsync("Please hold while I find an available unit. Look for a Direct message with your rescue unit information - This could take several minutes");
             }
 
             //send a message to those discords
@@ -1372,21 +1372,22 @@ namespace multicorp_bot
             DiscordMember acceptedUser = null;
             await qjmmsg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
             var qjmAcceptedInter = ctx.Client.GetInteractivity();
-            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(1));
+            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(2));
             if (qjmAccepted.Result == null)
             {
                 Random rand = new Random();
                 while(acceptedUser == null)
                 {
-                    var org = orgs[rand.Next(orgs.Count - 1)];
+                    await qjmmsg.DeleteAsync();
+                    var org = orgs[rand.Next(0, orgs.Count)];
 
                     var msg = await DispatchController.SendOrgMessage(ctx, org);
                     await msg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
                     var acceptedInter = ctx.Client.GetInteractivity();
                     var accepted = await acceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(2));
-                    if (accepted.Result.User.Id.ToString() == null)
+                    if (accepted.Result != null)
                     {
-                        acceptedUser = await qjmAccepted.Result.Guild.GetMemberAsync(qjmAccepted.Result.User.Id);
+                        acceptedUser = await accepted.Result.Guild.GetMemberAsync(accepted.Result.User.Id);
                     }
                     else
                     {
