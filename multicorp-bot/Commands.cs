@@ -109,6 +109,12 @@ namespace multicorp_bot
             }
         }
 
+        [Command("setup")]
+        public async Task Setup(CommandContext ctx)
+        {
+            OrgController.AddOrg(ctx.Guild);
+        }
+
 
         [Command("check-requirements")]
         public async Task CheckRequirements(CommandContext ctx)
@@ -1617,7 +1623,7 @@ namespace multicorp_bot
                         loan = await LoanController.FundLoan(ctx, loanIdMsg.Result, true);
                         await ctx.RespondAsync($"Congratulations " +
                             $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
-                            $" MultiCorpBank is willing to fund your loan!" +
+                            $" {ctx.Guild.Name} is willing to fund your loan!" +
                             $" Reach out to them to a banker to receive your funds");
                     }
                     else
