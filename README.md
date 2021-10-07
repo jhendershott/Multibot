@@ -18,4 +18,4 @@ Do you want to support the project??
 [![Paypal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate?business=M4V7ZXDYEE59L&no_recurring=0&currency_code=USD)
 
 **Venmo**
-[Imgur](https://i.imgur.com/1K00k00.png)
+[![Imgur](https://img.shields.io/badge/Donate-VenmoQR-orange.svg)](https://i.imgur.com/1K00k00.png)
