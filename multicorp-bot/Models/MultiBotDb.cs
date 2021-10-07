@@ -320,6 +320,10 @@ namespace multicorp_bot
                 entity.Property(e => e.OrgId)
                 .IsRequired()
                 .HasColumnName("org_id");
+
+                entity.Property(e => e.DispatchType)
+                .IsRequired()
+                .HasColumnName("dispatch_type");
             });
 
             OnModelCreatingPartial(modelBuilder);

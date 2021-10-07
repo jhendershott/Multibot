@@ -29,7 +29,7 @@ namespace multicorp_bot {
             interactivity = discord.UseInteractivity(new InteractivityConfiguration());
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-                StringPrefixes = new string[] { "." },
+                StringPrefixes = new string[] { "!" },
                 CaseSensitive = false
             });
 

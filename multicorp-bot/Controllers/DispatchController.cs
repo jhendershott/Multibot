@@ -21,7 +21,7 @@ namespace multicorp_bot.Controllers
 
         public List<Orgs> GetRescueOrgs()
         {
-            var orgD = MultiBotDb.OrgDispatch.AsQueryable().Where(x => x.OrgDispatchId == 1).ToList();
+            var orgD = MultiBotDb.OrgDispatch.AsQueryable().Where(x => x.DispatchType == 1).ToList();
 
             List<Orgs> orgs = new List<Orgs>();
             foreach (var org in orgD)
@@ -36,7 +36,7 @@ namespace multicorp_bot.Controllers
         {
             DiscordGuild guild = await ctx.Client.GetGuildAsync(ulong.Parse(org.DiscordId));
             var channels = await guild.GetChannelsAsync();
-            DiscordMessage msg = await channels.First(x => x.Name == "bottest").SendMessageAsync("Someone Needs Medical Attention");
+            DiscordMessage msg = await channels.First(x => x.Name == "medical-assistance").SendMessageAsync("Someone Needs Medical Attention");
 
             return msg;
         }

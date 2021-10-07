@@ -1354,8 +1354,8 @@ namespace multicorp_bot
             DiscordMember acceptedUser = null;
             await qjmmsg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
             var qjmAcceptedInter = ctx.Client.GetInteractivity();
-            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(5));
-            if (qjmAccepted.Result.User.Id.ToString() == null)
+            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(1));
+            if (qjmAccepted.Result == null)
             {
                 Random rand = new Random();
                 while(acceptedUser == null)
@@ -1399,30 +1399,40 @@ namespace multicorp_bot
                 await requestorDm.SendMessageAsync($"Would you like an invite to {acceptedUser.Guild.Name}? " +
                     $"\nYes = you will be put in a specific patient channel " +
                     $"\nNo = you agree to wait for a discord/RSI friend request from {acceptedUser.Username}");
-                var confirm = await requestorDm.GetNextMessageAsync(timeoutOverride: TimeSpan.FromMinutes(5));
+                var confirm = await requestorDm.GetNextMessageAsync(timeoutOverride: TimeSpan.FromMinutes(1));
 
                 if(confirm.Result.Content != null && confirm.Result.Content.ToLower() == "yes")
                 {
-                    var invites = await acceptedUser.Guild.GetInvitesAsync();
-                    var channel = (await acceptedUser.Guild.GetChannelsAsync()).First(x => x.Name == "Patient");
-                    foreach (var inv in invites)
-                    {
-                        if (inv.Channel.Name == "patient")
-                        {
-                            await requestorDm.SendMessageAsync(inv.ToString());
-                            await acceptorDm.SendMessageAsync($"{ctx.Member.Username} will be joining you server as a 'patient'");
-                        }
-                    }
+                    var invites = (await acceptedUser.Guild.GetInvitesAsync()).ToList();
+                
+                    var channel = (await acceptedUser.Guild.GetChannelsAsync()).First(x => x.Name == "medical-assistance");
+                    var inv = invites.FirstOrDefault(x => x.Channel.Name == "medical-assistance");
+
+                    await requestorDm.SendMessageAsync(inv.ToString());
+                    await acceptorDm.SendMessageAsync($"{ctx.Member.Username} will be joining you server as a 'patient'");
+                    
 
                     bool userInChannel = false;
                     int i = 0;
-                    while (userInChannel == false || i < 300000) {
-                        var users = channel.Users;
-                        var use = users.FirstOrDefault(x => x.Id == ctx.Member.Id);
-                        if(use != null)
+
+
+                    try
+                    {
+                        while (userInChannel == false || i < 300000)
                         {
-                            await use.GrantRoleAsync(acceptedUser.Guild.Roles.First(x => x.Value.Name == "patient").Value, "New Patient");
+                            var users = await acceptedUser.Guild.GetAllMembersAsync();
+                            var use = users.FirstOrDefault(x => x.Id == ctx.Member.Id);
+                            if (use != null)
+                            {
+                                var patient = acceptedUser.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Patient").Value;
+                                await use.GrantRoleAsync(patient, "New Patient");
+                                userInChannel = true;
+                            }
+                            i++;
                         }
+                    } catch(Exception e)
+                    {
+                        Console.WriteLine(e);
                     }
                 }
                 else

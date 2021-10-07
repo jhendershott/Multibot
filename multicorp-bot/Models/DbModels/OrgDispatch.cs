@@ -7,5 +7,6 @@ namespace multicorp_bot.Models.DbModels
 
         public int OrgDispatchId { get; set; }
         public int OrgId { get; set; }
+        public int DispatchType { get; set; }
     }
 }
