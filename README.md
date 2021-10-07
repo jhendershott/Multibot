@@ -1,4 +1,4 @@
-#Welcome to Multibot your one stop shop for organizations in Star Citizen
+Welcome to Multibot your one stop shop for organizations in Star Citizen
 
 Functionality will be added as we go so please add requests into issues or reach out to me directly to help you out!
 
