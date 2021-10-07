@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using System.Threading.Tasks;
+using multicorp_bot.Models.DbModels;
 
 namespace multicorp_bot.Controllers
 {
@@ -41,8 +42,54 @@ namespace multicorp_bot.Controllers
             return msg;
         }
 
+        public bool Enlist(CommandContext ctx, string type)
+        {
+            var org = new OrgController().GetOrgId(ctx.Guild);
+            DispatchType dType = null;
 
+            try
+            {
+                switch (type)
+                {
+                    case "medical":
+                        dType = this.GetDispatchType(type);
+                        var newsub = new OrgDispatch();
+                        newsub.OrgId = org;
+                        newsub.DispatchType = dType.DispatchTypeId;
 
+                        MultiBotDb.OrgDispatch.Add(newsub);
+                        MultiBotDb.SaveChanges();
+                        break;
+
+                    default: ctx.RespondAsync("Enlistment types include: 'medical', please try again"); break;
+                }
+
+                var en = new MultiBotDb().OrgDispatch.FirstOrDefault(x => x.OrgId == org && x.DispatchType == dType.DispatchTypeId);
+
+                if (en != null)
+                {
+                    ctx.RespondAsync("You have been successfully subscribed to 'medical'");
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                ctx.RespondAsync("something went wrong");
+                return false;
+            }
+
+            
+        }
+
+        private DispatchType GetDispatchType(string type)
+        {
+            return MultiBotDb.DispatchType.First(x => x.Description == type);
+        }
 
     }
 }

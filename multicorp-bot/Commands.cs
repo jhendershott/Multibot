@@ -1191,6 +1191,24 @@ namespace multicorp_bot
             controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
         }
 
+        [Command("subscribe")]
+        public async Task Enlist(CommandContext ctx, string type = null)
+        {
+            if(type == null)
+            {
+                var interactivity = ctx.Client.GetInteractivity();
+                await ctx.RespondAsync("To What type of tasks would you like to subscribe? currently your options are: 'medical' ");
+                var typemsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(2));
+                DispatchController.Enlist(ctx, typemsg.Result.Content);
+
+            }
+            else
+            {
+                DispatchController.Enlist(ctx, type);
+            }
+
+        }
+
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
