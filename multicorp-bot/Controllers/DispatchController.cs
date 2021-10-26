@@ -91,5 +91,14 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.DispatchType.First(x => x.Description == type);
         }
 
+        public void LogDispach(DiscordMember requestor, DiscordMember acceptor = null)
+        {
+            var newLog = new DispatchLog();
+            newLog.RequestorName = requestor.Username;
+            newLog.RequestorOrg = requestor.Guild.Name;
+            newLog.AcceptorName = acceptor.Username;
+            newLog.AcceptorOrg = acceptor.Guild.Name;
+        }
+
     }
 }
