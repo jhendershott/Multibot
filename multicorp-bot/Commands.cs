@@ -1379,7 +1379,7 @@ namespace multicorp_bot
             DiscordMember acceptedUser = null;
             await qjmmsg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
             var qjmAcceptedInter = ctx.Client.GetInteractivity();
-            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(1));
+            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(4));
             if (qjmAccepted.Result == null)
             {
                 Random rand = new Random();
@@ -1427,7 +1427,7 @@ namespace multicorp_bot
                 await requestorDm.SendMessageAsync($"Would you like an invite to {acceptedUser.Guild.Name}? " +
                     $"\nYes = you will be put in a specific patient channel " +
                     $"\nNo = you agree to wait for a discord/RSI friend request from {acceptedUser.Username}");
-                var confirm = await requestorDm.GetNextMessageAsync(timeoutOverride: TimeSpan.FromMinutes(1));
+                var confirm = await requestorDm.GetNextMessageAsync(timeoutOverride: TimeSpan.FromMinutes(4));
 
                 if(confirm.Result.Content != null && confirm.Result.Content.ToLower() == "yes")
                 {
