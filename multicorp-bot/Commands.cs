@@ -1372,7 +1372,7 @@ namespace multicorp_bot
 
             //send a message to those discords
             var qjm = orgs.First(x => x.OrgName == "MultiCorp");
-            var qjmmsg = await DispatchController.SendOrgMessage(ctx, qjm);
+            var qjmmsg = await DispatchController.SendOrgMessage(ctx, qjm, locationResp.Result.Content);
             orgs.Remove(qjm);
 
             //wait until someone accepts
@@ -1389,7 +1389,7 @@ namespace multicorp_bot
                     await qjmmsg.Channel.SendMessageAsync("Since no one was available within the 4 minute time limit the dispatch was sent to another provider");
                     var org = orgs[rand.Next(orgs.Count)];
 
-                    var msg = await DispatchController.SendOrgMessage(ctx, org);
+                    var msg = await DispatchController.SendOrgMessage(ctx, org, locationResp.Result.Content);
                     await msg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
                     var acceptedInter = ctx.Client.GetInteractivity();
                     var accepted = await acceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(4));

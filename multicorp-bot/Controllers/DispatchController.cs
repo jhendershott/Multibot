@@ -40,11 +40,11 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public async Task<DiscordMessage> SendOrgMessage(CommandContext ctx, Orgs org)
+        public async Task<DiscordMessage> SendOrgMessage(CommandContext ctx, Orgs org, string location)
         {
             DiscordGuild guild = await ctx.Client.GetGuildAsync(ulong.Parse(org.DiscordId));
             var channels = await guild.GetChannelsAsync();
-            DiscordMessage msg = await channels.First(x => x.Name == "medical-assistance").SendMessageAsync("Someone Needs Medical Attention");
+            DiscordMessage msg = await channels.First(x => x.Name == "medical-assistance").SendMessageAsync($"Someone Needs Medical Attention \n Approximate location: {location}");
 
             return msg;
         }
