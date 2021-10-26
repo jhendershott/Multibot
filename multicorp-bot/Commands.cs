@@ -1370,7 +1370,7 @@ namespace multicorp_bot
             }
 
             //send a message to those discords
-            var qjm = orgs.First(x => x.OrgName == "QUANTUM JUMP MEDICAL");
+            var qjm = orgs.First(x => x.OrgName == "MultiCorp");
             var qjmmsg = await DispatchController.SendOrgMessage(ctx, qjm);
             orgs.Remove(qjm);
 
@@ -1378,7 +1378,7 @@ namespace multicorp_bot
             DiscordMember acceptedUser = null;
             await qjmmsg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
             var qjmAcceptedInter = ctx.Client.GetInteractivity();
-            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(2));
+            var qjmAccepted = await qjmAcceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(4));
             if (qjmAccepted.Result == null)
             {
                 Random rand = new Random();
@@ -1390,7 +1390,7 @@ namespace multicorp_bot
                     var msg = await DispatchController.SendOrgMessage(ctx, org);
                     await msg.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":rotating_light:"));
                     var acceptedInter = ctx.Client.GetInteractivity();
-                    var accepted = await acceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(2));
+                    var accepted = await acceptedInter.WaitForReactionAsync(x => x.User.Id != qjmmsg.Author.Id && x.Emoji == DiscordEmoji.FromName(ctx.Client, ":rotating_light:"), TimeSpan.FromMinutes(4));
                     if (accepted.Result != null)
                     {
                         acceptedUser = await accepted.Result.Guild.GetMemberAsync(accepted.Result.User.Id);
@@ -1398,6 +1398,7 @@ namespace multicorp_bot
                     else
                     {
                         orgs.Remove(org);
+                        await msg.Channel.SendMessageAsync("Since no one was available withing the 4 minute time limit the dispatch was sent to another provider");
                         await msg.DeleteAsync();
                     }
                 }
@@ -1464,6 +1465,8 @@ namespace multicorp_bot
                 {
                     await acceptorDm.SendMessageAsync($"{ctx.Member.Username} does not wish to join your discord, please reach out to them directly");
                 }
+
+                DispatchController.LogDispach(ctx.Member, acceptedUser);
             }
             else
             {

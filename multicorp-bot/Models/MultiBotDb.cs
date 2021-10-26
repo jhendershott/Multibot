@@ -28,6 +28,7 @@ namespace multicorp_bot
         public virtual DbSet<Loans> Loans { get; set; }
         public virtual DbSet<OrgDispatch> OrgDispatch { get; set;}
         public virtual DbSet<DispatchType> DispatchType { get; set; }
+        public virtual DbSet<DispatchLog> DispatchLog { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -324,6 +325,28 @@ namespace multicorp_bot
                 entity.Property(e => e.DispatchType)
                 .IsRequired()
                 .HasColumnName("dispatch_type");
+            });
+
+            modelBuilder.Entity<DispatchLog>(entity =>
+            {
+                entity.ToTable("org_dispatch");
+
+                entity.Property(e => e.Id)
+                .HasColumnName("id").ValueGeneratedOnAdd();
+
+                entity.Property(e => e.RequestorName)
+                .IsRequired()
+                .HasColumnName("requestor_name");
+
+                entity.Property(e => e.RequestorOrg)
+                .IsRequired()
+                .HasColumnName("requestor_org");
+
+                entity.Property(e => e.AcceptorName)
+                .HasColumnName("acceptor_name");
+
+                entity.Property(e => e.AcceptorOrg)
+                .HasColumnName("acceptor_org");
             });
 
             OnModelCreatingPartial(modelBuilder);
