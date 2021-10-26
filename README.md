@@ -1,28 +1,24 @@
-# MD-Branch Updates
-I just wanted to add some logging and experiment with measuring application exceptions and edges cases.
+Welcome to Multibot your one stop shop for organizations in Star Citizen
 
-This logging will let us know how many users tried to do things they can't, and how many exceptions are being handled.
+Functionality will be added as we go so please add requests into issues or reach out to me directly to help you out!
 
-## Added 1 new helper class for logging exceptions and events
-Helpers/TelemetryHelper.cs  -  Singleton helper class for logging in Azure.  Helper classes for logging exceptions and custom events.
+Please see our wiki for details https://github.com/jhendershott/Multibot/wiki
+Current most used commands inclue
+**Bank**
+**Dispatch**
+**Loans**
+**Fleet**
 
-## Added 2 new environment variables:
-"TelemetryAppKey": "GUID"   -  This is the unique id of the Azure Application Insights instrument key.
+All of these commands are detailed in the wiki. Let me know how I can help you run your org as efficiently as possible.
 
-"TelemetryENV": "DEV"  - This is the environment metadata associated with each log entry.
+This is an open source project so if you're interested in contributing please reach out!
 
-## Example C# code snipets:
-TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "loan", ctx);
+Do you want to support the project??
 
-TelemetryHelper.Singleton.LogEvent("BOT TASK", "task-loan-find-not", ctx);
+**Paypal**
 
-TelemetryHelper.Singleton.LogException("task-loan-pay", e);
+[![Paypal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate?business=M4V7ZXDYEE59L&no_recurring=0&currency_code=USD)
 
+**Venmo**
 
-
-
-
-
-
-
-
+[![Imgur](https://img.shields.io/badge/Donate-VenmoQR-orange.svg)](https://i.imgur.com/1K00k00.png)
