@@ -22,15 +22,22 @@ namespace multicorp_bot.Controllers
 
         public List<Orgs> GetRescueOrgs()
         {
-            var orgD = MultiBotDb.OrgDispatch.AsQueryable().Where(x => x.DispatchType == 1).ToList();
-
-            List<Orgs> orgs = new List<Orgs>();
-            foreach (var org in orgD)
+            try
             {
-                orgs.Add(MultiBotDb.Orgs.Single(x => x.Id == org.OrgId));
-            }
+                var orgD = MultiBotDb.OrgDispatch.AsQueryable().Where(x => x.DispatchType == 1).ToList();
 
-            return orgs;
+                List<Orgs> orgs = new List<Orgs>();
+                foreach (var org in orgD)
+                {
+                    orgs.Add(MultiBotDb.Orgs.Single(x => x.Id == org.OrgId));
+                }
+
+                return orgs;
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
         }
 
         public async Task<DiscordMessage> SendOrgMessage(CommandContext ctx, Orgs org)
@@ -91,13 +98,22 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.DispatchType.First(x => x.Description == type);
         }
 
-        public void LogDispach(DiscordMember requestor, DiscordMember acceptor = null)
+        public void LogDispatch(DiscordMember requestor, DiscordMember acceptor = null)
         {
-            var newLog = new DispatchLog();
-            newLog.RequestorName = requestor.Username;
-            newLog.RequestorOrg = requestor.Guild.Name;
-            newLog.AcceptorName = acceptor.Username;
-            newLog.AcceptorOrg = acceptor.Guild.Name;
+            try
+            {
+                var newLog = new DispatchLog();
+                newLog.RequestorName = requestor.Username;
+                newLog.RequestorOrg = requestor.Guild.Name;
+                newLog.AcceptorName = acceptor.Username;
+                newLog.AcceptorOrg = acceptor.Guild.Name;
+
+                MultiBotDb.DispatchLog.Add(newLog);
+                MultiBotDb.SaveChanges();
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
     }

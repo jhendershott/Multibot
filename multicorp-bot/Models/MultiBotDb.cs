@@ -34,9 +34,8 @@ namespace multicorp_bot
         {
             if (!optionsBuilder.IsConfigured)
             {
-                Console.WriteLine(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
-                //optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
-                optionsBuilder.UseNpgsql("Server=ec2-52-87-58-157.compute-1.amazonaws.com; Port=5432; User Id=otaezimgjezlqz; Password=e1229aee93dabd15a5747c19cb63857c3669137d147df681c5d501f1df2e6a70; Database=d7rat0uua58ok5; SSL Mode=Require;Trust Server Certificate=true");
+                optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
+                
             }
         }
 
@@ -329,7 +328,7 @@ namespace multicorp_bot
 
             modelBuilder.Entity<DispatchLog>(entity =>
             {
-                entity.ToTable("org_dispatch");
+                entity.ToTable("dispatch_log");
 
                 entity.Property(e => e.Id)
                 .HasColumnName("id").ValueGeneratedOnAdd();
