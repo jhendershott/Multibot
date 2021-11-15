@@ -151,7 +151,8 @@ namespace multicorp_bot.Controllers
             var users = memCont.GetMembersByOrgId(orgC.GetOrgId(guild));
 
             foreach(var user in users){
-                bankItems.Single(x => x.UserId == user.UserId).Amount = 0;   
+                bankItems.Single(x => x.UserId == user.UserId).Amount = 0;
+                bankItems.Single(x => x.UserId == user.UserId).Merits = 0;
             }
             transContext.UpdateRange(bankItems);
             MultiBotDb.SaveChanges();
