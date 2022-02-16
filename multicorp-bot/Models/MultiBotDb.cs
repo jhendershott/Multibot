@@ -335,17 +335,17 @@ namespace multicorp_bot
 
                 entity.Property(e => e.RequestorName)
                 .IsRequired()
-                .HasColumnName("requestor_name");
+                .HasColumnName("requestor-name");
 
                 entity.Property(e => e.RequestorOrg)
                 .IsRequired()
-                .HasColumnName("requestor_org");
+                .HasColumnName("requestor-org");
 
                 entity.Property(e => e.AcceptorName)
-                .HasColumnName("acceptor_name");
+                .HasColumnName("acceptor-name");
 
                 entity.Property(e => e.AcceptorOrg)
-                .HasColumnName("acceptor_org");
+                .HasColumnName("acceptor-org");
             });
 
             OnModelCreatingPartial(modelBuilder);
