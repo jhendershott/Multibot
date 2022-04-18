@@ -75,7 +75,7 @@ namespace multicorp_bot.Controllers
             }
             else
             {
-                AddMember(new Ranks().GetNickWithoutRank(member.Nickname), orgId, member);
+                AddMember(member.Nickname, orgId, member);
                 return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
             }
         }
