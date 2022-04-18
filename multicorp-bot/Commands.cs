@@ -1616,11 +1616,11 @@ namespace multicorp_bot
 
                 Loans loan = null;
 
-                if (bankers.Contains(ctx.Member.Id) && bank == "bank")
+                if (bankers.Contains(ctx.Member.Id) && bank == "bank" && !loanIdMsg.TimedOut)
                 {
                     var confirmEmojis = ConfirmEmojis(ctx);
 
-                    var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds?");
+                    var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds? Please respond with 'yes' or 'approve'");
                     var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains(xm.Author.Id), TimeSpan.FromMinutes(10));
                     if (confirmMsg.Result.Content.ToLower().Contains("yes")
                         || confirmMsg.Result.Content.ToLower().Contains("confirm")
@@ -1637,6 +1637,10 @@ namespace multicorp_bot
                         await ctx.RespondAsync("Loan funding with bank credits has been cancelled");
                     }
 
+                }
+                else if(loanIdMsg.TimedOut)
+                {
+                    await ctx.RespondAsync("Loan Request Timed out. Please start loan fund request again.");
                 }
                 else
                 {
