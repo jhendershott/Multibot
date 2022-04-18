@@ -69,7 +69,7 @@ namespace multicorp_bot.Controllers
         {
             var orgId = new OrgController().GetOrgId(guild);
             var memberCtx = MultiBotDb.Mcmember;
-            if(memberCtx.Any(x => x.DiscordId == member.Id.ToString()))
+            if(memberCtx.Any(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId ))
             {
                 return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
             }
