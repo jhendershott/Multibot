@@ -17,6 +17,8 @@ namespace multicorp_bot.Controllers
 
         public int AddOrg(DiscordGuild guild)
         {
+            if (MultiBotDb.Orgs.Any(o => o.DiscordId == guild.Id.ToString())) return GetOrgId(guild);
+
             var orgContext = MultiBotDb.Orgs;
             var org = new Orgs()
             {
@@ -47,7 +49,6 @@ namespace multicorp_bot.Controllers
                 Console.WriteLine(e);
             }
         }
-
 
         public int GetOrgId(DiscordGuild guild)
         {
