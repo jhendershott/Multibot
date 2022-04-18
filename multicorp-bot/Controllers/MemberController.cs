@@ -75,7 +75,14 @@ namespace multicorp_bot.Controllers
             }
             else
             {
-                AddMember(member.Nickname, orgId, member);
+                if (member.Nickname != null)
+                {
+                    AddMember(member.Nickname, orgId, member);
+                }
+                else
+                {
+                    AddMember(member.DisplayName, orgId, member);
+                }
                 return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
             }
         }
