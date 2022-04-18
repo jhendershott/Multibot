@@ -1628,7 +1628,7 @@ namespace multicorp_bot
                     {
                         loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result, true);
                         await ctx.RespondAsync($"Congratulations " +
-                            $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
+                            $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention}! \n" +
                             $" {ctx.Guild.Name} is willing to fund your loan!" +
                             $" Reach out to a Guild banker to receive your funds");
                     }
@@ -1646,7 +1646,7 @@ namespace multicorp_bot
                 {
                     loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result);
                     await ctx.RespondAsync($"Congratulations " +
-                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
+                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention}! \n" +
                     $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}is willing to fund your loan!" +
                     $" Reach out to them to receive your funds");
                 }
