@@ -1796,7 +1796,7 @@ namespace multicorp_bot
             try
             {
                 int amount = int.Parse(amountmsg.Result.Content);
-                await ctx.RespondAsync("Excellent! Do you prefer your interested to be 'percentage' or 'flat' rate?");
+                await ctx.RespondAsync("Excellent! Do you want to offer interested back? Please type 'percent' for a calculated incentive, 'flat' for a flat return, or 'none' for a no interest loan");
 
                 var typemsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
                 string type = "";
@@ -1807,6 +1807,12 @@ namespace multicorp_bot
                         break;
                     case string b when b.Contains("flat"):
                         type = "flat";
+                        break;
+                    case string b when b.Contains("none"):
+                        type = "none";
+                        break;
+                    case string b when b.Contains("0"):
+                        type = "none";
                         break;
                     default:
                         await ctx.RespondAsync("Sorry I didn't get that. Please start over, types must include 'flat' or 'percentage'.");
@@ -1824,7 +1830,7 @@ namespace multicorp_bot
                     await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + interestamount} is waiting for funding");
                     TelemetryHelper.Singleton.LogEvent("BOT TASK", "loan-request-details", ctx);//seeing if it gets here
                 }
-                else
+                else if(type == "flat")
                 {
                     await ctx.RespondAsync("What amount interest are you offering. Please use whole numbers: e.g. 20000");
                     var interest = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
@@ -1835,6 +1841,22 @@ namespace multicorp_bot
                     {
                         LoanController.AddLoan(ctx.Member, ctx.Guild, amount, interestAmount);
                         await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + interestAmount} is waiting for funding");
+                    }
+                    catch (Exception e)
+                    {
+                        TelemetryHelper.Singleton.LogException("task-loan-add", e);
+                        Console.WriteLine(e);
+                        await ctx.RespondAsync("I'm sorry, but an error has occured please notify your banker.");
+                    }
+                }
+                else if(type == "none")
+                {
+                    await ctx.RespondAsync("Please hold your application is being processed");
+
+                    try
+                    {
+                        LoanController.AddLoan(ctx.Member, ctx.Guild, amount, 0);
+                        await ctx.RespondAsync($"Your Loan of {amount} with a total repayment of {amount + 0} is waiting for funding");
                     }
                     catch (Exception e)
                     {
