@@ -1628,7 +1628,7 @@ namespace multicorp_bot
 
                     if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
                     {
-                        loan = await LoanController.FundLoan(ctx, loanIdMsg.Result, true);
+                        loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result, true);
                         await ctx.RespondAsync($"Congratulations " +
                             $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
                             $" {ctx.Guild.Name} is willing to fund your loan!" +
@@ -1643,7 +1643,7 @@ namespace multicorp_bot
                 }
                 else
                 {
-                    loan = await LoanController.FundLoan(ctx, loanIdMsg.Result);
+                    loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result);
                     await ctx.RespondAsync($"Congratulations " +
                     $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
                     $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention} is willing to fund your loan!" +
@@ -1817,7 +1817,7 @@ namespace multicorp_bot
                         type = "none";
                         break;
                     default:
-                        await ctx.RespondAsync("Sorry I didn't get that. Please start over, types must include 'flat' or 'percentage'.");
+                        await ctx.RespondAsync("Sorry I didn't get that. You will need to start over. Please type !Loan Requests and provide a valid type. types must include 'flat', 'percentage', or 'none'.");
                         break;
                 }
 

@@ -162,7 +162,7 @@ namespace multicorp_bot.Controllers
             return builder.Build();
         }
 
-        public async Task<Loans> FundLoan(CommandContext ctx, DiscordMessage response, bool isBank = false)
+        public async Task<Loans> FundLoan(CommandContext ctx, DiscordMember member, DiscordGuild guild, DiscordMessage response, bool isBank = false)
         {
             try
             {
@@ -173,7 +173,7 @@ namespace multicorp_bot.Controllers
                 }
                 else
                 {
-                    loan.FunderId = new MemberController().GetMemberbyDcId(await ctx.Guild.GetMemberAsync(ctx.User.Id), ctx.Guild).UserId;
+                    loan.FunderId = new MemberController().GetMemberbyDcId(member, guild).UserId;
                 }
 
                 loan.Status = "Funded";
