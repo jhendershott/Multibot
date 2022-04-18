@@ -636,6 +636,7 @@ namespace multicorp_bot
                     case "withdraw":
                         try
                         {
+                            await ctx.RespondAsync("starting Withdraw process");
                             if (bankers.Contains(ctx.Member.Id))
                             {
                                 if (!ctx.Message.Content.ToLower().Contains("merit") && !ctx.Message.Content.ToLower().Contains("credit"))
@@ -857,6 +858,7 @@ namespace multicorp_bot
                     case "withdraw":
                         try
                         {
+                            await ctx.RespondAsync("starting Withdraw process");
                             if (bankers.Contains(ctx.Member.Id))
                             {
                                 if (!type.ToLower().Contains("merit") && !type.ToLower().Contains("credit"))

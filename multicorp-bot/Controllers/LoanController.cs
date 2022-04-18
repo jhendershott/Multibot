@@ -42,8 +42,7 @@ namespace multicorp_bot.Controllers
                 var loan = new Loans()
                 {
                     LoanId = GetHighestLoanId() + 1,
-                    ApplicantId = new MemberController().GetMemberId(
-                       new Ranks().GetNickWithoutRank(member), orgId, member).GetValueOrDefault(),
+                    ApplicantId = new MemberController().GetMemberbyDcId(member, guild).UserId,
                     RequestedAmount = totalAmount,
                     RemainingAmount = totalAmount + interestAmount,
                     InterestAmount = interestAmount,
