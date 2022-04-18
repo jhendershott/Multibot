@@ -1621,23 +1621,20 @@ namespace multicorp_bot
                     var confirmEmojis = ConfirmEmojis(ctx);
 
                     var approval = await ctx.RespondAsync("Are you sure you want to fund the loan with Bank funds?");
-                    await approval.CreateReactionAsync(confirmEmojis[0]);
-                    await approval.CreateReactionAsync(confirmEmojis[1]);
-                    Thread.Sleep(500);
-                    var confirmMsg = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], timeoutoverride: TimeSpan.FromMinutes(5));
-
-                    if (confirmMsg.Result.Emoji.Name == "✅" && bankers.Contains(confirmMsg.Result.User.Id))
+                    var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains(xm.Author.Id), TimeSpan.FromMinutes(10));
+                    if (confirmMsg.Result.Content.ToLower().Contains("yes")
+                        || confirmMsg.Result.Content.ToLower().Contains("confirm")
+                        || confirmMsg.Result.Content.ToLower().Contains("approve"))
                     {
                         loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result, true);
                         await ctx.RespondAsync($"Congratulations " +
                             $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
                             $" {ctx.Guild.Name} is willing to fund your loan!" +
-                            $" Reach out to them to a banker to receive your funds");
+                            $" Reach out to a Guild banker to receive your funds");
                     }
                     else
                     {
                         await ctx.RespondAsync("Loan funding with bank credits has been cancelled");
-
                     }
 
                 }
@@ -1646,7 +1643,7 @@ namespace multicorp_bot
                     loan = await LoanController.FundLoan(ctx, ctx.Member, ctx.Guild, loanIdMsg.Result);
                     await ctx.RespondAsync($"Congratulations " +
                     $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}! \n" +
-                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.ApplicantId)).Mention} is willing to fund your loan!" +
+                    $"{(await MemberController.GetDiscordMemberByMemberId(ctx, loan.FunderId.GetValueOrDefault())).Mention}is willing to fund your loan!" +
                     $" Reach out to them to receive your funds");
                 }
             } catch(Exception e)
@@ -1687,7 +1684,7 @@ namespace multicorp_bot
         private async Task LoanPayment(CommandContext ctx)
         {
             Loans loan = null;
-            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild); ;
+            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild); 
             var pullingMsg = await ctx.RespondAsync("Pulling up your loan info now.");
             try
             {
@@ -1718,14 +1715,9 @@ namespace multicorp_bot
 
                     if (loan.FunderId == 0)
                     {
-                        var confirmMsg = await ctx.RespondAsync($"Waiting for a Banker to confirm this payment, you have 10 minutes to confirm");
-                        var confirmEmojis = ConfirmEmojis(ctx);
-                        await confirmMsg.CreateReactionAsync(confirmEmojis[0]);
-                        await confirmMsg.CreateReactionAsync(confirmEmojis[1]);
-                        Thread.Sleep(500);
-                        var confirm = await interactivity.WaitForReactionAsync(r => r.Emoji == confirmEmojis[0] || r.Emoji == confirmEmojis[1], confirmMsg, ctx.User, timeoutoverride: TimeSpan.FromMinutes(5));
-
-                        if (confirm.Result.Emoji.Name == "✅" && bankers.Contains(confirm.Result.User.Id))
+                        var confirmMsg = await ctx.RespondAsync($"Waiting for a Bankerconfirm this payment, you have 10 minutes to confirm, please type 'yes' or 'confirm'");
+                        var confirm = await interactivity.WaitForMessageAsync(xm => bankers.Contains(xm.Author.Id));
+                        if (bankers.Contains(confirm.Result.Author.Id) && confirm.Result.Content.Contains("yes") || confirm.Result.Content.Contains("confirm"))
                         {
                             LoanController.MakePayment(loan.LoanId, int.Parse(amountmsg.Result.Content));
                             await ctx.RespondAsync($"Payment of {FormatHelpers.FormattedNumber(amountmsg.Result.Content)} has been confirmed for loan: {loan.LoanId}. The new balance is {LoanController.GetLoanById(loan.LoanId).RemainingAmount}");
@@ -1739,7 +1731,7 @@ namespace multicorp_bot
                     else
                     {
                         var fundedMember = await ctx.Guild.GetMemberAsync(ulong.Parse(MemberController.GetMemberById(loan.FunderId.GetValueOrDefault()).DiscordId));
-                        var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm");
+                        var confirmMsg = await ctx.RespondAsync($"{fundedMember.Mention} Please confirm this payment, you have 10 minutes to confirm, please type 'yes' or 'confirm'");
                         var confirm = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == fundedMember.Id, TimeSpan.FromMinutes(10)));
                         if (confirm.Result.Content.Contains("yes") || confirm.Result.Content.Contains("confirm"))
                         {
