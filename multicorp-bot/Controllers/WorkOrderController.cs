@@ -136,10 +136,10 @@ namespace multicorp_bot.Controllers
                         string reqString = "";
                         foreach(var r in req)
                         {
-                            reqString = reqString + $"\n----------------------------------------------------------- \n**Material:** {r.Material} \n**Amount:** {r.Amount} \n";
+                            reqString = reqString + $"\n\n**Material:** {r.Material} \n**Amount:** {r.Amount}";
                         }
 
-                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + $"{reqString} \n-------------------------------------------------------------------");
+                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n{wOrders[i].Location} {reqString} \n\n-------------------------------------------------------------------");
 
                     }
                     builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
@@ -396,7 +396,7 @@ namespace multicorp_bot.Controllers
                 var order = new WorkOrders()
                 {
                     Id = GetHighestWorkOrder(id) + 1,
-                    Name = $"{title}: requested by - {ctx.Member.Nickname ?? ctx.Member.DisplayName}",
+                    Name = $"{title}- requested by {ctx.Member.Nickname ?? ctx.Member.DisplayName}",
                     Description = description,
                     Location = location,
                     WorkOrderTypeId = (await GetWorkOrderType(ctx, type)).Id,
