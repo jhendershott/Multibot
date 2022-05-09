@@ -288,6 +288,7 @@ namespace multicorp_bot.Controllers
             } catch(Exception e)
             {
                 Console.WriteLine(e);
+                return false;
             }
         }
 
