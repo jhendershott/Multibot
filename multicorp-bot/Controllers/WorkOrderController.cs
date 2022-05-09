@@ -136,7 +136,7 @@ namespace multicorp_bot.Controllers
                         string reqString = "";
                         foreach(var r in req)
                         {
-                            reqString = reqString + $"\nMaterial Name - {r.Material} \n Count{r.Amount} \n ---------------------";
+                            reqString = reqString + $"\n----------------\nMaterial Name - {r.Material} \n Count - {r.Amount} \n";
                         }
 
                         builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + $"{reqString} \n-------------------------------------------------------------------");
@@ -387,7 +387,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public async Task AddWorkOrder(CommandContext ctx, string name, string description, string type, string location, List<Tuple<string, int>> reqs)
+        public async Task AddWorkOrder(CommandContext ctx, string title, string description, string type, string location, List<Tuple<string, int>> reqs)
         {
 
             var id = new OrgController().GetOrgId(ctx.Guild);
@@ -396,7 +396,7 @@ namespace multicorp_bot.Controllers
                 var order = new WorkOrders()
                 {
                     Id = GetHighestWorkOrder(id) + 1,
-                    Name = name,
+                    Name = $"{title}: requested by - {ctx.Member.Nickname ?? ctx.Member.DisplayName}",
                     Description = description,
                     Location = location,
                     WorkOrderTypeId = (await GetWorkOrderType(ctx, type)).Id,
