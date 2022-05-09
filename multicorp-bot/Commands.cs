@@ -1189,24 +1189,27 @@ namespace multicorp_bot
         [Command("updateBoard")]   //command to test updating the board, we should call UpdateJobBoard() everytime we remove and add orders.
         public async Task updateBoard(CommandContext ctx)
         {
-            UpdateJobBoard(ctx);
+            await UpdateJobBoard(ctx);
 
         }
 
         public async Task UpdateJobBoard(CommandContext ctx)
         {
-            Mychannel = await ctx.Client.GetChannelAsync(973175260918734858);
-            if (JobBoardMesage != null)
+            var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
+            if(Mychannel == null)
             {
-                JobBoardMesage.DeleteAsync();
+                await ctx.Channel.SendMessageAsync("For a cleaner and more readable experience you must create a channel called 'job-board'");
             }
-      
-            JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+            else
+            {
+                if (JobBoardMesage != null)
+                {
+                    await JobBoardMesage.DeleteAsync();
+                }
 
+                JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+            }
         }
-
-
-
 
         [Command("restoreNicknames")]
         public async Task RestoreNicks(CommandContext ctx)
@@ -1245,7 +1248,11 @@ namespace multicorp_bot
                 var msg = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
                 amount = Regex.Replace(msg,  "[^0-9]", "");
             }
-            controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
+            bool isComplete = controller.LogWork(ctx, int.Parse(workOrder), material, int.Parse(amount));
+            if (isComplete)
+            {
+                await updateBoard(ctx);
+            }
         }
 
         [Command("subscribe")]
@@ -1601,6 +1608,7 @@ namespace multicorp_bot
             await controller.AddWorkOrder(ctx, name, description, workOrdertype, location, req);
 
             await ctx.RespondAsync("Work Order has been added to the dispatch list");
+            await updateBoard(ctx); 
         }
 
         private async Task FleetRequest(CommandContext ctx)

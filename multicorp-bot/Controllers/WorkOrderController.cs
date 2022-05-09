@@ -226,7 +226,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public void LogWork(CommandContext ctx, int id, string type, int amount)
+        public bool LogWork(CommandContext ctx, int id, string type, int amount)
         {
             try
             {
@@ -238,7 +238,7 @@ namespace multicorp_bot.Controllers
                 if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
                 {
                     ctx.RespondAsync("Please try again with a valid Work Order Id");
-                    return;
+                    return isCompleted;
                 }
                 
                 orderReq.Amount = orderReq.Amount - amount;
@@ -266,7 +266,7 @@ namespace multicorp_bot.Controllers
                     order.isCompleted = true;
                     MultiBotDb.WorkOrders.Update(order);
                     ctx.RespondAsync($"Great job you have completed the Work Order {type}");
-                    CalcXpForCompletion(order);
+                    CalcXpForCompletion(order);     
                 }
 
                 var xpmod = MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
@@ -283,6 +283,8 @@ namespace multicorp_bot.Controllers
 
                 newMbDb.Mcmember.Update(Member);
                 newMbDb.SaveChanges();
+
+                return isCompleted;
             } catch(Exception e)
             {
                 Console.WriteLine(e);
