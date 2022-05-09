@@ -126,20 +126,22 @@ namespace multicorp_bot.Controllers
 
                
                 builder.Color = DiscordColor.Orange;
-
-                for (int i = 0; i < wOrders.Count; i++)
+                if (wOrders.Count == 0)
                 {
-                   builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + "\n\n-------------------------------------------------------------------");
-
+                    builder.AddField("No Work Orders", "Check back later");
+                    builder.Timestamp = DateTime.Now;
+                    return builder.Build();
                 }
-                builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
-                builder.Timestamp = DateTime.Now;
-                return builder.Build();
-                
+                else { 
+                    for (int i = 0; i < wOrders.Count; i++)
+                    {
+                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + "\n\n-------------------------------------------------------------------");
 
-
-
-
+                    }
+                    builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
+                    builder.Timestamp = DateTime.Now;
+                    return builder.Build();
+                }
             }
             catch (Exception e)
             {

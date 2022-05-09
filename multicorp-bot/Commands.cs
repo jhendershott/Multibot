@@ -1195,19 +1195,25 @@ namespace multicorp_bot
 
         public async Task UpdateJobBoard(CommandContext ctx)
         {
-            var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
-            if(Mychannel == null)
+            try
             {
-                await ctx.Channel.SendMessageAsync("For a cleaner and more readable experience you must create a channel called 'job-board'");
-            }
-            else
-            {
-                if (JobBoardMesage != null)
+                var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
+                if (Mychannel == null)
                 {
-                    await JobBoardMesage.DeleteAsync();
+                    await ctx.Channel.SendMessageAsync("For a cleaner and more readable experience you must create a channel called 'job-board'");
                 }
+                else
+                {
+                    if (JobBoardMesage != null)
+                    {
+                        await JobBoardMesage.DeleteAsync();
+                    }
 
-                JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+                    JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+                }
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
