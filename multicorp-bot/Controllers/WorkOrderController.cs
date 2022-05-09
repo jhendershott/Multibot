@@ -112,10 +112,7 @@ namespace multicorp_bot.Controllers
                 WorkOrders order = null;
                 var orderType = await GetWorkOrderType(ctx, workOrderType);
                 var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted ).ToList();
-               
-                var DanOrder = wOrders[0].Name;
-               
-
+            
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
                 var type = FormatHelpers.Capitalize(orderType.Name);
 
@@ -135,7 +132,14 @@ namespace multicorp_bot.Controllers
                 else { 
                     for (int i = 0; i < wOrders.Count; i++)
                     {
-                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + "\n\n-------------------------------------------------------------------");
+                        var req = GetRequirements(wOrders[i].Id);
+                        string reqString = "";
+                        foreach(var r in req)
+                        {
+                            reqString = reqString + $"\nMaterial Name - {r.Material} \n Count{r.Amount} \n ---------------------";
+                        }
+
+                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + $"{reqString} \n-------------------------------------------------------------------");
 
                     }
                     builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
