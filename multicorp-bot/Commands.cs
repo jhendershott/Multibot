@@ -1122,9 +1122,7 @@ namespace multicorp_bot
                 else if (type.ToLower() == "view")
                 {
                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
-                    await ctx.RespondAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
-                    await ctx.Channel.SendMessageAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
-                        
+                    await ctx.Channel.SendMessageAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));     
                 }
                 else if (type.ToLower() == "log")
                 {
