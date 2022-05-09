@@ -139,7 +139,7 @@ namespace multicorp_bot.Controllers
                             reqString = reqString + $"\n**Material:** {r.Material} \n**Amount:** {r.Amount}\n";
                         }
 
-                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n\n**Locations:** {wOrders[i].Location} {reqString} \n\n-------------------------------------------------------------------");
+                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n\n**Location:** {wOrders[i].Location} {reqString} \n\n-------------------------------------------------------------------");
 
                     }
                     builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
