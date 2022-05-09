@@ -136,7 +136,7 @@ namespace multicorp_bot.Controllers
                         string reqString = "";
                         foreach(var r in req)
                         {
-                            reqString = reqString + $"\n----------------\nMaterial Name - {r.Material} \n Count - {r.Amount} \n";
+                            reqString = reqString + $"\n----------------\n<b>Material</b> - {r.Material} \n<b>Amount</b> - {r.Amount} \n";
                         }
 
                         builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + $"{reqString} \n-------------------------------------------------------------------");
