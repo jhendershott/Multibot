@@ -939,10 +939,19 @@ namespace multicorp_bot
                     await FundFleet(ctx);
                     break;
                 case "complete":
-                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-complete", ctx);
-                    var completed = FleetController.CompleteFleetRequest(ctx.Guild);
-                    await ctx.RespondAsync($"{completed} requests have been marked complete");
-                    break;
+                    var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+                    if (bankers.Contains(ctx.Member.Id))
+                    {
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-complete", ctx);
+                        var completed = FleetController.CompleteFleetRequest(ctx.Guild);
+                        await ctx.RespondAsync($"{completed} requests have been marked complete");
+                        break;
+                    }
+                    else
+                    {
+                        await ctx.RespondAsync("Sorry only Bankers are allowed to complete Fleet Requests");
+                        break;
+                    }
             }
             
         }
@@ -1114,6 +1123,8 @@ namespace multicorp_bot
                 {
                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
                     await ctx.RespondAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
+                    await ctx.Channel.SendMessageAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
+                        
                 }
                 else if (type.ToLower() == "log")
                 {
@@ -1659,7 +1670,7 @@ namespace multicorp_bot
         }
 
         private async Task LoanComplete(CommandContext ctx, string id = null)
-        {
+        { 
             if(id == null)
             {
                 await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));

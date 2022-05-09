@@ -23,7 +23,7 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == modName).FirstOrDefault().XpModifier;
         }
 
-        public async Task<Tuple<DiscordEmbed, WorkOrders>> GetWorkOrders(CommandContext ctx, string workOrderType)
+        public async Task<Tuple<DiscordEmbed, WorkOrders>> GetWorkOrders(CommandContext ctx, string workOrderType, int? id = null)
         {
             try
             {
@@ -35,23 +35,37 @@ namespace multicorp_bot.Controllers
                 var type = FormatHelpers.Capitalize(orderType.Name);
 
                 builder.Title = $"{ctx.Guild.Name} {type} Dispatch";
-                builder.Description = $"There are {wOrders.Count} {type} Work Orders, here's one that may interest you?";
+                builder.Description = $"There are {wOrders.Count} {type} Work Orders, here's one:";
                 builder.Timestamp = DateTime.Now;
+
+               
 
                 if (wOrders.Count > 0)
                 {
-                    Random rand = new Random();
-                    int randOrder = rand.Next(0, wOrders.Count);
-                    order = wOrders[randOrder];
 
-                    var workOrderMember = GetWorkOrderMembers(order.Id);
+                    if (id == null)
+                    {
+                       
+                        Random rand = new Random();
+                        int randOrder = rand.Next(0, wOrders.Count);
+                        order = wOrders[randOrder];
+
+                    }
+                    else
+                    {
+                        order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id  == id.Value ).ToList()[0];
+                    }
+
+                    var workOrderMember = (id == null) ? GetWorkOrderMembers(order.Id) : GetWorkOrderMembers(id.Value);
+                    
+
                     StringBuilder membersStr = new StringBuilder();
-
+              
                     builder.AddField("Location", order.Location);
                     StringBuilder reqString = new StringBuilder();
                     foreach (WorkOrderRequirements req in GetRequirements(order.Id))
                     {
-                        reqString.Append($"\u200b\nRequirement ID: {req.Id}\n");
+                      //  reqString.Append($"\u200b\nRequirement ID: {req.Id}\n");
                         reqString.Append($"Material: {req.Material}\n");
                         reqString.Append($"Amount: {req.Amount} Units (Units = SCU when ship mining/trading)\n");
                     }
@@ -69,10 +83,11 @@ namespace multicorp_bot.Controllers
 
                     builder.AddField($"Work Order Id: {order.Id} {membersStr.ToString()}", $"\n{order.Description}\n{reqString.ToString()}");
 
-                    builder.WithFooter("If you would like to accept this dispatch please respond with ✅" +
-                        "\n to decline and see another use X" +
-                        "\n If you are not interested in a dispatch at this time simply do nothing at all and the request will time out");
+                    builder.WithFooter($"If you want to accept this order, Type !accept {order.Id}");
 
+                    //builder.WithFooter("If you would like to accept this dispatch please respond with ✅" +
+                    //  "\n to decline and see another use X" +
+                    //  "\n If you are not interested in a dispatch at this time simply do nothing at all and the request will time out");
                 }
                 else
                 {
@@ -88,6 +103,52 @@ namespace multicorp_bot.Controllers
                 Console.WriteLine(e);
                 return null;
             }
+        }
+
+        public async Task<DiscordEmbed> CreateJobBoard(CommandContext ctx, string workOrderType)
+        {
+            try
+            {
+                WorkOrders order = null;
+                var orderType = await GetWorkOrderType(ctx, workOrderType);
+                var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted ).ToList();
+               
+                var DanOrder = wOrders[0].Name;
+               
+
+                DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+                var type = FormatHelpers.Capitalize(orderType.Name);
+
+                builder.Title = "MultiCorp - Job Board";
+               
+                builder.Description = "This is the MultiCorp Job Board listing all available orders and missions issed by our members.\nFeel free to accept any missions you find worthwhile.\n\n\n-------------------------------------------------------------------";
+
+
+               
+                builder.Color = DiscordColor.Orange;
+
+                for (int i = 0; i < wOrders.Count; i++)
+                {
+                   builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, wOrders[i].Description + "\n\n-------------------------------------------------------------------");
+
+                }
+                builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
+                builder.Timestamp = DateTime.Now;
+                return builder.Build();
+                
+
+
+
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
+            
+
+
         }
 
         public async Task<DiscordEmbed> GetWorkOrderByMember(CommandContext ctx)
@@ -179,7 +240,7 @@ namespace multicorp_bot.Controllers
                     ctx.RespondAsync("Please try again with a valid Work Order Id");
                     return;
                 }
-
+                
                 orderReq.Amount = orderReq.Amount - amount;
                 if (orderReq.Amount <= 0)
                 {
