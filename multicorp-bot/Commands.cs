@@ -29,6 +29,12 @@ namespace multicorp_bot
         readonly WorkOrderController WorkOrderController;
         readonly DispatchController DispatchController;
 
+        //Dan: I added variables here cause i didnt know how else to have them persist between commands and calls and stuff, idk if theres a better way
+        //Other code added is CreateBoard(), UpdateBoard(), !view and then some changes to AcceptDispatch and GetWorkOrders so I could accomodate specific fishing of the iD when asked with !view.
+        //
+        DiscordMessage JobBoardMesage; 
+        DiscordChannel Mychannel;
+        //
 
         TelemetryHelper tHelper = new TelemetryHelper();
 
@@ -939,19 +945,10 @@ namespace multicorp_bot
                     await FundFleet(ctx);
                     break;
                 case "complete":
-                    var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
-                    if (bankers.Contains(ctx.Member.Id))
-                    {
-                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-complete", ctx);
-                        var completed = FleetController.CompleteFleetRequest(ctx.Guild);
-                        await ctx.RespondAsync($"{completed} requests have been marked complete");
-                        break;
-                    }
-                    else
-                    {
-                        await ctx.RespondAsync("Sorry only Bankers are allowed to complete Fleet Requests");
-                        break;
-                    }
+                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "fleet-complete", ctx);
+                    var completed = FleetController.CompleteFleetRequest(ctx.Guild);
+                    await ctx.RespondAsync($"{completed} requests have been marked complete");
+                    break;
             }
             
         }
@@ -1046,6 +1043,31 @@ namespace multicorp_bot
 
         }
 
+        [Command("view")]
+        public async Task view(CommandContext ctx, int? id = null)
+        {
+
+            try
+            {
+                if (id == null)
+                { 
+                await ctx.RespondAsync("Provide the ID after !view, please try again");
+                }
+                else
+                {
+                    var controller = new WorkOrderController();
+                    var interactivity = ctx.Client.GetInteractivity();
+                    var wOrder = await controller.GetWorkOrders(ctx, "Shipping", id);
+                    var msg = await ctx.RespondAsync(embed: wOrder.Item1);
+
+                }
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Yo WNR someone broke me, check the logs");
+            }
+        }
+
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null, int? id = null)
         {
@@ -1120,9 +1142,10 @@ namespace multicorp_bot
                     await AddWorkOrder(ctx);
                 }
                 else if (type.ToLower() == "view")
+
                 {
                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-view", ctx);
-                    await ctx.Channel.SendMessageAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));     
+                    await ctx.Channel.SendMessageAsync(embed: await WorkOrderController.GetWorkOrderByMember(ctx));
                 }
                 else if (type.ToLower() == "log")
                 {
@@ -1163,11 +1186,27 @@ namespace multicorp_bot
             }
         }
 
-        [Command("test")]
-        public async Task Test(CommandContext ctx)
+        [Command("updateBoard")]   //command to test updating the board, we should call UpdateJobBoard() everytime we remove and add orders.
+        public async Task updateBoard(CommandContext ctx)
         {
-            await ctx.RespondAsync("I'm listening");
+            UpdateJobBoard(ctx);
+
         }
+
+        public async Task UpdateJobBoard(CommandContext ctx)
+        {
+            Mychannel = await ctx.Client.GetChannelAsync(973175260918734858);
+            if (JobBoardMesage != null)
+            {
+                JobBoardMesage.DeleteAsync();
+            }
+      
+            JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+
+        }
+
+
+
 
         [Command("restoreNicknames")]
         public async Task RestoreNicks(CommandContext ctx)
@@ -1496,11 +1535,11 @@ namespace multicorp_bot
             return Task.CompletedTask;
         }
 
-        private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type)
+        private async Task<Tuple<bool, WorkOrders>> AcceptDispatch(CommandContext ctx, string type, int? id=null)
         {
             var controller = new WorkOrderController();
             var interactivity = ctx.Client.GetInteractivity();
-            var wOrder = await controller.GetWorkOrders(ctx, type);
+            var wOrder = await controller.GetWorkOrders(ctx, type, id);
             var msg = await ctx.RespondAsync(embed: wOrder.Item1);
 
             var confirmDeny = await ctx.RespondAsync("Please respond with 'accept' or 'deny'"); 
@@ -1668,7 +1707,7 @@ namespace multicorp_bot
         }
 
         private async Task LoanComplete(CommandContext ctx, string id = null)
-        { 
+        {
             if(id == null)
             {
                 await ctx.RespondAsync("Which Loan would you like to complete", embed: LoanController.GetFundedLoansEmbed(ctx.Guild));
