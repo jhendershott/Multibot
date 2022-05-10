@@ -173,7 +173,7 @@ namespace multicorp_bot.Controllers
                         amount = trans.Amount,
                         merits = trans.Merits
                     }
-                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0).OrderByDescending(x => x.amount).ToList();
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && (x.amount != 0 || x.merits != 0)).OrderByDescending(x => x.amount).ToList();
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
 
@@ -218,7 +218,7 @@ namespace multicorp_bot.Controllers
                         merits = trans.Merits,
                         xp = mem.Xp,
                     }
-                 ).FirstOrDefault(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.discordID == dMember.Id.ToString());
+                 ).FirstOrDefault(x => x.orgId == new OrgController().GetOrgId(guild) && (x.amount != 0  || x.merits != 0)&& x.discordID == dMember.Id.ToString());
 
             if (data == null)
             {

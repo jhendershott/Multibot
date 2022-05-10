@@ -1303,31 +1303,37 @@ namespace multicorp_bot
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
-            TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank", ctx);
-            BankController bankController = new BankController();
-
-            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
-
-            if (bankers.Contains(ctx.Member.Id))
+            try
             {
-                var interactivity = ctx.Client.GetInteractivity();
-                await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
-                var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
+                TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank", ctx);
+                BankController bankController = new BankController();
 
-                if (confirmMsg.Result.Content.ToLower() == "yes")
+                var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
+
+                if (bankers.Contains(ctx.Member.Id))
                 {
-                    bankController.WipeBank(ctx.Guild);
-                    TransactionController.WipeTransactions(ctx.Guild);
-                    LoanController.WipeLoans(ctx);
+                    var interactivity = ctx.Client.GetInteractivity();
+                    await ctx.RespondAsync("Are you sure you want to continue? This Cannot be undone");
+                    var confirmMsg = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5));
+
+                    if (confirmMsg.Result.Content.ToLower() == "yes")
+                    {
+                        bankController.WipeBank(ctx.Guild);
+                        TransactionController.WipeTransactions(ctx.Guild);
+                        LoanController.WipeLoans(ctx);
 
 
-                    TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank-success", ctx);
-                    await ctx.RespondAsync("your org balance and transactions have been set to 0. All Loans have been completed");
+                        TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank-success", ctx);
+                        await ctx.RespondAsync("your org balance and transactions have been set to 0. All Loans have been completed");
+                    }
                 }
-            }
-            else
+                else
+                {
+                    await ctx.RespondAsync("Nice Try Bub but you have to be a banker to perform a wipe");
+                }
+            } catch(Exception e)
             {
-                await ctx.RespondAsync("Nice Try Bub but you have to be a banker to perform a wipe");
+                await ctx.RespondAsync($"Send Wnr the following error {e.Message}");
             }
 
            
