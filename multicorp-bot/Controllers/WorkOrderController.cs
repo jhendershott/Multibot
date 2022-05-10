@@ -13,10 +13,16 @@ namespace multicorp_bot.Controllers
     {
         MultiBotDb MultiBotDb;
         TelemetryHelper tHelper = new TelemetryHelper();
+        public List<string> Types;
+
         public WorkOrderController()
         {
             MultiBotDb = new MultiBotDb();
+            Types = new List<string>();
+            string[] types = { "Trading", "Shipping", "Mining", "Military" };
+            Types.AddRange(types);
         }
+
 
         public double GetExpModifier(string modName)
         {
@@ -109,16 +115,15 @@ namespace multicorp_bot.Controllers
         {
             try
             {
-                WorkOrders order = null;
                 var orderType = await GetWorkOrderType(ctx, workOrderType);
                 var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted ).ToList();
             
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
                 var type = FormatHelpers.Capitalize(orderType.Name);
 
-                builder.Title = "MultiCorp - Job Board";
+                builder.Title = $"{ctx.Guild.Name} - Job Board";
                
-                builder.Description = "This is the MultiCorp Job Board listing all available orders and missions issed by our members.\nFeel free to accept any missions you find worthwhile.\n\n\n-------------------------------------------------------------------";
+                builder.Description = $"This is the {ctx.Guild.Name} Job Board listing all available orders and missions issued by our members.\nFeel free to accept any missions you find worthwhile.\n-------------------------------------------------------------------";
 
 
                
@@ -139,7 +144,7 @@ namespace multicorp_bot.Controllers
                             reqString = reqString + $"\n**Material:** {r.Material} \n**Amount:** {r.Amount}\n";
                         }
 
-                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n\n**Location:** {wOrders[i].Location} {reqString} \n\n-------------------------------------------------------------------");
+                        builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n\n**Location:** {wOrders[i].Location} {reqString} \n-------------------------------------------------------------------");
 
                     }
                     builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
@@ -153,9 +158,6 @@ namespace multicorp_bot.Controllers
                 await ctx.RespondAsync($"Send wnr the following error: {e}");
                 return null;
             }
-            
-
-
         }
 
         public async Task<DiscordEmbed> GetWorkOrderByMember(CommandContext ctx)

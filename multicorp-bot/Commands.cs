@@ -1196,14 +1196,15 @@ namespace multicorp_bot
         }
 
         [Command("updateBoard")]   //command to test updating the board, we should call UpdateJobBoard() everytime we remove and add orders.
-        public async Task updateBoard(CommandContext ctx)
+        public async Task updateBoard(CommandContext ctx, string type = null)
         {
-            await UpdateJobBoard(ctx);
+            await UpdateJobBoard(ctx, type);
 
         }
 
-        public async Task UpdateJobBoard(CommandContext ctx)
+        public async Task UpdateJobBoard(CommandContext ctx, string type = null)
         {
+            
             try
             {
                 var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
@@ -1218,7 +1219,18 @@ namespace multicorp_bot
                         await JobBoardMesage.DeleteAsync();
                     }
 
-                    JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+                    if (type == null)
+                    {
+                        JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+                    }
+                    else if (type != null && WorkOrderController.Types.Contains(type))
+                    {
+                        JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, type));
+                    }
+                    else
+                    {
+                       await ctx.RespondAsync("Please provide a type of 'Trading', 'Shipping', 'Mining', or 'Military' ");
+                    }
                 }
             } catch(Exception e)
             {
