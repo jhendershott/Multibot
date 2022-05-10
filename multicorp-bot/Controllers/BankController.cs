@@ -227,7 +227,7 @@ namespace multicorp_bot
             return Math.Round(Math.Abs(margin), 2);
         }
 
-        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string amount, bool isCredits = true)
+        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string amount, bool isCredits = true, DiscordMember member = null)
         {
             string[] args = Regex.Split(ctx.Message.Content, @"\s+");
 
@@ -272,17 +272,17 @@ namespace multicorp_bot
                     return transaction;
                 }
             }
-            else if (args.Length > 4 && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
+            else if (member != null && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
             {
                 if (isCredits)
                 {
-                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, int.Parse(args[3]));
+                    BankTransaction transaction = new BankTransaction(args[1], member, ctx.Guild, int.Parse(args[3]));
                     return transaction;
                 }
                 else
                 {
 
-                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, merits: int.Parse(args[3]));
+                    BankTransaction transaction = new BankTransaction(args[1], member, ctx.Guild, merits: int.Parse(args[3]));
                     return transaction;
                 }
             }
