@@ -227,70 +227,29 @@ namespace multicorp_bot
             return Math.Round(Math.Abs(margin), 2);
         }
 
-        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string amount, bool isCredits = true, DiscordMember member = null)
+        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string action, int amount, DiscordMember member = null, string type = null)
         {
-            string[] args = Regex.Split(ctx.Message.Content, @"\s+");
+            BankTransaction trans = null;
 
-
-            if (args.Length == 3)
+            if (member == null)
             {
-                if (isCredits)
-                {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, int.Parse(amount));
-                    return trans;
-                }
-                else
-                {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, merits: int.Parse(amount));
-                    return trans;
-                }
-            }
-            else if (args.Length == 4 && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
-            {
-                if (isCredits)
-                {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, int.Parse(args[2]));
-                    return trans;
-                }
-                else
-                {
-                    BankTransaction trans = new BankTransaction(args[1], ctx.Member, ctx.Guild, merits: int.Parse(args[2]));
-                    return trans;
-                }
-            }
-            else if (args.Length == 4)
-            {
-                if (isCredits)
-                {
-                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, int.Parse(args[3]));
-                    return transaction;
-                }
-                else
-                {
-
-                    BankTransaction transaction = new BankTransaction(args[1], await ctx.Guild.GetMemberAsync(ctx.Message.MentionedUsers[0].Id), ctx.Guild, merits: int.Parse(args[3]));
-                    return transaction;
-                }
-            }
-            else if (member != null && (ctx.Message.Content.ToLower().Contains("credit") || ctx.Message.Content.ToLower().Contains("merit")))
-            {
-                if (isCredits)
-                {
-                    BankTransaction transaction = new BankTransaction(args[1], member, ctx.Guild, int.Parse(args[3]));
-                    return transaction;
-                }
-                else
-                {
-
-                    BankTransaction transaction = new BankTransaction(args[1], member, ctx.Guild, merits: int.Parse(args[3]));
-                    return transaction;
-                }
+                trans = new BankTransaction(action, ctx.Member, ctx.Guild);
             }
             else
             {
-                await ctx.RespondAsync("Your transaction contains invalid arguments use !bank {action} {amount}");
-                return null;
+                trans = new BankTransaction(action, member, ctx.Guild);
             }
+
+            if(type == "merit")
+            {
+                trans.Merits = amount;
+            }
+            else
+            {
+                trans.Amount = amount;
+            }
+
+            return trans;
         }
     }
 }

@@ -394,7 +394,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx, string command, DiscordMember user, string amount)
+        public async Task Bank(CommandContext ctx, string command, DiscordMember user, int amount, string type = null)
         {
             BankController BankController = new BankController();
             Tuple<string, string> newBalance;
@@ -415,25 +415,33 @@ namespace multicorp_bot
                         }
                         else
                         {
-                            await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
-
-                            var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
-
-                            if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
+                            if (type == null)
                             {
-                                await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
+                                await ctx.RespondAsync("Starting your deposit, Would you like to deposit credits or merits?");
+
+                                var confirmMsg = await interactivity.WaitForMessageAsync(r => r.Author == ctx.User && r.Content.ToLower().Contains("merit") && r.Content.ToLower().Contains("credit"), timeoutoverride: TimeSpan.FromMinutes(20));
+
+                                if (!confirmMsg.Result.Content.ToLower().Contains("merit") && !confirmMsg.Result.Content.ToLower().Contains("credit"))
+                                {
+                                    await ctx.RespondAsync("Please specify credits or merits e.g. !bank deposit 1000 merits || !bank deposit 1000 credits");
+                                }
+                                else
+                                {
+                                    type = confirmMsg.Result.Content.ToLower();
+                                }
+
                             }
 
 
-                            if (confirmMsg.Result.Content.ToLower().Contains("credit"))
+                            if (type.Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, true, user);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, user, "credit");
                             }
-                            else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
+                            else if (type.Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, false, user);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, user, "merit");
                                 isCredit = false;
                             }
 
@@ -483,7 +491,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx, string command, string amount)
+        public async Task Bank(CommandContext ctx, string command, int amount)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
 
@@ -516,12 +524,12 @@ namespace multicorp_bot
                             if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, null, "credit");
                             }
                             else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, null, "merit");
                                 isCredit = false;
                             }
 
@@ -597,12 +605,12 @@ namespace multicorp_bot
                                 if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                    transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, null, "credit");
                                 }
                                 else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
                                 {
                                     TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                    transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount,null, "merit");
                                     isCredit = false;
                                 }
                                 newBalance = BankController.Deposit(transaction);
@@ -658,12 +666,12 @@ namespace multicorp_bot
                                     {
                                         if (creditmsg.Result.Content.ToLower().Contains("credit"))
                                         {
-                                            transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                            transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: "credit");
                                         }
 
                                         else if (creditmsg.Result.Content.ToLower().Contains("merit"))
                                         {
-                                            transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                            transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: "merit");
                                             isCredit = false;
                                         }
                                     }
@@ -675,11 +683,11 @@ namespace multicorp_bot
                                 }
                                 else if (ctx.Message.Content.ToLower().Contains("credit"))
                                 {
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                    transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: "credit");
                                 }
                                 else if (ctx.Message.Content.ToLower().Contains("merit"))
                                 {
-                                    transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                    transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: "merit");
                                     isCredit = false;
                                 }
                                 newBalance = BankController.Withdraw(transaction);
@@ -715,7 +723,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx, string command, string amount, string type)
+        public async Task Bank(CommandContext ctx, string command, int amount, string type)
         {
             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank", ctx);
 
@@ -746,12 +754,12 @@ namespace multicorp_bot
                             if (type.ToLower().Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, type: type);
                             }
                             else if(type.ToLower().Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, type: type);
                                 isCredit = false;
                             }
 
@@ -821,12 +829,12 @@ namespace multicorp_bot
                             if (type.ToLower().Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, type: type);
                             }
                             else if (type.ToLower().Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, "deposit", amount, type: type);
                                 isCredit = false;
                             }
 
@@ -877,12 +885,12 @@ namespace multicorp_bot
                                 {
                                     if (type.ToLower().Contains("credit"))
                                     {
-                                        transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                        transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: type);
                                     }
 
                                     else if (type.ToLower().Contains("merit"))
                                     {
-                                        transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                        transaction = await BankController.GetBankActionAsync(ctx, "withdraw", amount, type: type);
                                         isCredit = false;
                                     }
                                 }
