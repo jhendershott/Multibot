@@ -33,7 +33,6 @@ namespace multicorp_bot
         //Other code added is CreateBoard(), UpdateBoard(), !view and then some changes to AcceptDispatch and GetWorkOrders so I could accomodate specific fishing of the iD when asked with !view.
         //
         DiscordMessage JobBoardMesage; 
-        DiscordChannel Mychannel;
         //
 
         TelemetryHelper tHelper = new TelemetryHelper();
