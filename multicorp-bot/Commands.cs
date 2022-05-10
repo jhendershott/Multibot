@@ -1138,6 +1138,7 @@ namespace multicorp_bot
                     {
                         TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "dispatch-accepted", ctx);
                         await ctx.RespondAsync("Work order has been accepted");
+                        await updateBoard(ctx);
                     }
                     else
                     {
