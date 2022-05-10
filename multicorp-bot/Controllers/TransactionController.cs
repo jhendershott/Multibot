@@ -39,11 +39,11 @@ namespace multicorp_bot.Controllers
             {
                 return transContext.Single(x => x.UserId == userId).TransactionId;
             }
-            catch 
+            catch
             {
                 return AddTransaction(userId.GetValueOrDefault(), 0);
             }
-            
+
         }
 
         public void UpdateTransaction(int? transId, BankTransaction transaction)
@@ -75,7 +75,7 @@ namespace multicorp_bot.Controllers
                         orgId = mem.OrgId.GetValueOrDefault(),
                         amount = trans.Amount,
                         merits = trans.Merits
-                    }              
+                    }
                  ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0).OrderByDescending(x => x.amount).ToList();
 
             var transactions = new List<TransactionItem>();
@@ -114,7 +114,7 @@ namespace multicorp_bot.Controllers
                         orgId = mem.OrgId.GetValueOrDefault(),
                         amount = trans.Amount,
                         merits = trans.Merits
-                        
+
                     }
                  ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.merits != 0).OrderByDescending(x => x.merits).ToList();
 
@@ -122,7 +122,7 @@ namespace multicorp_bot.Controllers
 
             var length = data.Count;
 
-            if(length < 3)
+            if (length < 3)
             {
                 for (int i = 0; i < length; i++)
                 {
@@ -150,12 +150,89 @@ namespace multicorp_bot.Controllers
 
             var users = memCont.GetMembersByOrgId(orgC.GetOrgId(guild));
 
-            foreach(var user in users){
+            foreach (var user in users)
+            {
                 bankItems.Single(x => x.UserId == user.UserId).Amount = 0;
                 bankItems.Single(x => x.UserId == user.UserId).Merits = 0;
             }
             transContext.UpdateRange(bankItems);
             MultiBotDb.SaveChanges();
+        }
+
+        public DiscordEmbed GetContributions(DiscordGuild guild, int? max = null)
+        {
+            var data = MultiBotDb.Transactions.AsQueryable()
+                .Join(
+                    MultiBotDb.Mcmember,
+                    trans => trans.UserId,
+                    mem => mem.UserId,
+                    (trans, mem) => new
+                    {
+                        memberName = mem.Username,
+                        orgId = mem.OrgId.GetValueOrDefault(),
+                        amount = trans.Amount,
+                        merits = trans.Merits
+                    }
+                 ).Where(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0).OrderByDescending(x => x.amount).ToList();
+
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+            if (max == null)
+            {
+                builder.Title = $"{guild.Name} - All Contributions";
+                foreach (var t in data)
+                {
+                    builder.AddField(t.memberName, $"**CREDITS:** {FormatHelpers.FormattedNumber(t.amount.ToString())} " +
+                        $"\n**Merits:** {FormatHelpers.FormattedNumber(t.merits.ToString())}");
+                }
+            }
+            else
+            {
+                builder.Title = $"{guild.Name} - Top {max} Contributions";
+                for (int i = 0; i < max; i++)
+                {
+                    var t = data[i];
+                    builder.AddField(t.memberName, $"**CREDITS:** {FormatHelpers.FormattedNumber(t.amount.ToString())} " +
+                        $"\n**Merits:** {FormatHelpers.FormattedNumber(t.merits.ToString())}");
+                }
+            }
+
+
+            return builder.Build();
+        }
+
+
+        public string GetContributions(DiscordGuild guild, DiscordMember dMember)
+        {
+            var data = MultiBotDb.Transactions.AsQueryable()
+                .Join(
+                    MultiBotDb.Mcmember,
+                    trans => trans.UserId,
+                    mem => mem.UserId,
+                    (trans, mem) => new
+                    {
+                        memberName = mem.Username,
+                        discordID = mem.DiscordId,
+                        orgId = mem.OrgId.GetValueOrDefault(),
+                        amount = trans.Amount,
+                        merits = trans.Merits,
+                        xp = mem.Xp,
+                    }
+                 ).FirstOrDefault(x => x.orgId == new OrgController().GetOrgId(guild) && x.amount != 0 && x.discordID == dMember.Id.ToString());
+
+            if (data == null)
+            {
+                return $"Could not find Transactions for **{ dMember.Nickname ?? dMember.DisplayName}**";
+            }
+            else
+            {
+                return $"**Contribution by User:** {dMember.Nickname ?? dMember.DisplayName} \n " +
+                $"**CREDITS:** {FormatHelpers.FormattedNumber(data.amount.ToString())}" +
+                $"\n**MERITS:** {FormatHelpers.FormattedNumber(data.merits.ToString())}" +
+                $"\n**ORG XP:** {FormatHelpers.FormattedNumber(data.xp.ToString())}";
+            }
+            
+           
         }
     }
 }

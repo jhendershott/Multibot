@@ -394,7 +394,7 @@ namespace multicorp_bot
         }
 
         [Command("bank")]
-        public async Task Bank(CommandContext ctx, string command, DiscordUser user, string amount)
+        public async Task Bank(CommandContext ctx, string command, DiscordMember user, string amount)
         {
             BankController BankController = new BankController();
             Tuple<string, string> newBalance;
@@ -428,12 +428,12 @@ namespace multicorp_bot
                             if (confirmMsg.Result.Content.ToLower().Contains("credit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-credit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, true, user);
                             }
                             else if (confirmMsg.Result.Content.ToLower().Contains("merit"))
                             {
                                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "bank-deposit-merit", ctx);
-                                transaction = await BankController.GetBankActionAsync(ctx, amount, false);
+                                transaction = await BankController.GetBankActionAsync(ctx, amount, false, user);
                                 isCredit = false;
                             }
 
@@ -478,6 +478,7 @@ namespace multicorp_bot
             {
                 tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e.Message);
+                await ctx.Channel.SendMessageAsync($"Send WNR the following error: {e}");
             }
         }
 
@@ -1279,6 +1280,18 @@ namespace multicorp_bot
 
         }
 
+        [Command("GetContributions")]
+        public async Task GetContributions(CommandContext ctx, int? max = null)
+        {
+            await ctx.Channel.SendMessageAsync(embed: TransactionController.GetContributions(ctx.Guild, max));
+        }
+
+        [Command("GetContributions")]
+        public async Task GetContributions(CommandContext ctx, DiscordMember member)
+        {
+            await ctx.Channel.SendMessageAsync(TransactionController.GetContributions(ctx.Guild, member));
+        }
+
         [Command("wipe-bank")]
         public async Task WipeBank(CommandContext ctx)
         {
@@ -1294,6 +1307,7 @@ namespace multicorp_bot
                 bankController.WipeBank(ctx.Guild);
                 TransactionController.WipeTransactions(ctx.Guild);
                 LoanController.WipeLoans(ctx);
+
 
                 TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "wipe-bank-success", ctx);
                 await ctx.RespondAsync("your org balance and transactions have been set to 0. All Loans have been completed");
@@ -1577,7 +1591,7 @@ namespace multicorp_bot
         {
             var interactivity = ctx.Client.GetInteractivity();
             await ctx.RespondAsync("Please add the title");
-            string name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+            string title = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a Description");
             string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a type: trading, mining shipping or military");
@@ -1611,7 +1625,7 @@ namespace multicorp_bot
             }
 
             var controller = new WorkOrderController();
-            await controller.AddWorkOrder(ctx, name, description, workOrdertype, location, req);
+            await controller.AddWorkOrder(ctx, title, description, workOrdertype, location, req);
 
             await ctx.RespondAsync("Work Order has been added to the dispatch list");
             await updateBoard(ctx); 

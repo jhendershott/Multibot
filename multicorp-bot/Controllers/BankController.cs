@@ -136,6 +136,7 @@ namespace multicorp_bot
             var bankContext = MultiBotDb.Bank;
             var bankItem = GetBankByOrg(guild);
             bankItem.Balance = 0;
+            bankItem.Merits = 0;
             bankContext.Update(bankItem);
             MultiBotDb.SaveChanges();
         }
