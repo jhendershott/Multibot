@@ -150,6 +150,7 @@ namespace multicorp_bot.Controllers
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                await ctx.RespondAsync($"Send wnr the following error: {e}");
                 return null;
             }
             

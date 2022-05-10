@@ -1223,6 +1223,7 @@ namespace multicorp_bot
             } catch(Exception e)
             {
                 Console.WriteLine(e);
+                await ctx.RespondAsync($"Send wnr the following error {e.Message}");
             }
         }
 
