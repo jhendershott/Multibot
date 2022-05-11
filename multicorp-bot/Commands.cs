@@ -1218,6 +1218,7 @@ namespace multicorp_bot
 
                     if (Mychannel.LastMessageId != null)
                     {
+                        Console.WriteLine(Mychannel.LastMessageId);
                         await Mychannel.DeleteMessageAsync(Mychannel.GetMessageAsync(Mychannel.LastMessageId.Value).Result);
                     }
 
