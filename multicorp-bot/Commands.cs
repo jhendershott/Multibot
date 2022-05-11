@@ -1208,7 +1208,7 @@ namespace multicorp_bot
             
             try
             {
-                MyChannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
+                var MyChannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
                 if (MyChannel == null)
                 {
                     await ctx.Channel.SendMessageAsync("For a cleaner and more readable experience you must create a channel called 'job-board'");
