@@ -32,7 +32,8 @@ namespace multicorp_bot
         //Dan: I added variables here cause i didnt know how else to have them persist between commands and calls and stuff, idk if theres a better way
         //Other code added is CreateBoard(), UpdateBoard(), !view and then some changes to AcceptDispatch and GetWorkOrders so I could accomodate specific fishing of the iD when asked with !view.
         //
-        DiscordMessage JobBoardMesage; 
+        DiscordMessage JobBoardMesage;
+        DiscordChannel MyChannel;
         //
 
         TelemetryHelper tHelper = new TelemetryHelper();
@@ -1207,8 +1208,8 @@ namespace multicorp_bot
             
             try
             {
-                var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
-                if (Mychannel == null)
+                MyChannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "job-board");
+                if (MyChannel == null)
                 {
                     await ctx.Channel.SendMessageAsync("For a cleaner and more readable experience you must create a channel called 'job-board'");
                 }
@@ -1221,11 +1222,11 @@ namespace multicorp_bot
 
                     if (type == null)
                     {
-                        JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
+                        JobBoardMesage = await MyChannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "Shipping"));
                     }
                     else if (type != null && WorkOrderController.Types.Contains(type))
                     {
-                        JobBoardMesage = await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, type));
+                        JobBoardMesage = await MyChannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, type));
                     }
                     else
                     {
