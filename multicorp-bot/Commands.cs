@@ -1227,7 +1227,7 @@ namespace multicorp_bot
                     {
                         await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, "shipping"));
                     }
-                    else if (type != null && WorkOrderController.Types.Contains(type))
+                    else if (type != null && WorkOrderController.Types.Contains(type.ToLower()))
                     {
                         await Mychannel.SendMessageAsync(embed: await WorkOrderController.CreateJobBoard(ctx, type.ToLower()));
                     }
