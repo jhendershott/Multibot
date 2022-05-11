@@ -19,7 +19,7 @@ namespace multicorp_bot.Controllers
         {
             MultiBotDb = new MultiBotDb();
             Types = new List<string>();
-            string[] types = { "Trading", "Shipping", "Mining", "Military" };
+            string[] types = { "trading", "shipping", "mining", "military" };
             Types.AddRange(types);
         }
 
