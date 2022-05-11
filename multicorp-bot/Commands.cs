@@ -1218,7 +1218,10 @@ namespace multicorp_bot
 
                     var msgs = await Mychannel.GetMessagesAsync();
 
-                    await Mychannel.DeleteMessagesAsync(msgs);
+                    if (msgs.Count > 0)
+                    {
+                        await Mychannel.DeleteMessagesAsync(msgs);
+                    }
 
                     if (type == null)
                     {
