@@ -17,17 +17,23 @@ namespace multicorp_bot.Controllers
 
         public int AddOrg(DiscordGuild guild)
         {
-            if (MultiBotDb.Orgs.Any(o => o.DiscordId == guild.Id.ToString())) return GetOrgId(guild);
-
-            var orgContext = MultiBotDb.Orgs;
-            var org = new Orgs()
+            try
             {
-                OrgName = guild.Name,
-                DiscordId = guild.Id.ToString()
-             };
+                if (MultiBotDb.Orgs.Any(o => o.DiscordId == guild.Id.ToString())) return GetOrgId(guild);
 
-            orgContext.Add(org);
-            MultiBotDb.SaveChanges();
+                var orgContext = MultiBotDb.Orgs;
+                var org = new Orgs()
+                {
+                    OrgName = guild.Name,
+                    DiscordId = guild.Id.ToString()
+                };
+
+                orgContext.Add(org);
+                MultiBotDb.SaveChanges();
+            } catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             return GetOrgId(guild);
         }
 
