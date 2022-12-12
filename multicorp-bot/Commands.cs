@@ -116,8 +116,15 @@ namespace multicorp_bot
         [Command("setup")]
         public async Task Setup(CommandContext ctx)
         {
-            OrgController.AddOrg(ctx.Guild);
-            await ctx.RespondAsync("You're all setup and ready to go");
+            try
+            {
+                OrgController.AddOrg(ctx.Guild);
+                await ctx.RespondAsync("You're all setup and ready to go");
+            }
+            catch (Exception e)
+            {
+               await ctx.RespondAsync($"Error on setup {e}");
+            }
         }
 
 
