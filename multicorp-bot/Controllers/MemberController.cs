@@ -22,9 +22,9 @@ namespace multicorp_bot.Controllers
 
         public int? AddMember(string name, int orgid, DiscordMember dcMember)
         {
-            var memberContext = MultiBotDb.Mcmember;
+            var memberContext = MultiBotDb.Member;
             var test = GetHighestUserId() + 1;
-            var member = new Mcmember()
+            var member = new Member()
             {
                 OrgId = orgid,
                 Username = name,
@@ -39,14 +39,14 @@ namespace multicorp_bot.Controllers
             return GetMemberId(name, orgid, dcMember);
         }
 
-        public Mcmember GetMemberById(int id)
+        public Member GetMemberById(int id)
         {
-            return MultiBotDb.Mcmember.Single(x => x.UserId == id);
+            return MultiBotDb.Member.Single(x => x.UserId == id);
         }
 
         public int? GetMemberId(string name, int orgId, DiscordMember member)
         {
-            var memberContext = MultiBotDb.Mcmember;
+            var memberContext = MultiBotDb.Member;
             try
             {
                 return memberContext.Single(x => x.Username == name && x.OrgId == orgId).UserId;
@@ -58,17 +58,17 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public Mcmember GetMember(string name, DiscordGuild guild)
+        public Member GetMember(string name, DiscordGuild guild)
         {
             var orgId = new OrgController().GetOrgId(guild);
-            var memberCtx = MultiBotDb.Mcmember;
+            var memberCtx = MultiBotDb.Member;
             return memberCtx.SingleOrDefault(x => x.Username == name && x.OrgId == orgId);
         }
 
-        public Mcmember GetMemberbyDcId(DiscordMember member, DiscordGuild guild)
+        public Member GetMemberbyDcId(DiscordMember member, DiscordGuild guild)
         {
             var orgId = new OrgController().GetOrgId(guild);
-            var memberCtx = MultiBotDb.Mcmember;
+            var memberCtx = MultiBotDb.Member;
             if(memberCtx.Any(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId ))
             {
                 return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
@@ -95,10 +95,10 @@ namespace multicorp_bot.Controllers
         public void UpdateMemberName(CommandContext ctx, string oldName, string newName, DiscordGuild guild)
         {
             var member = GetMember(oldName, guild);
-            var memberCtx = MultiBotDb.Mcmember;
+            var memberCtx = MultiBotDb.Member;
             if (member == null)
             {
-                memberCtx.Add(new Mcmember
+                memberCtx.Add(new Member
                 {
                     Username = newName,
                     DiscordId = ctx.Member.Id.ToString(),
@@ -116,20 +116,20 @@ namespace multicorp_bot.Controllers
             MultiBotDb.SaveChanges();
         }
 
-        public List<Mcmember> GetMembersByOrgId(int orgId)
+        public List<Member> GetMembersByOrgId(int orgId)
         {
-            var memberContext = MultiBotDb.Mcmember;
+            var memberContext = MultiBotDb.Member;
             return memberContext.AsQueryable().Where(x => x.OrgId == orgId).ToList();
         }
 
         private int GetHighestUserId()
         {
-            return MultiBotDb.Mcmember.ToList().OrderByDescending(x => x.UserId).First().UserId;
+            return MultiBotDb.Member.ToList().OrderByDescending(x => x.UserId).First().UserId;
         }
 
         public long? UpdateExperiencePoints(string workOrderType, BankTransaction trans)
         {
-            Mcmember member = GetMemberbyDcId(trans.Member, trans.Guild);
+            Member member = GetMemberbyDcId(trans.Member, trans.Guild);
             double xpMod = new WorkOrderController().GetExpModifier(workOrderType);
             switch (workOrderType)
             {
@@ -145,7 +145,7 @@ namespace multicorp_bot.Controllers
             }
 
             member.Xp = member.Xp + Convert.ToInt64(trans.Amount * xpMod);
-            MultiBotDb.Mcmember.Update(member);
+            MultiBotDb.Member.Update(member);
             MultiBotDb.SaveChanges();
 
             return member.Xp;
@@ -163,7 +163,7 @@ namespace multicorp_bot.Controllers
         public DiscordEmbed GetTopXp(DiscordGuild guild)
         {
             var orgId = new OrgController().GetOrgId(guild);
-            var memberByXP = MultiBotDb.Mcmember.Where(x => x.OrgId == orgId).OrderBy(x => x.Xp).ToList();
+            var memberByXP = MultiBotDb.Member.Where(x => x.OrgId == orgId).OrderBy(x => x.Xp).ToList();
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
             builder.Title = $"{guild.Name} Top XP Earners";

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace multicorp_bot
 {
-    public partial class Mcmember
+    public partial class Member
     {
-        public Mcmember()
+        public Member()
         {
             Transactions = new HashSet<Transactions>();
         }

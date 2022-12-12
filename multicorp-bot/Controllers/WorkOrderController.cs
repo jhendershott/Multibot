@@ -166,7 +166,7 @@ namespace multicorp_bot.Controllers
             try
             {
 
-                Mcmember mem = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
+                Member mem = new MemberController().GetMemberbyDcId(ctx.Member, ctx.Guild);
                 List<WorkOrderMembers> memberOrders = mbDb.WorkOrderMembers.AsQueryable().Where(x => x.MemberId == mem.UserId).ToList();
                 List<WorkOrders> wOrders = new List<WorkOrders>();
 
@@ -290,7 +290,7 @@ namespace multicorp_bot.Controllers
 
                 Member.Xp = (long?)(Member.Xp + adjustedXp);
 
-                newMbDb.Mcmember.Update(Member);
+                newMbDb.Member.Update(Member);
                 newMbDb.SaveChanges();
 
                 return isCompleted;
@@ -308,7 +308,7 @@ namespace multicorp_bot.Controllers
             {
                 var acceptedMember = new MemberController().GetMemberById(member.MemberId);
                 acceptedMember.Xp = (acceptedMember.Xp + 50);
-                MultiBotDb.Mcmember.Update(acceptedMember);
+                MultiBotDb.Member.Update(acceptedMember);
                 MultiBotDb.SaveChanges();
             }
         }

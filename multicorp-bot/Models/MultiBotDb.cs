@@ -16,7 +16,7 @@ namespace multicorp_bot
         }
 
         public virtual DbSet<Bank> Bank { get; set; }
-        public virtual DbSet<Mcmember> Mcmember { get; set; }
+        public virtual DbSet<Member> Member { get; set; }
         public virtual DbSet<Orgs> Orgs { get; set; }
         public virtual DbSet<Transactions> Transactions { get; set; }
         public virtual DbSet<WantedShips> WantedShips { get; set; }
@@ -51,7 +51,8 @@ namespace multicorp_bot
                 entity.HasIndex(e => e.OrgId)
                     .HasName("fki_orgId");
 
-                entity.Property(e => e.AccountId).HasColumnName("account_id");
+                entity.Property(e => e.AccountId).HasColumnName("account_id")
+                    .UseIdentityAlwaysColumn();
 
                 entity.Property(e => e.Balance).HasColumnName("balance");
                 entity.Property(e => e.Merits).HasColumnName("merits");
@@ -64,12 +65,12 @@ namespace multicorp_bot
                     .HasConstraintName("org_fk");
             });
 
-            modelBuilder.Entity<Mcmember>(entity =>
+            modelBuilder.Entity<Member>(entity =>
             {
                 entity.HasKey(e => e.UserId)
-                    .HasName("mcmember_pkey");
+                    .HasName("member_pkey");
 
-                entity.ToTable("mcmember");
+                entity.ToTable("member");
 
                 entity.Property(e => e.UserId).HasColumnName("user_id");
 
@@ -127,7 +128,7 @@ namespace multicorp_bot
 
             modelBuilder.Entity<WantedShips>(entity =>
             {
-                entity.ToTable("wantedShips");
+                entity.ToTable("wanted-ships");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -144,15 +145,15 @@ namespace multicorp_bot
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
 
-                entity.Property(e => e.RemainingPrice).HasColumnName("remainingPrice");
+                entity.Property(e => e.RemainingPrice).HasColumnName("remaining-price");
 
-                entity.Property(e => e.TotalPrice).HasColumnName("totalPrice");
-                entity.Property(e => e.IsCompleted).HasColumnName("isCompleted");
+                entity.Property(e => e.TotalPrice).HasColumnName("total-price");
+                entity.Property(e => e.IsCompleted).HasColumnName("is-completed");
             });
 
             modelBuilder.Entity<WorkOrderRequirements>(entity =>
             {
-                entity.ToTable("workOrderRequirements");
+                entity.ToTable("work-order-requirements");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id");
@@ -170,7 +171,7 @@ namespace multicorp_bot
 
             modelBuilder.Entity<WorkOrderTypes>(entity =>
             {
-                entity.ToTable("workOrderTypes");
+                entity.ToTable("work-order-types");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -207,8 +208,7 @@ namespace multicorp_bot
                 entity.ToTable("workOrders");
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("id")
-                    .ValueGeneratedNever();
+                    .HasColumnName("id");
 
                 entity.Property(e => e.Description)
                     .IsRequired()
@@ -227,8 +227,7 @@ namespace multicorp_bot
                 entity.Property(e => e.isCompleted).HasColumnName("isCompleted");
 
                 entity.Property(e => e.Location)
-                .IsRequired()
-                .HasColumnName("Location")
+                .HasColumnName("location")
                 .HasColumnType("character varying");
             });
 

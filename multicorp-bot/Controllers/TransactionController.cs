@@ -66,7 +66,7 @@ namespace multicorp_bot.Controllers
         {
             var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
-                    MultiBotDb.Mcmember,
+                    MultiBotDb.Member,
                     trans => trans.UserId,
                     mem => mem.UserId,
                     (trans, mem) => new
@@ -105,7 +105,7 @@ namespace multicorp_bot.Controllers
         {
             var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
-                    MultiBotDb.Mcmember,
+                    MultiBotDb.Member,
                     trans => trans.UserId,
                     mem => mem.UserId,
                     (trans, mem) => new
@@ -163,7 +163,7 @@ namespace multicorp_bot.Controllers
         {
             var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
-                    MultiBotDb.Mcmember,
+                    MultiBotDb.Member,
                     trans => trans.UserId,
                     mem => mem.UserId,
                     (trans, mem) => new
@@ -206,7 +206,7 @@ namespace multicorp_bot.Controllers
         {
             var data = MultiBotDb.Transactions.AsQueryable()
                 .Join(
-                    MultiBotDb.Mcmember,
+                    MultiBotDb.Member,
                     trans => trans.UserId,
                     mem => mem.UserId,
                     (trans, mem) => new
