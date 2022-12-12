@@ -68,7 +68,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 tHelper.LogException($"Method: UpdateHandle; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
         }
 
@@ -148,7 +148,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 TelemetryHelper.Singleton.LogException("check-requirements", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
 
         }
@@ -166,7 +166,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 TelemetryHelper.Singleton.LogException("check", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
         }
 
@@ -189,7 +189,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 TelemetryHelper.Singleton.LogException("set-role-level", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
         }
 
@@ -490,7 +490,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
                 await ctx.Channel.SendMessageAsync($"Send WNR the following error: {e}");
             }
         }
@@ -723,7 +723,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
         }
 
@@ -936,7 +936,7 @@ namespace multicorp_bot
             catch (Exception e)
             {
                 tHelper.LogException($"Method: Bank Uncaught exception; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);
             }
         }
 
