@@ -49,10 +49,15 @@ namespace multicorp_bot
             PermissionsHelper.LoadPermissions();
         }
 
+        [Command("test")]
+        public async Task Test(CommandContext ctx)
+        {
+            await ctx.RespondAsync($"I'm here {ctx.Member.Nickname}");
+        }
+
         [Command("handle")]
         public async Task UpdateHandle(CommandContext ctx, params string [] handle)
         {
-             TelemetryHelper.Singleton.LogEvent("BOT COMMAND", "handle", ctx);
             DiscordMember member = null;
             try
             {

@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
-using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Helpers;
 
 namespace multicorp_bot {
@@ -13,31 +11,23 @@ namespace multicorp_bot {
         static CommandsNextExtension commands;
         static InteractivityExtension interactivity;
         
-
-        static void Main (string[] args) {
-            TelemetryHelper.Singleton.LogEvent("BOT START");
-            MainAsync (args).ConfigureAwait (false).GetAwaiter ().GetResult ();
-        }
-
-        static async Task MainAsync (string[] args) {
+       static async Task Main (string[] args) {
             string token = Environment.GetEnvironmentVariable("BOTTOKEN");
-            discord = new DiscordClient(new DiscordConfiguration {
+            discord = new DiscordClient(new DiscordConfiguration()
+            {
                 Token = token,
-                TokenType = TokenType.Bot
+                TokenType = TokenType.Bot,
+                Intents = DiscordIntents.All
             });
 
-            interactivity = discord.UseInteractivity(new InteractivityConfiguration());
-
-            commands = discord.UseCommandsNext(new CommandsNextConfiguration() {
-                StringPrefixes = new string[] { "!" },
-                CaseSensitive = false
-            });
+            var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+                {
+                    StringPrefixes = new[] { "!" },
+                    CaseSensitive = false
+                }
+            );
 
             commands.RegisterCommands<Commands>();
-
-            var command = new Commands();
-
-            //await Task.Run(() => discord.MessageCreated += Discord_MessageCreated);
 
             await discord.ConnectAsync ();
             await Task.Delay (-1);
