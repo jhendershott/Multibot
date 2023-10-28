@@ -24,18 +24,18 @@ namespace multicorp_bot
         public virtual DbSet<WorkOrderTypes> WorkOrderTypes { get; set; }
         public virtual DbSet<WorkOrders> WorkOrders { get; set; }
         public virtual DbSet<WorkOrderMembers> WorkOrderMembers { get; set; }
-        public virtual DbSet<OrgRankStrip> OrgRankStrip { get; set; }
         public virtual DbSet<Loans> Loans { get; set; }
         public virtual DbSet<OrgDispatch> OrgDispatch { get; set;}
         public virtual DbSet<DispatchType> DispatchType { get; set; }
         public virtual DbSet<DispatchLog> DispatchLog { get; set; }
+        public virtual DbSet<Factions> Factions { get; set; }
+        public virtual DbSet<FactionFavor> FactionFavors { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
-                
+                optionsBuilder.UseNpgsql("Server=45.32.170.243; Port=5432; User Id=admin; Password=Adm1n123!; Database=multibot");
             }
         }
 
@@ -47,9 +47,6 @@ namespace multicorp_bot
                     .HasName("bank_pkey");
 
                 entity.ToTable("bank");
-
-                entity.HasIndex(e => e.OrgId)
-                    .HasName("fki_orgId");
 
                 entity.Property(e => e.AccountId).HasColumnName("account_id")
                     .UseIdentityAlwaysColumn();
@@ -74,9 +71,13 @@ namespace multicorp_bot
 
                 entity.Property(e => e.UserId).HasColumnName("user_id");
 
-                entity.Property(e => e.OrgId).HasColumnName("org_id");
+                entity.Property(e => e.OrgId)
+                    .IsRequired()
+                    .HasColumnName("org_id");
 
-                entity.Property(e => e.DiscordId).HasColumnName("discord_id");
+                entity.Property(e => e.DiscordId)
+                    .IsRequired()
+                    .HasColumnName("discord_id");
 
                 entity.Property(e => e.Username)
                     .IsRequired()
@@ -128,14 +129,14 @@ namespace multicorp_bot
 
             modelBuilder.Entity<WantedShips>(entity =>
             {
-                entity.ToTable("wanted-ships");
+                entity.ToTable("wanted_ships");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
                     .ValueGeneratedNever();
 
                 entity.Property(e => e.ImgUrl)
-                    .HasColumnName("imgUrl")
+                    .HasColumnName("img_url")
                     .HasColumnType("character varying");
 
                 entity.Property(e => e.Name)
@@ -145,33 +146,33 @@ namespace multicorp_bot
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
 
-                entity.Property(e => e.RemainingPrice).HasColumnName("remaining-price");
+                entity.Property(e => e.RemainingPrice).HasColumnName("remaining_price");
 
-                entity.Property(e => e.TotalPrice).HasColumnName("total-price");
-                entity.Property(e => e.IsCompleted).HasColumnName("is-completed");
+                entity.Property(e => e.TotalPrice).HasColumnName("total_price");
+                entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
             });
 
             modelBuilder.Entity<WorkOrderRequirements>(entity =>
             {
-                entity.ToTable("work-order-requirements");
+                entity.ToTable("work_order_requirements");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id");
 
                 entity.Property(e => e.Amount).HasColumnName("amount");
 
-                entity.Property(e => e.TypeId).HasColumnName("typeId");
+                entity.Property(e => e.TypeId).HasColumnName("type_id");
 
-                entity.Property(e => e.WorkOrderId).HasColumnName("workOrderId");
+                entity.Property(e => e.WorkOrderId).HasColumnName("work_order_id");
 
                 entity.Property(e => e.Material).HasColumnName("material");
 
-                entity.Property(e => e.isCompleted).HasColumnName("isCompleted");
+                entity.Property(e => e.isCompleted).HasColumnName("is_completed");
             });
 
             modelBuilder.Entity<WorkOrderTypes>(entity =>
             {
-                entity.ToTable("work-order-types");
+                entity.ToTable("work_order_types");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -182,30 +183,30 @@ namespace multicorp_bot
                     .HasColumnName("name")
                     .HasColumnType("character varying");
 
-                entity.Property(e => e.XpModifier).HasColumnName("xpModifier");
+                entity.Property(e => e.XpModifier).HasColumnName("xp_modifier");
 
                 entity.Property(e => e.ImgUrl)
-                .HasColumnName("imgUrl")
-                .HasColumnType("character varying"); ;
+                    .HasColumnName("img_url")
+                    .HasColumnType("character varying"); ;
             });
 
             modelBuilder.Entity<WorkOrderMembers>(entity =>
             {
-                entity.ToTable("workOrderMembers");
+                entity.ToTable("work_order_members");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id").ValueGeneratedOnAdd();
 
                 entity.Property(e => e.MemberId)
                     .IsRequired()
-                    .HasColumnName("memberId");
+                    .HasColumnName("member_id");
 
-                entity.Property(e => e.WorkOrderId).HasColumnName("workOrderId");
+                entity.Property(e => e.WorkOrderId).HasColumnName("work_order_id");
             });
 
             modelBuilder.Entity<WorkOrders>(entity =>
             {
-                entity.ToTable("workOrders");
+                entity.ToTable("work_orders");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id");
@@ -222,13 +223,16 @@ namespace multicorp_bot
 
                 entity.Property(e => e.OrgId).HasColumnName("org_id");
 
-                entity.Property(e => e.WorkOrderTypeId).HasColumnName("workOrderTypeId");
+                entity.Property(e => e.WorkOrderTypeId).HasColumnName("work_order_type_id");
 
-                entity.Property(e => e.isCompleted).HasColumnName("isCompleted");
+                entity.Property(e => e.isCompleted).HasColumnName("is_completed");
 
                 entity.Property(e => e.Location)
-                .HasColumnName("location")
-                .HasColumnType("character varying");
+                    .HasColumnName("location")
+                    .HasColumnType("character varying");
+
+                entity.Property(e => e.FactionId)
+                    .HasColumnName("faction_id");
             });
 
             modelBuilder.Entity<Loans>(entity =>
@@ -239,13 +243,13 @@ namespace multicorp_bot
                 entity.ToTable("loans");
 
                 entity.HasIndex(e => e.ApplicantId)
-                    .HasName("fki_requestor_id");
+                    .HasDatabaseName("fki_requestor_id");
 
                 entity.HasIndex(e => e.FunderId)
-                    .HasName("fki_funder_fk");
+                    .HasDatabaseName("fki_funder_fk");
 
                 entity.HasIndex(e => e.OrgId)
-                    .HasName("fki_org_id");
+                    .HasDatabaseName("fki_org_id");
 
                 entity.Property(e => e.LoanId)
                     .HasColumnName("loan_id")
@@ -269,43 +273,17 @@ namespace multicorp_bot
 
             });
 
-            modelBuilder.Entity<OrgRankStrip>(entity =>
-            {
-                entity.ToTable("org_rank_strip");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("id").ValueGeneratedOnAdd();
-
-                entity.Property(e => e.DiscordId)
-                    .IsRequired()
-                    .HasColumnName("discordid");
-
-
-                entity.Property(e => e.OldNick)
-                    .IsRequired()
-                    .HasColumnName("oldnick");
-
-
-                entity.Property(e => e.NewNick)
-                    .IsRequired()
-                    .HasColumnName("newnick");
-
-                entity.Property(e => e.OrgName)
-                    .IsRequired()
-                    .HasColumnName("org_name");
-            });
-
             modelBuilder.Entity<DispatchType>(entity =>
             {
                 entity.ToTable("dispatch_type");
 
                 entity.Property(e => e.DispatchTypeId)
-                .IsRequired()
-                .HasColumnName("dispatch_type_id");
+                    .IsRequired()
+                    .HasColumnName("dispatch_type_id");
 
                 entity.Property(e => e.Description)
-                .IsRequired()
-                .HasColumnName("description");
+                    .IsRequired()
+                    .HasColumnName("description");
             });
 
             modelBuilder.Entity<OrgDispatch>(entity =>
@@ -313,16 +291,16 @@ namespace multicorp_bot
                 entity.ToTable("org_dispatch");
 
                 entity.Property(e => e.OrgDispatchId)
-                .IsRequired()
-                .HasColumnName("org_dispatch_id");
+                    .IsRequired()
+                    .HasColumnName("org_dispatch_id");
 
                 entity.Property(e => e.OrgId)
-                .IsRequired()
-                .HasColumnName("org_id");
+                    .IsRequired()
+                    .HasColumnName("org_id");
 
                 entity.Property(e => e.DispatchType)
-                .IsRequired()
-                .HasColumnName("dispatch_type");
+                    .IsRequired()
+                    .HasColumnName("dispatch_type_id");
             });
 
             modelBuilder.Entity<DispatchLog>(entity =>
@@ -330,21 +308,65 @@ namespace multicorp_bot
                 entity.ToTable("dispatch_log");
 
                 entity.Property(e => e.Id)
-                .HasColumnName("id").ValueGeneratedOnAdd();
+                    .HasColumnName("id").ValueGeneratedOnAdd();
 
                 entity.Property(e => e.RequestorName)
-                .IsRequired()
-                .HasColumnName("requestor-name");
+                    .IsRequired()
+                    .HasColumnName("requestor_name");
 
                 entity.Property(e => e.RequestorOrg)
-                .IsRequired()
-                .HasColumnName("requestor-org");
+                    .IsRequired()
+                    .HasColumnName("requestor_org");
 
                 entity.Property(e => e.AcceptorName)
-                .HasColumnName("acceptor-name");
+                    .HasColumnName("acceptor_name");
 
                 entity.Property(e => e.AcceptorOrg)
-                .HasColumnName("acceptor-org");
+                    .HasColumnName("acceptor_org");
+            });
+
+            modelBuilder.Entity<Factions>(entity =>
+            {
+                entity.HasKey(e => e.FactionId)
+                    .HasName("primary");
+
+                entity.ToTable("factions");
+
+                entity.Property(e => e.FactionId)
+                    .IsRequired()
+                    .HasColumnName("faction_id");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasColumnName("name");
+
+                entity.Property(e => e.OrgId)
+                    .IsRequired()
+                    .HasColumnName("org_id");
+            });
+
+            modelBuilder.Entity<FactionFavor>(entity =>
+            {
+                entity.HasKey(e => e.Id)
+                    .HasName("primary");
+
+                entity.ToTable("faction_favor");
+
+                entity.Property(e => e.Id)
+                    .IsRequired()
+                    .HasColumnName("id");
+
+                entity.Property(e => e.FactionID)
+                    .IsRequired()
+                    .HasColumnName("faction_id");
+
+                entity.Property(e => e.OrgId)
+                    .IsRequired()
+                    .HasColumnName("org_id");
+
+                entity.Property(e => e.FavorPoints)
+                    .IsRequired()
+                    .HasColumnName("favor_points");
             });
 
             OnModelCreatingPartial(modelBuilder);

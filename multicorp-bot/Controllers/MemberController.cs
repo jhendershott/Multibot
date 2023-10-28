@@ -15,20 +15,18 @@ namespace multicorp_bot.Controllers
     public class MemberController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
-        public MemberController() {
+        public MemberController()
+        {
             MultiBotDb = new MultiBotDb();
         }
 
         public int? AddMember(string name, int orgid, DiscordMember dcMember)
         {
             var memberContext = MultiBotDb.Member;
-            var test = GetHighestUserId() + 1;
             var member = new Member()
             {
                 OrgId = orgid,
                 Username = name,
-                UserId = GetHighestUserId() + 1,
                 DiscordId = dcMember.Id.ToString(),
                 Xp = 0
             };
@@ -51,7 +49,7 @@ namespace multicorp_bot.Controllers
             {
                 return memberContext.Single(x => x.Username == name && x.OrgId == orgId).UserId;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e);
                 return AddMember(name, orgId, member);
@@ -69,9 +67,10 @@ namespace multicorp_bot.Controllers
         {
             var orgId = new OrgController().GetOrgId(guild);
             var memberCtx = MultiBotDb.Member;
-            if(memberCtx.Any(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId ))
+            var mem = memberCtx.AsQueryable().Where(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId).FirstOrDefault();
+            if (mem != null)
             {
-                return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
+                return mem;
             }
             else
             {
@@ -87,9 +86,33 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public async Task<DiscordMember> GetDiscordMemberByMemberId(CommandContext ctx, int id)
+        public async Task<Member> GetMemberbyDcId(DiscordUser member, DiscordGuild guild)
         {
-            return await ctx.Guild.GetMemberAsync(ulong.Parse(GetMemberById(id).DiscordId));
+            var orgId = new OrgController().GetOrgId(guild);
+            var memberCtx = MultiBotDb.Member;
+            if (memberCtx.Any(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId))
+            {
+                return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
+            }
+            else
+            {
+                DiscordMember dcMem = await guild.GetMemberAsync(member.Id);
+                if (dcMem.Nickname != null)
+                {
+                    AddMember(dcMem.Nickname, orgId, dcMem);
+                }
+                else
+                {
+                    AddMember(dcMem.DisplayName, orgId, dcMem);
+                }
+                return memberCtx.Single(x => x.DiscordId == member.Id.ToString() && x.OrgId == orgId);
+            }
+        }
+
+        public async Task<DiscordMember> GetDiscordMemberByMemberId(DiscordGuild guild, int memberId)
+        {
+            string discordId = MultiBotDb.Member.Single(x => x.OrgId == new OrgController().GetOrgId(guild) && x.UserId == memberId).DiscordId;
+            return await guild.GetMemberAsync(ulong.Parse(discordId));
         }
 
         public void UpdateMemberName(CommandContext ctx, string oldName, string newName, DiscordGuild guild)
@@ -122,11 +145,6 @@ namespace multicorp_bot.Controllers
             return memberContext.AsQueryable().Where(x => x.OrgId == orgId).ToList();
         }
 
-        private int GetHighestUserId()
-        {
-            return MultiBotDb.Member.ToList().OrderByDescending(x => x.UserId).First().UserId;
-        }
-
         public long? UpdateExperiencePoints(string workOrderType, BankTransaction trans)
         {
             Member member = GetMemberbyDcId(trans.Member, trans.Guild);
@@ -140,7 +158,8 @@ namespace multicorp_bot.Controllers
                     member.Xp = member.Xp + Convert.ToInt64(trans.Amount * xpMod);
                     break;
 
-                default: Console.WriteLine("Currently support xp modifiers are merit and credits");
+                default:
+                    Console.WriteLine("Currently support xp modifiers are merit and credits");
                     break;
             }
 
@@ -168,7 +187,7 @@ namespace multicorp_bot.Controllers
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
             builder.Title = $"{guild.Name} Top XP Earners";
 
-            for(int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
                 builder.AddField(memberByXP[i].Username, $"Current Experience Points: {memberByXP[i].Xp}");
             }
@@ -177,74 +196,6 @@ namespace multicorp_bot.Controllers
 
             return builder.Build();
 
-        }
-
-        public async Task<bool> StripRank(DiscordMember member)
-        {
-            try
-            {
-                Ranks rank = new Ranks();
-                var newnick = rank.GetNickWithoutRank(member);
-                MultiBotDb db = new MultiBotDb();
-                var record = new OrgRankStrip()
-                {
-                    DiscordId = member.Id.ToString(),
-                    OldNick = member.DisplayName,
-                    NewNick = newnick,
-                    OrgName = member.Guild.Name
-                };
-
-                db.OrgRankStrip.Add(record);
-                await db.SaveChangesAsync();
-                
-                var rec = db.OrgRankStrip.SingleOrDefault(x => x.DiscordId == member.Id.ToString());
-                await member.ModifyAsync(x => x.Nickname = $"MC{rec.Id} {newnick}");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
-
-            return true;
-        }
-
-        public async Task<bool> RestoreRanks(CommandContext ctx)
-        {
-            try
-            {
-                Ranks rank = new Ranks();
-                
-                MultiBotDb db = new MultiBotDb();
-
-                var usersInOrg = db.OrgRankStrip.Where(x => x.OrgName == ctx.Guild.Name);
-                var list = usersInOrg.ToList();
-
-  
-                foreach (var user in usersInOrg)
-                {
-                    try
-                    {
-                        var member = await ctx.Guild.GetMemberAsync(ulong.Parse(user.DiscordId));
-                        await member.ModifyAsync(x => x.Nickname = user.OldNick);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                }
-                foreach (var record in list)
-                {
-                    db.OrgRankStrip.Remove(record);
-                }
-                await db.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-            return true;
         }
     }
 }

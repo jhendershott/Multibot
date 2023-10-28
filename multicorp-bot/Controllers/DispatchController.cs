@@ -13,8 +13,6 @@ namespace multicorp_bot.Controllers
     public class DispatchController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
-
         public DispatchController()
         {
             MultiBotDb = new MultiBotDb();

@@ -14,7 +14,7 @@ namespace multicorp_bot
         public long? RequestedAmount { get; set; }
         public long? InterestAmount { get; set; }
         public long? RemainingAmount { get; set; }
-        public int IsCompleted { get; set; }
+        public bool IsCompleted { get; set; }
 
         public virtual Member Applicant { get; set; }
         public virtual Member Funder { get; set; }

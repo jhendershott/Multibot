@@ -12,7 +12,7 @@ namespace multicorp_bot
         public int OrgId { get; set; }
         public int WorkOrderTypeId { get; set; }
         public string Location { get; set; }
-
         public bool isCompleted { get; set; }
+        public int? FactionId { get; set; }
     }
 }

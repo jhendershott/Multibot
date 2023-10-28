@@ -9,7 +9,6 @@ namespace multicorp_bot.Controllers
     public class FleetController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
         public FleetController()
         {
             MultiBotDb = new MultiBotDb();

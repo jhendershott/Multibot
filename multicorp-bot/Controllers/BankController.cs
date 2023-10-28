@@ -4,6 +4,7 @@ using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
 using multicorp_bot.POCO;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
@@ -14,7 +15,6 @@ namespace multicorp_bot
     public class BankController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
 
         public BankController()
         {
@@ -25,17 +25,24 @@ namespace multicorp_bot
         {
             var orgId = new OrgController().GetOrgId(guild);
 
-            var bank = new Bank()
+            List<Bank> getBank = MultiBotDb.Bank.AsQueryable().Where(x => x.OrgId == orgId).ToList();
+
+            if (getBank.Count == 0)
             {
-                AccountId = GetHighestBankId() + 1,
-                Balance = 0,
-                OrgId = new OrgController().GetOrgId(guild),
-            };
-
-            MultiBotDb.Bank.Add(bank);
-            MultiBotDb.SaveChangesAsync();
-
-            return GetBankByOrg(guild);
+                var bank = new Bank()
+                {
+                    Balance = 0,
+                    OrgId = orgId,
+                };
+                MultiBotDb.Bank.Add(bank);
+                MultiBotDb.SaveChangesAsync();
+                return GetBankByOrg(guild);
+            }
+            else
+            {
+                return getBank[0];
+            }
+            
         }
 
         public int GetHighestBankId()
@@ -47,7 +54,7 @@ namespace multicorp_bot
         {
             try
             {
-                return MultiBotDb.Bank.Single(x => x.OrgId == new OrgController().GetOrgId(guild));
+                return new MultiBotDb().Bank.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild)).First();
             }
             catch
             {
@@ -55,7 +62,7 @@ namespace multicorp_bot
             }
         }
 
-        public Tuple<string, string> Deposit(BankTransaction trans)
+        public async Task<Tuple<string, string>> Deposit(BankTransaction trans)
         {
             var bankContext = MultiBotDb.Bank;
             var bankItem = GetBankByOrg(trans.Guild);
@@ -63,13 +70,13 @@ namespace multicorp_bot
             bankItem.Merits = bankItem.Merits + trans.Merits;
 
             bankContext.Update(bankItem);
-            MultiBotDb.SaveChanges();
+            await MultiBotDb.SaveChangesAsync();
 
             return new Tuple<string, string> (FormatHelpers.FormattedNumber(GetBankBalance(trans.Guild).ToString()),
                 FormatHelpers.FormattedNumber(GetBankMeritBalance(trans.Guild).ToString()));
         }
 
-        public Tuple<string, string> Withdraw(BankTransaction trans)
+        public async Task<Tuple<string, string>> Withdraw(BankTransaction trans)
         {
             var bankContext = MultiBotDb.Bank;
             var bankItem = GetBankByOrg(trans.Guild);
@@ -77,7 +84,7 @@ namespace multicorp_bot
             bankItem.Merits = bankItem.Merits - trans.Merits;
 
             bankContext.Update(bankItem);
-            MultiBotDb.SaveChanges();
+            await MultiBotDb.SaveChangesAsync();
 
             return new Tuple<string, string>(FormatHelpers.FormattedNumber(GetBankBalance(trans.Guild).ToString()),
                 FormatHelpers.FormattedNumber(GetBankMeritBalance(trans.Guild).ToString()));
@@ -90,7 +97,6 @@ namespace multicorp_bot
             builder.Title = $"{guild.Name} Bank";
             builder.Timestamp = DateTime.Now;
 
-     
             builder.AddField("Current Balance:", $"{FormatHelpers.FormattedNumber(GetBankBalance(guild).ToString())} aUEC", true);
             builder.AddField("Current Merits:", $"{FormatHelpers.FormattedNumber(GetBankMeritBalance(guild).ToString())}", true);
 
@@ -143,20 +149,11 @@ namespace multicorp_bot
 
         public void UpdateTransaction(BankTransaction trans)
         {
-            Ranks ranks = new Ranks();
             var memberC = new MemberController();
             var memberId = 0;
             var orgId = new OrgController().GetOrgId(trans.Guild);
-            if(trans.Member.Nickname != null)
-            {
-                memberId = memberC.GetMemberId(ranks.GetNickWithoutRank(trans.Member.Nickname), orgId, trans.Member).GetValueOrDefault();
-            }
-            else
-            {
-                memberId = memberC.GetMemberId(trans.Member.Username, orgId, trans.Member).GetValueOrDefault();
-            }
-            
-
+            memberId = memberC.GetMemberId(trans.Member.Username, orgId, trans.Member).GetValueOrDefault();
+           
             var transC = new TransactionController();
             var transactionId = transC.GetTransactionId(memberId);
 
@@ -227,9 +224,9 @@ namespace multicorp_bot
             return Math.Round(Math.Abs(margin), 2);
         }
 
-        public async Task<BankTransaction> GetBankActionAsync(CommandContext ctx, string action, int amount, DiscordMember member = null, string type = null)
+        public BankTransaction GetBankAction(CommandContext ctx, string action, int amount, DiscordMember member = null, string type = null)
         {
-            BankTransaction trans = null;
+            BankTransaction trans;
 
             if (member == null)
             {
@@ -240,7 +237,7 @@ namespace multicorp_bot
                 trans = new BankTransaction(action, member, ctx.Guild);
             }
 
-            if(type == "merit")
+            if (type == "merit")
             {
                 trans.Merits = amount;
             }

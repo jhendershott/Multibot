@@ -8,7 +8,6 @@ namespace multicorp_bot.Controllers
     public class OrgController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
         public OrgController()
         {
             MultiBotDb = new MultiBotDb();

@@ -2,28 +2,45 @@ using System;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
+using Microsoft.Extensions.Logging;
 using multicorp_bot.Helpers;
 
 namespace multicorp_bot {
     class Program {
         static DiscordClient discord;
-        static CommandsNextExtension commands;
-        static InteractivityExtension interactivity;
         
        static async Task Main (string[] args) {
-            string token = Environment.GetEnvironmentVariable("BOTTOKEN");
+            //string token = Environment.GetEnvironmentVariable("BOTTOKEN");
+            string token = "NjkzODcwNzM3OTExNDQ3NjEy.GIbCnR.V-zOZBhTJSx7nZ9lmPhJR1G2gbLx4gLbjqEVco";
             discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = token,
                 TokenType = TokenType.Bot,
-                Intents = DiscordIntents.All
+                Intents = DiscordIntents.All,
+                MinimumLogLevel = LogLevel.Debug
+            });
+
+            discord.ComponentInteractionCreated += async (s, e) =>
+            {
+                new ComponentInteractions(s, e).Parse();
+                await e.Interaction.CreateResponseAsync(InteractionResponseType.Pong);
+            };
+
+            discord.UseInteractivity(new InteractivityConfiguration()
+            {
+                PollBehaviour = PollBehaviour.KeepEmojis,
+                Timeout = TimeSpan.FromSeconds(60)
             });
 
             var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
                 {
                     StringPrefixes = new[] { "!" },
-                    CaseSensitive = false
+                    CaseSensitive = false,
+                    EnableDefaultHelp = false,
                 }
             );
 
@@ -65,7 +82,7 @@ namespace multicorp_bot {
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            TelemetryHelper.Singleton.LogEvent("BOT STOP");
+            Console.WriteLine("Bot Stop");
         }
     }
 }

@@ -11,7 +11,6 @@ namespace multicorp_bot.Controllers
     public class TransactionController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
         public TransactionController()
         {
             MultiBotDb = new MultiBotDb();

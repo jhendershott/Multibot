@@ -12,7 +12,6 @@ namespace multicorp_bot.Controllers
     public class LoanController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
         public LoanController()
         {
             MultiBotDb = new MultiBotDb();
@@ -65,7 +64,7 @@ namespace multicorp_bot.Controllers
             {
                 var loanCtx = MultiBotDb.Loans;
                 int orgId = new OrgController().GetOrgId(guild);
-                var loanList = loanCtx.AsQueryable().AsQueryable().Where(x => x.OrgId == orgId && x.IsCompleted == 0).ToList();
+                var loanList = loanCtx.AsQueryable().AsQueryable().Where(x => x.OrgId == orgId && x.IsCompleted == false).ToList();
                 var memberController = new MemberController();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -100,7 +99,6 @@ namespace multicorp_bot.Controllers
             }
             catch (Exception e)
             {
-                tHelper.LogException($"Method: GetLoanEmbed; Org: {guild.Name};", e);
                 Console.WriteLine(e);
                 return null;
             }
@@ -110,7 +108,7 @@ namespace multicorp_bot.Controllers
         {
             var loanList = MultiBotDb.Loans.AsQueryable().Where(x =>
             x.OrgId == new OrgController().GetOrgId(guild)
-            && x.IsCompleted == 0
+            && x.IsCompleted == false
             && x.Status == "Waiting To Be Funded").ToList();
 
             return loanList;
@@ -120,7 +118,7 @@ namespace multicorp_bot.Controllers
         {
             var loanList = MultiBotDb.Loans.AsQueryable().Where(x =>
             x.OrgId == new OrgController().GetOrgId(guild)
-            && x.IsCompleted == 0
+            && x.IsCompleted == false
             && x.Status == "Funded").ToList();
 
             return loanList;
@@ -190,7 +188,7 @@ namespace multicorp_bot.Controllers
 
         public List<Loans> GetLoanByApplicantId(int appId)
         {
-            return MultiBotDb.Loans.AsQueryable().Where(x => x.ApplicantId == appId && x.IsCompleted == 0).ToList();
+            return MultiBotDb.Loans.AsQueryable().Where(x => x.ApplicantId == appId && x.IsCompleted == false).ToList();
         }
 
         public Loans GetLoanById(int id)
@@ -209,10 +207,10 @@ namespace multicorp_bot.Controllers
 
         public void WipeLoans(CommandContext ctx)
         {
-            var loans = MultiBotDb.Loans.AsQueryable().Where(x => x.IsCompleted == 0 && x.OrgId == new OrgController().GetOrgId(ctx.Guild));
+            var loans = MultiBotDb.Loans.AsQueryable().Where(x => x.IsCompleted == false && x.OrgId == new OrgController().GetOrgId(ctx.Guild));
             foreach(var loan in loans)
             {
-                loan.IsCompleted = 1;
+                loan.IsCompleted = true;
             }
             MultiBotDb.SaveChangesAsync();
         }
@@ -220,7 +218,7 @@ namespace multicorp_bot.Controllers
         public Loans CompleteLoan(int loanId)
         {
             var loan = MultiBotDb.Loans.Single(x => x.LoanId == loanId);
-            loan.IsCompleted = 1;
+            loan.IsCompleted = true;
             loan.Status = "Completed";
             MultiBotDb.SaveChangesAsync();
 

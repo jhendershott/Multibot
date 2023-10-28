@@ -12,7 +12,6 @@ namespace multicorp_bot.Controllers
     public class WorkOrderController
     {
         MultiBotDb MultiBotDb;
-        TelemetryHelper tHelper = new TelemetryHelper();
         public List<string> Types;
 
         public WorkOrderController()
@@ -29,12 +28,30 @@ namespace multicorp_bot.Controllers
             return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == modName).FirstOrDefault().XpModifier;
         }
 
+        public async void AcceptWorkOrder(DiscordUser dcMem, DiscordGuild dcGuild, DiscordChannel channel, string workOrderId)
+        {
+            try
+            {
+                Member member = await new MemberController().GetMemberbyDcId(dcMem, dcGuild);
+                WorkOrderMembers newMem = new WorkOrderMembers();
+                newMem.MemberId = member.UserId;
+                newMem.WorkOrderId = int.Parse(workOrderId);
+                MultiBotDb.WorkOrderMembers.Add(newMem);
+                MultiBotDb.SaveChanges();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                ErrorController.SendError(channel, e.Message, dcGuild);
+            }
+        }
+
         public async Task<Tuple<DiscordEmbed, WorkOrders>> GetWorkOrders(CommandContext ctx, string workOrderType, int? id = null)
         {
             try
             {
                 WorkOrders order = null;
-                var orderType = await GetWorkOrderType(ctx, workOrderType);
+                var orderType = await GetWorkOrderType(ctx.Channel, workOrderType);
                 var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted).ToList();
 
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
@@ -105,25 +122,24 @@ namespace multicorp_bot.Controllers
             }
             catch (Exception e)
             {
-                tHelper.LogException($"Method: GetWorkOrders; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e);
                 return null;
             }
         }
 
-        public async Task<DiscordEmbed> CreateJobBoard(CommandContext ctx, string workOrderType)
+        public async Task<DiscordMessageBuilder> CreateJobBoard(DiscordGuild guild, DiscordChannel channel, string workOrderType)
         {
             try
             {
-                var orderType = await GetWorkOrderType(ctx, workOrderType);
-                var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(ctx.Guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted ).ToList();
+                var orderType = await GetWorkOrderType(channel, workOrderType);
+                var wOrders = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild) && x.WorkOrderTypeId == orderType.Id && !x.isCompleted ).ToList();
             
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
                 var type = FormatHelpers.Capitalize(orderType.Name);
 
-                builder.Title = $"{ctx.Guild.Name} - Job Board";
+                builder.Title = $"{workOrderType.ToUpper()} Job Board";
                
-                builder.Description = $"This is the {ctx.Guild.Name} Job Board listing all available orders and missions issued by our members.\nFeel free to accept any missions you find worthwhile.\n-------------------------------------------------------------------";
+                builder.Description = $"This is the {guild.Name} Job Board listing all available orders and missions issued by our members.\nFeel free to accept any missions you find worthwhile.\n-------------------------------------------------------------------";
 
 
                
@@ -132,13 +148,20 @@ namespace multicorp_bot.Controllers
                 {
                     builder.AddField("No Work Orders", "Check back later");
                     builder.Timestamp = DateTime.Now;
-                    return builder.Build();
+
+                    return new DiscordMessageBuilder().AddEmbed(builder.Build());
                 }
-                else { 
+                else {
+                    DiscordComponent[] buttons = new DiscordComponent[wOrders.Count];
                     for (int i = 0; i < wOrders.Count; i++)
                     {
                         var req = GetRequirements(wOrders[i].Id);
                         string reqString = "";
+                        if (wOrders[i].FactionId != null)
+                        {
+                            builder.AddField("Faction", new FactionController().GetFactionById(wOrders[i].FactionId.GetValueOrDefault()));
+                        }
+                    
                         foreach(var r in req)
                         {
                             reqString = reqString + $"\n**Material:** {r.Material} \n**Amount:** {r.Amount}\n";
@@ -146,21 +169,27 @@ namespace multicorp_bot.Controllers
 
                         builder.AddField( ((GetWorkOrderMembers(wOrders[i].Id).Count >0)?"[ACCEPTED] ": "")+ "ID:" +wOrders[i].Id + " - " + wOrders[i].Name, $"{wOrders[i].Description} \n\n**Location:** {wOrders[i].Location} {reqString} \n-------------------------------------------------------------------");
 
+                        buttons[i] = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, $"accept_order-{wOrders[i].Id}", $"Accept Order #{wOrders[i].Id}");
                     }
-                    builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type !accept <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
+                    builder.WithFooter("If you'd like to view more about the order, Type !view <ID> \nIf you'd like to accept an order, Type Click Below <ID>\nIf you'd like to log work for an order, Type !log <ID>\n");
                     builder.Timestamp = DateTime.Now;
-                    return builder.Build();
+
+                    DiscordMessageBuilder msg = new DiscordMessageBuilder();
+                    msg.AddEmbed(builder.Build());
+                    msg.AddComponents(buttons);
+
+                    return msg;
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                await ctx.RespondAsync($"Send wnr the following error: {e}");
+                await channel.SendMessageAsync($"Send wnr the following error: {e}");
                 return null;
             }
         }
 
-        public async Task<DiscordEmbed> GetWorkOrderByMember(CommandContext ctx)
+        public DiscordEmbed GetWorkOrderByMember(CommandContext ctx)
         {
             var mbDb = new MultiBotDb();
             try
@@ -170,7 +199,7 @@ namespace multicorp_bot.Controllers
                 List<WorkOrderMembers> memberOrders = mbDb.WorkOrderMembers.AsQueryable().Where(x => x.MemberId == mem.UserId).ToList();
                 List<WorkOrders> wOrders = new List<WorkOrders>();
 
-                foreach(var o in memberOrders)
+                foreach (var o in memberOrders)
                 {
                     var order = mbDb.WorkOrders.AsQueryable().Where(x => x.Id == o.WorkOrderId).FirstOrDefault();
                     if (!order.isCompleted)
@@ -178,7 +207,7 @@ namespace multicorp_bot.Controllers
                         wOrders.Add(order);
                     }
                 }
-                                
+
                 DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
 
                 builder.Title = $"{ctx.Guild.Name} Open Work Orders - {ctx.Member.Nickname}";
@@ -211,7 +240,7 @@ namespace multicorp_bot.Controllers
                         builder.AddField($"__________________________________________" +
                             $" \nWork Order Id: {order.Id} \n Location: {order.Location} {membersStr.ToString()}", $"\n{order.Description}\n{reqString.ToString()}");
                     }
-                    
+
                 }
                 else
                 {
@@ -229,7 +258,6 @@ namespace multicorp_bot.Controllers
             }
             catch (Exception e)
             {
-                tHelper.LogException($"Method: GetWorkOrders; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e);
                 return null;
             }
@@ -274,6 +302,10 @@ namespace multicorp_bot.Controllers
                 {
                     order.isCompleted = true;
                     MultiBotDb.WorkOrders.Update(order);
+                    if (order.FactionId != null)
+                    {
+                        new FactionController().AddFactionFavor(order.OrgId, order.FactionId.GetValueOrDefault());
+                    }
                     ctx.RespondAsync($"Great job you have completed the Work Order {type}");
                     CalcXpForCompletion(order);     
                 }
@@ -313,7 +345,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public async Task<WorkOrderTypes> GetWorkOrderType(CommandContext ctx, string type)
+        public async Task<WorkOrderTypes> GetWorkOrderType(DiscordChannel channel, string type)
         {
             try
             {
@@ -332,20 +364,19 @@ namespace multicorp_bot.Controllers
                     case "ship":
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "shipping").SingleOrDefault();
                     case var hand when type.ToLower().Contains("hand"):
-                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "hand mineables").SingleOrDefault();
                     case var roc when type.ToLower().Contains("roc"):
-                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "Hand Mineables").SingleOrDefault();
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "hand mineables").SingleOrDefault();
                     case "military":
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "military").SingleOrDefault();
 
                     default:
-                        await ctx.RespondAsync("Please specify type, trading, mining, hand mining or roc mining, shipping, military");
+                        await channel.SendMessageAsync("Please specify type, trading, mining, hand mining or roc mining, shipping, military");
                         throw new InvalidOperationException("Unspecified Work Order Type");
 
                 }
             } catch(Exception e)
             {
-                tHelper.LogException($"Method: GetWorkOrderType; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e);
             }
 
@@ -384,7 +415,6 @@ namespace multicorp_bot.Controllers
             }
             catch (Exception e)
             {
-                tHelper.LogException($"Method: AcceptWorkOrder; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e);
                 return false;
             }
@@ -398,11 +428,10 @@ namespace multicorp_bot.Controllers
             {
                 var order = new WorkOrders()
                 {
-                    Id = GetHighestWorkOrder(id) + 1,
                     Name = $"{title}- requested by {ctx.Member.Nickname ?? ctx.Member.DisplayName}",
                     Description = description,
                     Location = location,
-                    WorkOrderTypeId = (await GetWorkOrderType(ctx, type)).Id,
+                    WorkOrderTypeId = (await GetWorkOrderType(ctx.Channel, type)).Id,
                     OrgId = id,
                     isCompleted = false
                 };
@@ -423,7 +452,6 @@ namespace multicorp_bot.Controllers
                 }
             } catch (Exception e)
             {
-                tHelper.LogException($"Method: AddWorkOrder; Org: {ctx.Guild.Name}; Message: {ctx.Message}; User:{ctx.Member.Nickname}", e);
                 Console.WriteLine(e);
             }
         }

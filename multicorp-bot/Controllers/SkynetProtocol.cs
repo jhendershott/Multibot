@@ -118,25 +118,11 @@ namespace multicorp_bot.Controllers
 
             var msg = json.scheduled[index];
 
-            if(index == 3)
+            if (index == 3)
             {
                 BankController bank = new BankController();
                 var trans = new BankTransaction("withdraw", ctx.Member, ctx.Guild, amount: 15000000);
-                bank.Withdraw(trans);
-            }
-            else if(index == 8)
-            {
-                SkynetProtocol sk = new SkynetProtocol();
-                MemberController memCon = new MemberController();
-                var listUser = ctx.Channel.Users;
-                foreach(var user in listUser)
-                {
-                    if (user.IsBot == false)
-                    {
-                        await memCon.StripRank(user);
-                    }
-                   
-                }
+                await bank.Withdraw(trans);
             }
 
             return json.scheduled[index].messages;
