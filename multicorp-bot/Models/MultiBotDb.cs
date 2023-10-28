@@ -35,7 +35,7 @@ namespace multicorp_bot
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql("Server=45.32.170.243; Port=5432; User Id=admin; Password=Adm1n123!; Database=multibot");
+                optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRESCONNECTIONSTRING"));
             }
         }
 

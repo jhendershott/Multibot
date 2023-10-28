@@ -14,8 +14,7 @@ namespace multicorp_bot {
         static DiscordClient discord;
         
        static async Task Main (string[] args) {
-            //string token = Environment.GetEnvironmentVariable("BOTTOKEN");
-            string token = "NjkzODcwNzM3OTExNDQ3NjEy.GIbCnR.V-zOZBhTJSx7nZ9lmPhJR1G2gbLx4gLbjqEVco";
+            string token = Environment.GetEnvironmentVariable("BOTTOKEN");
             discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = token,
