@@ -36,6 +36,11 @@ namespace multicorp_bot.Controllers
             return GetOrgId(guild);
         }
 
+        public bool isRpOrg(DiscordGuild guild)
+        {
+            return MultiBotDb.Orgs.AsQueryable().Where(x => x.Id == GetOrgId(guild)).First().IsRp;
+        }
+
         public void UpdateDiscordId(DiscordGuild guild)
         {
             var orgContext = MultiBotDb.Orgs;

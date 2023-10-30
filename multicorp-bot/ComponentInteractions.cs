@@ -11,29 +11,31 @@ namespace multicorp_bot
 	{
 		public ComponentInteractions(DiscordClient client, ComponentInteractionCreateEventArgs eventArgs)
 		{
-			this.DiscordClient = client;
-			this.EventArgs = eventArgs;
+			DiscordClient = client;
+			EventArgs = eventArgs;
 			var idArr = eventArgs.Id.Split("-");
-			this.ComponentAction = idArr[0];
-			this.ComponentId = idArr[1];
+			ComponentAction = idArr[0];
+			ComponentId = idArr[1];
         }
 
 		public DiscordClient DiscordClient;
 		public ComponentInteractionCreateEventArgs EventArgs;
-		public String ComponentAction;
-		public String ComponentId;
+		public string ComponentAction;
+		public string ComponentId;
 
 		public async void Parse()
 		{
-			switch (this.ComponentAction)
+			switch (ComponentAction)
 			{
 				case "accept_order":
 					new WorkOrderController().AcceptWorkOrder(EventArgs.User, EventArgs.Guild, EventArgs.Channel, ComponentId);
 					await new Commands().UpdateJobBoard(EventArgs.Guild, EventArgs.Channel);
 					break;
-					
 				case "help":
 					await HelpController.SelectHelpEmbed(EventArgs.Channel, ComponentId);
+					break;
+				case "expense":
+					await new BankController().ExpenseButtonInteractionAsync(ComponentId, EventArgs.Guild, EventArgs.Channel);
 					break;
             }
 		}

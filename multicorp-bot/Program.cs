@@ -23,17 +23,17 @@ namespace multicorp_bot {
                 MinimumLogLevel = LogLevel.Debug
             });
 
-            discord.ComponentInteractionCreated += async (s, e) =>
-            {
-                new ComponentInteractions(s, e).Parse();
-                await e.Interaction.CreateResponseAsync(InteractionResponseType.Pong);
-            };
-
             discord.UseInteractivity(new InteractivityConfiguration()
             {
                 PollBehaviour = PollBehaviour.KeepEmojis,
                 Timeout = TimeSpan.FromSeconds(60)
             });
+
+            discord.ComponentInteractionCreated += async (s, e) =>
+            {
+                new ComponentInteractions(s, e).Parse();
+                await e.Interaction.CreateResponseAsync(InteractionResponseType.Pong);
+            };
 
             var commands = discord.UseCommandsNext(new CommandsNextConfiguration()
                 {

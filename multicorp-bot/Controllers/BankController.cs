@@ -1,13 +1,17 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
+using multicorp_bot.Models.DbModels;
 using multicorp_bot.POCO;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace multicorp_bot
@@ -21,13 +25,13 @@ namespace multicorp_bot
             MultiBotDb = new MultiBotDb();
         }
 
-        public Bank AddBankEntry(DiscordGuild guild)
+        public Bank AddBankEntry(DiscordGuild guild, bool isRp = false)
         {
             var orgId = new OrgController().GetOrgId(guild);
 
             List<Bank> getBank = MultiBotDb.Bank.AsQueryable().Where(x => x.OrgId == orgId).ToList();
 
-            if (getBank.Count == 0)
+            if (getBank.Count == 0 && !isRp)
             {
                 var bank = new Bank()
                 {
@@ -36,25 +40,40 @@ namespace multicorp_bot
                 };
                 MultiBotDb.Bank.Add(bank);
                 MultiBotDb.SaveChangesAsync();
-                return GetBankByOrg(guild);
+            }
+            else if (getBank.Count == 0 && isRp)
+            {
+                var icBank = new Bank()
+                {
+                    Balance = 0,
+                    OrgId = orgId,
+                    IsRp = true
+                };
+
+                var occBank = new Bank()
+                {
+                    Balance = 0,
+                    OrgId = orgId,
+                    IsRp = false
+                };
+
+                MultiBotDb.Bank.Add(icBank);
+                MultiBotDb.Bank.Add(occBank);
+                MultiBotDb.SaveChanges();
+                
             }
             else
             {
                 return getBank[0];
             }
-            
+            return GetBankByOrg(guild);
         }
 
-        public int GetHighestBankId()
-        {
-            return MultiBotDb.Bank.AsQueryable().OrderByDescending(x => x.AccountId).First().AccountId;
-        }
-
-        public Bank GetBankByOrg(DiscordGuild guild)
+        public Bank GetBankByOrg(DiscordGuild guild, bool isRp = false)
         {
             try
             {
-                return new MultiBotDb().Bank.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild)).First();
+                return new MultiBotDb().Bank.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild) && x.IsRp == isRp).First();
             }
             catch
             {
@@ -90,7 +109,7 @@ namespace multicorp_bot
                 FormatHelpers.FormattedNumber(GetBankMeritBalance(trans.Guild).ToString()));
         }
          
-        public DiscordEmbed GetBankBalanceEmbed(DiscordGuild guild)
+        public DiscordMessageBuilder GetBankBalanceEmbed(DiscordGuild guild)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
 
@@ -114,14 +133,35 @@ namespace multicorp_bot
                 builder.AddField(trans.MemberName, $"{FormatHelpers.FormattedNumber(trans.Merits.ToString())} Merits");
             }
 
-            return builder.Build();
+            return new DiscordMessageBuilder().AddEmbed(builder.Build());
         }
 
-        public long? GetBankBalance(DiscordGuild guild)
+        public DiscordMessageBuilder GetRpBankBalanceEmbed(DiscordGuild guild)
+        {
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder();
+
+            builder.Title = $"{guild.Name} Bank";
+            builder.Timestamp = DateTime.Now;
+
+            var balance = GetBankBalance(guild, true);
+
+            builder.AddField("Current Balance:", $"{FormatHelpers.FormattedNumber(balance.ToString())} aUEC", true);
+
+            Expenses exp = GetExpenses(guild);
+            builder.AddField(exp.Name, $"Monthly Amount: {exp.Amount} UEC\nMonthly Amount Remaining: {exp.Remaining} UEC");
+            builder.AddField("Profit", balance - exp.Remaining >= 0 ? $"{balance - exp.Remaining} UEC": "0 UEC");
+
+            DiscordComponent[] buttons = new DiscordComponent[2];
+            buttons[0] = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "expense-update", "Update");
+            buttons[1] = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "expense-period", "Start New Month");
+            return new DiscordMessageBuilder().AddEmbed(builder.Build()).AddComponents(buttons);
+        }
+
+        public long? GetBankBalance(DiscordGuild guild, bool isRp = false)
         {
             try
             {
-                var bankItem = GetBankByOrg(guild);
+                var bankItem = GetBankByOrg(guild, isRp);
                 return bankItem.Balance;
             } catch (Exception e)
             {
@@ -131,9 +171,9 @@ namespace multicorp_bot
             return 0;
         }
 
-        public long? GetBankMeritBalance(DiscordGuild guild)
+        public long? GetBankMeritBalance(DiscordGuild guild, bool isRp = false)
         {
-            var bankItem = GetBankByOrg(guild);
+            var bankItem = GetBankByOrg(guild, isRp);
             return bankItem.Merits;
         }
 
@@ -150,9 +190,8 @@ namespace multicorp_bot
         public void UpdateTransaction(BankTransaction trans)
         {
             var memberC = new MemberController();
-            var memberId = 0;
             var orgId = new OrgController().GetOrgId(trans.Guild);
-            memberId = memberC.GetMemberId(trans.Member.Username, orgId, trans.Member).GetValueOrDefault();
+            var memberId = memberC.GetMemberId(trans.Member.Username, orgId, trans.Member).GetValueOrDefault();
            
             var transC = new TransactionController();
             var transactionId = transC.GetTransactionId(memberId);
@@ -247,6 +286,49 @@ namespace multicorp_bot
             }
 
             return trans;
+        }
+
+        public Expenses GetExpenses(DiscordGuild guild)
+        {
+            int orgId = new OrgController().GetOrgId(guild);
+            return MultiBotDb.Expenses.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild)).First();
+        }
+
+        public async Task UpdateExpense(DiscordGuild guild, int amount)
+        {
+            var exp = GetExpenses(guild);
+            
+            exp.Remaining = exp.Remaining - amount;
+            MultiBotDb.Expenses.Update(exp);
+            MultiBotDb.SaveChanges();
+
+            var newDb = new MultiBotDb();
+            var bankItem = GetBankByOrg(guild, true);
+            bankItem.Balance = bankItem.Balance + amount;
+            newDb.Bank.Update(bankItem);
+
+            newDb.SaveChanges();
+
+            await new Commands().updateRpBankBoard(guild, (await guild.GetChannelsAsync()).Where(x => x.Name == "bank" && x.Parent.Name == "In Character").First());
+        }
+
+        public async Task ExpenseButtonInteractionAsync(string interaction, DiscordGuild guild, DiscordChannel channel)
+        {
+            if (interaction == "update")
+            {
+                await new Commands().updateRpBankBoard(guild, channel);
+            }
+            else if (interaction == "period")
+            {
+                var exp = GetExpenses(guild);
+
+                exp.Period = exp.Period++;
+                exp.Remaining = exp.Amount;
+                MultiBotDb.Expenses.Update(exp);
+
+                MultiBotDb.SaveChanges();
+                await new Commands().updateRpBankBoard(guild, channel);
+            }
         }
     }
 }

@@ -263,7 +263,7 @@ namespace multicorp_bot.Controllers
             }
         }
 
-        public bool LogWork(CommandContext ctx, int id, string type, int amount)
+        public async Task<bool> LogWorkAsync(CommandContext ctx, int id, string type, int amount)
         {
             try
             {
@@ -274,7 +274,7 @@ namespace multicorp_bot.Controllers
                 var order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id == id).SingleOrDefault();
                 if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
                 {
-                    ctx.RespondAsync("Please try again with a valid Work Order Id");
+                    await ctx.RespondAsync("Please try again with a valid Work Order Id");
                     return isCompleted;
                 }
                 
@@ -282,11 +282,11 @@ namespace multicorp_bot.Controllers
                 if (orderReq.Amount <= 0)
                 {
                     orderReq.isCompleted = true;
-                    ctx.RespondAsync($"Great job you have fulfilled work order for {type}");
+                    await ctx.RespondAsync($"Great job you have fulfilled work order for {type}");
                 }
                 else
                 {
-                    ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} units of {type}");
+                    await ctx.RespondAsync($"Work Order amount remaining: {orderReq.Amount} units of {type}");
                 }
 
                 foreach (WorkOrderRequirements item in orderReqs)
@@ -306,12 +306,13 @@ namespace multicorp_bot.Controllers
                     {
                         new FactionController().AddFactionFavor(order.OrgId, order.FactionId.GetValueOrDefault());
                     }
-                    ctx.RespondAsync($"Great job you have completed the Work Order {type}");
+                    await ctx.RespondAsync($"Great job you have completed the Work Order {type}");
                     CalcXpForCompletion(order);     
                 }
 
                 var xpmod = MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single().XpModifier;
-                long? adjustedXp = (long?)(amount * MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single().XpModifier);
+                WorkOrderTypes woType = MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Id == orderReq.TypeId).Single();
+                long? adjustedXp = (long?)(amount * woType.XpModifier);
                 if (adjustedXp < 1)
                 {
                     adjustedXp = 1;
@@ -323,6 +324,10 @@ namespace multicorp_bot.Controllers
                 Member.Xp = (long?)(Member.Xp + adjustedXp);
 
                 newMbDb.Member.Update(Member);
+                BankController b = new BankController();
+
+                await b.UpdateExpense(ctx.Guild, Convert.ToInt32((amount * 1500) * woType.CreditModifier));
+
                 newMbDb.SaveChanges();
 
                 return isCompleted;
