@@ -368,6 +368,8 @@ namespace multicorp_bot.Controllers
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "shipping").SingleOrDefault();
                     case "ship":
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "shipping").SingleOrDefault();
+                    case "salvage":
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "salvage").SingleOrDefault();
                     case var hand when type.ToLower().Contains("hand"):
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "hand mineables").SingleOrDefault();
                     case var roc when type.ToLower().Contains("roc"):

@@ -15,6 +15,7 @@ using DSharpPlus.Interactivity.Extensions;
 using multicorp_bot.Controllers;
 using multicorp_bot.Helpers;
 using multicorp_bot.POCO;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace multicorp_bot
@@ -488,7 +489,23 @@ namespace multicorp_bot
                     await ctx.RespondAsync("Options for loans is 'request', 'view', 'payment', 'fund', and 'complete'");
                     break;
             }
-        }      
+        }
+
+        [Command("dispatch")]
+        public async Task Dispatch(CommandContext ctx)
+        {
+            try
+            {
+                var interactivity = ctx.Client.GetInteractivity();
+                var m1 = await ctx.RespondAsync("Would you like to add, log or view?");
+                var type = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+                await Dispatch(ctx, type);
+            }
+            catch (Exception e)
+            {
+                ErrorController.SendError(ctx.Channel, e.Message, ctx.Guild);
+            }
+        }
 
         [Command("dispatch")]
         public async Task Dispatch(CommandContext ctx, string type = null)
