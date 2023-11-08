@@ -392,7 +392,7 @@ namespace multicorp_bot.Controllers
 
         public List<WorkOrderRequirements> GetRequirements(int workOrderId)
         {
-            return MultiBotDb.WorkOrderRequirements.AsQueryable().Where(x => x.WorkOrderId == workOrderId && !x.isCompleted).ToList();
+            return new MultiBotDb().WorkOrderRequirements.AsQueryable().Where(x => x.WorkOrderId == workOrderId && !x.isCompleted).ToList();
         }
 
         public WorkOrderRequirements GetRequirementById(int requirementId)

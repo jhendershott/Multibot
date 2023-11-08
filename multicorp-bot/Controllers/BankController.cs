@@ -147,9 +147,15 @@ namespace multicorp_bot
 
             builder.AddField("Current Balance:", $"{FormatHelpers.FormattedNumber(balance.ToString())} aUEC", true);
 
-            Expenses exp = GetExpenses(guild);
-            builder.AddField(exp.Name, $"Monthly Amount: {exp.Amount} UEC\nMonthly Amount Remaining: {exp.Remaining} UEC");
-            builder.AddField("Profit", balance - exp.Remaining >= 0 ? $"{balance - exp.Remaining} UEC": "0 UEC");
+            List<Expenses> exp = GetExpenses(guild);
+            int exptotal = 0;
+            exp.ForEach(x =>
+            {
+                builder.AddField(x.Name, $"Monthly Amount: {x.Amount} UEC\nMonthly Amount Remaining: {x.Remaining} UEC");
+                exptotal = (int)(exptotal + x.Amount);
+            });
+
+            builder.AddField("Profit", balance - exptotal >= 0 ? $"{balance - exptotal} UEC": "0 UEC");
 
             DiscordComponent[] buttons = new DiscordComponent[2];
             buttons[0] = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Primary, "expense-update", "Update");
@@ -288,18 +294,37 @@ namespace multicorp_bot
             return trans;
         }
 
-        public Expenses GetExpenses(DiscordGuild guild)
+        public List<Expenses> GetExpenses(DiscordGuild guild)
         {
             int orgId = new OrgController().GetOrgId(guild);
-            return MultiBotDb.Expenses.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild)).First();
+            return MultiBotDb.Expenses.AsQueryable().Where(x => x.OrgId == new OrgController().GetOrgId(guild)).ToList();
         }
 
         public async Task UpdateExpense(DiscordGuild guild, int amount)
         {
             var exp = GetExpenses(guild);
-            
-            exp.Remaining = exp.Remaining - amount;
-            MultiBotDb.Expenses.Update(exp);
+            int updatedAmt = amount;
+
+            exp.ForEach(x =>
+            {
+                if(amount > 0)
+                {
+                    int rem = (int)(x.Remaining - updatedAmt);
+                    if(rem > 0)
+                    {
+                        x.Remaining = x.Remaining - updatedAmt;
+                        updatedAmt = 0;
+                        MultiBotDb.Expenses.Update(x);
+                    }
+                    if(rem <= 0)
+                    {
+                        updatedAmt = (int)(updatedAmt - x.Remaining);
+                        x.Remaining = 0;
+                        MultiBotDb.Expenses.Update(x);
+                    }
+                }
+                
+            });
             MultiBotDb.SaveChanges();
 
             var newDb = new MultiBotDb();
@@ -322,9 +347,12 @@ namespace multicorp_bot
             {
                 var exp = GetExpenses(guild);
 
-                exp.Period = exp.Period++;
-                exp.Remaining = exp.Amount;
-                MultiBotDb.Expenses.Update(exp);
+                exp.ForEach(x =>
+                {
+                    x.Period = x.Period++;
+                    x.Remaining = x.Amount;
+                    MultiBotDb.Expenses.Update(x);
+                });
 
                 MultiBotDb.SaveChanges();
                 await new Commands().updateRpBankBoard(guild, channel);

@@ -584,7 +584,7 @@ namespace multicorp_bot
                     }
                     else
                     {
-                       await channel.SendMessageAsync("Please provide a type of 'Trading', 'Shipping', 'Mining', or 'Military' ");
+                       await channel.SendMessageAsync("Please provide a type of 'Trading', 'Shipping', 'Mining', or 'Military' or Salvage ");
                     }
                 }
             } catch(Exception e)
