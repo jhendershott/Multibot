@@ -314,8 +314,7 @@ namespace multicorp_bot
                 entity.ToTable("wanted_ships");
 
                 entity.Property(e => e.Id)
-                    .HasColumnName("id")
-                    .ValueGeneratedNever();
+                    .HasColumnName("id");
 
                 entity.Property(e => e.ImgUrl)
                     .HasColumnName("img_url")

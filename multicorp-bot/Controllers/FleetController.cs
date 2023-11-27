@@ -56,12 +56,12 @@ namespace multicorp_bot.Controllers
         {
             var request = new WantedShips()
             {
-                Id = GetHighestRequestid() + 1,
                 OrgId = new OrgController().GetOrgId(guild),
                 Name = name,
                 TotalPrice = price,
                 RemainingPrice = price,
-                ImgUrl = imgUrl
+                ImgUrl = imgUrl,
+                IsCompleted = false
             };
 
             MultiBotDb.WantedShips.Add(request);

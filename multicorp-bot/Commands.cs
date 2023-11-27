@@ -435,6 +435,25 @@ namespace multicorp_bot
             
         }
 
+        [Command("updateFleet")]
+        public async Task UpdateFleet(CommandContext ctx)
+        {
+            try
+            {
+                var Mychannel = (await ctx.Guild.GetChannelsAsync()).FirstOrDefault(x => x.Name == "fleet-requests");
+                var msgs = await Mychannel.GetMessagesAsync();
+                foreach (var msg in msgs)
+                {
+                    await msg.DeleteAsync();
+                }
+                await Mychannel.SendMessageAsync(new FleetController().GetFleetRequests(ctx.Guild));
+            } catch(Exception e)
+            {
+                Console.WriteLine(e);
+                await ctx.Channel.SendMessageAsync($"Send wnr the following error {e.Message}");
+            }
+}
+
         [Command("loan")]
         public async Task Loan(CommandContext ctx)
         {
@@ -568,7 +587,10 @@ namespace multicorp_bot
 
                     if (msgs.Count > 0)
                     {
-                        await Mychannel.DeleteMessagesAsync(msgs);
+                        foreach (var msg in msgs)
+                        {
+                            await msg.DeleteAsync();
+                        }
                     }
 
                     if (type == null)
