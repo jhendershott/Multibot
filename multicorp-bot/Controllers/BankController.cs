@@ -151,8 +151,16 @@ namespace multicorp_bot
             int exptotal = 0;
             exp.ForEach(x =>
             {
-                builder.AddField(x.Name, $"Monthly Amount: {x.Amount} UEC\nMonthly Amount Remaining: {x.Remaining} UEC");
-                exptotal = (int)(exptotal + x.Amount);
+                if(x.NumPeriods != null && x.NumPeriods > x.Period)
+                {
+                    builder.AddField(x.Name, $"Amount: {FormatHelpers.FormattedNumber(x.Amount.ToString())} UEC\nMonthly Periods Remaining: {x.NumPeriods - x.Period}");
+                    exptotal = (int)(exptotal + x.Amount);
+                }
+                else if (x.NumPeriods == null)
+                {
+                    builder.AddField(x.Name, $"Monthly Amount: {FormatHelpers.FormattedNumber(x.Amount.ToString())} UEC\nMonthly Amount Remaining: {FormatHelpers.FormattedNumber(x.Remaining.ToString())} UEC");
+                    exptotal = (int)(exptotal + x.Amount);
+                }
             });
 
             builder.AddField("Profit", balance - exptotal >= 0 ? $"{balance - exptotal} UEC": "0 UEC");
@@ -354,9 +362,27 @@ namespace multicorp_bot
                     MultiBotDb.Expenses.Update(x);
                 });
 
+                var bank = GetBankByOrg(guild,true);
+                bank.Balance = 0;
+                MultiBotDb.Bank.Update(bank);
+
                 MultiBotDb.SaveChanges();
+
                 await new Commands().updateRpBankBoard(guild, channel);
             }
+        }
+
+        public async Task AddExpense(string name, int amount, int? periods, DiscordGuild guild, DiscordChannel channel)
+        {
+            MultiBotDb.Expenses.Add(new Expenses(){
+                Name = name,
+                Amount = amount,
+                Remaining = amount,
+                OrgId = new OrgController().GetOrgId(guild),
+                Period = 0,
+                NumPeriods = periods
+            });
+            await MultiBotDb.SaveChangesAsync();
         }
     }
 }

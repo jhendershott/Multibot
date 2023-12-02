@@ -13,5 +13,6 @@ namespace multicorp_bot.Models.DbModels
         public long Amount { get; set; }
         public long Remaining { get; set; }
         public int Period { get; set; }
+        public int? NumPeriods { get; set; }
     }
 }

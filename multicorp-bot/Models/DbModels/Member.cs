@@ -17,6 +17,5 @@ namespace multicorp_bot
         public long? Xp { get; set; }
 
         public virtual ICollection<Transactions> Transactions { get; set; }
-
     }
 }

@@ -138,6 +138,9 @@ namespace multicorp_bot
                     .HasColumnName("period")
                     .HasColumnType("integer");
 
+                entity.Property(e => e.NumPeriods)
+                    .HasColumnName("num_periods")
+                    .HasColumnType("integer");
             });
 
             modelBuilder.Entity<Factions>(entity =>

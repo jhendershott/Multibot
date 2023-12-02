@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -412,6 +409,41 @@ namespace multicorp_bot
                     ErrorController.SendError(channel, e.Message, guild);
                 }
             }
+        }
+
+        [Command("Expense")]
+        public async Task Expense(CommandContext ctx)
+        {
+            await ctx.RespondAsync($"Please run the command the commands !expense add");
+        }
+
+        [Command("Expense")]
+        public async Task Expense(CommandContext ctx, string arg)
+        {
+            var interactivity = ctx.Client.GetInteractivity();
+            if (arg.ToLower() == "add")
+            {
+                try
+                {
+                    await ctx.RespondAsync("What would you like to call the expense?");
+                    var name = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+
+                    await ctx.RespondAsync("What what is the value of the expense?");
+                    var amount = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
+
+                    await ctx.RespondAsync("How many monthly periods will you be paying this expense? If indefinite enter 0");
+                    var periods = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
+
+                    await BankController.AddExpense(name, int.Parse(amount), periods == 0 ? null: periods ,ctx.Guild, ctx.Channel);
+
+                    await ctx.RespondAsync("Expense has been added, updating RP Bank");
+                    await updateRpBankBoard(ctx.Guild, ctx.Channel);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    await ctx.Channel.SendMessageAsync($"Send wnr the following error {e.Message}");
+                }
+            }            
         }
 
         [Command("fleet")]
@@ -1208,20 +1240,10 @@ namespace multicorp_bot
             await ctx.RespondAsync("How many credits you put towards the ship");
             var credits = int.Parse((await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content);
 
-            await ctx.RespondAsync("Waiting for Banker to confirm the transfer");
-            var bankers = await GetMembersWithRolesAsync("Banker", ctx.Guild);
-            var confirmMsg = await interactivity.WaitForMessageAsync(xm => bankers.Contains(xm.Author.Id), TimeSpan.FromMinutes(10));
-            if (confirmMsg.Result.Content.ToLower().Contains("yes")
-                || confirmMsg.Result.Content.ToLower().Contains("confirm")
-                || confirmMsg.Result.Content.ToLower().Contains("approve"))
-            {
-                BankTransaction trans = new BankTransaction("deposit", ctx.Member, ctx.Guild, credits);
-                await bankController.Deposit(trans);
-                bankController.UpdateTransaction(trans);
-                var xp = MemberController.UpdateExperiencePoints("credits for ships" ,trans);
-                FleetController.UpdateFleetItemAmount(int.Parse(item), credits);
-                await ctx.RespondAsync($"Your funds have been accepted and you've been credited the transaction.\n Your org experience is now {FormatHelpers.FormattedNumber(xp.ToString())}");
-            }
+            FleetController.UpdateFleetItemAmount(int.Parse(item), credits);
+            await ctx.RespondAsync($"Your funds have been accepted and you've been credited the transaction.");
+
+            await UpdateFleet(ctx);
         }
 
         private async Task LoanFund(CommandContext ctx, string bank = null)
