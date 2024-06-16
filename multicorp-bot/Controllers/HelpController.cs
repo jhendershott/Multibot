@@ -114,6 +114,7 @@ namespace multicorp_bot.Controllers
             builder.AddField("Setup", "Please create a channel called job-board, this will be updated with changing jobs");
             builder.AddField("Dispatch", "Dispatch will give you a random work order from the type you choose. currently supported types are: \n" +
                 "Trading, shipping, mining, roc mining, and hand mining\n" + 
+                "Trading, shipping, mining, roc mining, and hand mining\n" + 
             "!dispatch or !dispatch mining"); ;
             builder.AddField("Add", "This will walk you through the steps to add a new dispatch. \n" +
                 " Dispatches are used for earning XP or accomplishing org goals\n" +
