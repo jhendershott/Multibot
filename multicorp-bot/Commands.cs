@@ -638,7 +638,7 @@ namespace multicorp_bot
                     }
                     else
                     {
-                       await channel.SendMessageAsync("Please provide a type of 'Trading', 'Shipping', 'Mining', or 'Military' or Salvage ");
+                       await channel.SendMessageAsync("Please provide a type of 'Trading', 'Shipping', 'Mining', or 'Military', Salvage, or 'Redacted' ");
                     }
                 }
             } catch(Exception e)
@@ -1171,7 +1171,7 @@ namespace multicorp_bot
             string title = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a Description");
             string description = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
-            await ctx.RespondAsync("Please add a type: trading, mining shipping or military");
+            await ctx.RespondAsync("Please add a type: trading, mining, shipping, military, salvage, redacted");
             string workOrdertype = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;
             await ctx.RespondAsync("Please add a location");
             string location = (await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(5))).Result.Content;

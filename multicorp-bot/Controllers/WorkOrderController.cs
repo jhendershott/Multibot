@@ -18,7 +18,7 @@ namespace multicorp_bot.Controllers
         {
             MultiBotDb = new MultiBotDb();
             Types = new List<string>();
-            string[] types = { "trading", "shipping", "mining", "military", "salvage" };
+            string[] types = { "trading", "shipping", "mining", "military", "salvage", "redacted"};
             Types.AddRange(types);
         }
 
@@ -376,9 +376,11 @@ namespace multicorp_bot.Controllers
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "hand mineables").SingleOrDefault();
                     case "military":
                         return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "military").SingleOrDefault();
+                    case "redacted":
+                        return MultiBotDb.WorkOrderTypes.AsQueryable().Where(x => x.Name == "redacted").SingleOrDefault();
 
                     default:
-                        await channel.SendMessageAsync("Please specify type, trading, mining, hand mining or roc mining, shipping, military, salvage");
+                        await channel.SendMessageAsync("Please specify type, trading, mining, hand mining or roc mining, shipping, military, salvage, redacted");
                         throw new InvalidOperationException("Unspecified Work Order Type");
 
                 }
