@@ -683,10 +683,8 @@ namespace multicorp_bot
                 tasks.Add(m3.DeleteAsync());
             }
             bool isComplete = await controller.LogWorkAsync(ctx, int.Parse(workOrder), material, int.Parse(amount));
-            if (isComplete)
-            {
-                await updateBoard(ctx);
-            }
+
+            await updateBoard(ctx);
 
             if(ctx.Channel.Name == "work-log")
             {
