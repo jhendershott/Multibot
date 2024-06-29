@@ -262,14 +262,14 @@ namespace multicorp_bot.Controllers
                 return null;
             }
         }
-
+            
         public async Task<bool> LogWorkAsync(CommandContext ctx, int id, string type, int amount)
         {
             try
             {
                 bool isCompleted = true;
                 var orderReqs = MultiBotDb.WorkOrderRequirements.AsQueryable().Where(x => x.WorkOrderId == id).ToList();
-                var orderReq = orderReqs.AsQueryable().Where(x => x.Material.ToLower() == type.ToLower()).SingleOrDefault();
+                var orderReq = orderReqs.AsQueryable().Where(x => x.Material.ToLower().Replace("||", "") == type.ToLower()).SingleOrDefault();
 
                 var order = MultiBotDb.WorkOrders.AsQueryable().Where(x => x.Id == id).SingleOrDefault();
                 if (order.OrgId != new OrgController().GetOrgId(ctx.Guild) || order.isCompleted)
