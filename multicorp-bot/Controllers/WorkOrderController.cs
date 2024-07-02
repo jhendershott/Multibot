@@ -302,6 +302,7 @@ namespace multicorp_bot.Controllers
                 {
                     order.isCompleted = true;
                     MultiBotDb.WorkOrders.Update(order);
+                    MultiBotDb.SaveChanges();
                     if (order.FactionId != null)
                     {
                         new FactionController().AddFactionFavor(order.OrgId, order.FactionId.GetValueOrDefault());
